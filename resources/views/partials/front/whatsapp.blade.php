@@ -21,7 +21,7 @@
          :style="window.innerWidth >= 1024 ? 'right:24px;bottom:24px' : 'right:20px;bottom:calc(84px + env(safe-area-inset-bottom,0px))'">
 
         <div x-show="buka" x-cloak x-transition.opacity
-             class="plate-up mb-3 w-[min(78vw,19rem)] p-4">
+             class="plate-up plate-besar mb-3 w-[min(78vw,19rem)] p-4">
             <div class="flex items-start justify-between gap-2">
                 <div>
                     <p class="font-display text-lg font-semibold">

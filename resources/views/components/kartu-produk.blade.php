@@ -8,7 +8,7 @@
     $jumlahVarian = $produk->variants->where('is_active', true)->count();
 @endphp
 
-<article class="plate group relative flex h-full flex-col overflow-hidden">
+<article class="plate plate-interaktif group relative flex h-full flex-col overflow-hidden">
     <a href="{{ route('front.products.show', $produk) }}" wire:navigate
        class="block aspect-[4/3] overflow-hidden bg-sunken">
         @if ($media)
