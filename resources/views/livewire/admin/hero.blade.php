@@ -62,7 +62,7 @@
                 </span>
 
                 <div class="h-14 w-20 flex-none overflow-hidden rounded border border-line-soft bg-sunken">
-                    @php $url = filled($s->media_path) ? \Illuminate\Support\Facades\Storage::disk('public')->url($s->media_path) : null; @endphp
+                    @php $url = filled($s->media_path) ? \App\Models\ProductMedia::urlMedia($s->media_path) : null; @endphp
 
                     @if ($url && $s->media_type === 'image')
                         <img src="{{ $url }}" alt="" class="h-full w-full object-cover" />
@@ -186,7 +186,7 @@
                         $berkasPratinjau = $sedang->media_type === 'video'
                             ? ($sedang->poster_path ?: $sedang->media_path)
                             : ($pratinjau === 'ponsel' ? ($sedang->media_path_mobile ?: $sedang->media_path) : $sedang->media_path);
-                        $urlPratinjau = filled($berkasPratinjau) ? \Illuminate\Support\Facades\Storage::disk('public')->url($berkasPratinjau) : null;
+                        $urlPratinjau = filled($berkasPratinjau) ? \App\Models\ProductMedia::urlMedia($berkasPratinjau) : null;
                     @endphp
 
                     <div class="overflow-hidden border border-line-soft bg-sunken transition-all

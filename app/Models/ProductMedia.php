@@ -73,11 +73,37 @@ class ProductMedia extends Model
             $jalur = $this->{'path_'.$kandidat} ?? null;
 
             if (filled($jalur)) {
-                return Storage::disk('public')->url($jalur);
+                return self::urlMedia($jalur);
             }
         }
 
         return null;
+    }
+
+    /**
+     * URL media untuk ditampilkan di halaman.
+     *
+     * Disk "public" menyusun URL dari APP_URL. Pada mesin ini APP_URL masih
+     * menunjuk port bawaan 8000, sementara aplikasi dilayani di 8090 dan lewat
+     * terowongan. Akibatnya setiap gambar dirender dari asal yang berbeda dari
+     * halamannya, lalu diblokir CSP "img-src 'self'" — gambar tidak muncul sama
+     * sekali meski berkasnya ada dan permintaannya tidak pernah sampai server.
+     *
+     * Yang dikembalikan adalah jalur relatif, bukan URL absolut. Peramban
+     * menyelesaikannya terhadap asal halaman, sehingga bekerja pada port lokal,
+     * di balik terowongan, maupun di domain produksi tanpa perubahan konfigurasi.
+     */
+    public static function urlMedia(?string $jalur): ?string
+    {
+        if (blank($jalur)) {
+            return null;
+        }
+
+        // Storage::disk('public')->url() menyusun URL absolut dari APP_URL, jadi
+        // yang diambil hanya bagian jalurnya.
+        $path = parse_url(Storage::disk('public')->url($jalur), PHP_URL_PATH);
+
+        return is_string($path) && $path !== '' ? $path : null;
     }
 
     /** @return array<int, string> */

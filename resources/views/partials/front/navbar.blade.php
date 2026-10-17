@@ -22,7 +22,7 @@
         {{-- Logo --}}
         <a href="{{ route('front.home') }}" class="flex min-w-0 items-center gap-2">
             @if ($logo || $logoTerang)
-                <img src="{{ Storage::disk('public')->url($logo ?: $logoTerang) }}"
+                <img src="{{ \App\Models\ProductMedia::urlMedia($logo ?: $logoTerang) }}"
                      alt="{{ $toko->teks('site_name') }}"
                      width="140" height="40" class="h-8 w-auto lg:h-9">
             @else

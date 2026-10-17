@@ -474,6 +474,6 @@ class HeroBuilder extends Component
     /** URL gambar untuk pratinjau. Jalur kosong berarti belum ada berkas. */
     public function urlMedia(?string $jalur): ?string
     {
-        return filled($jalur) ? Storage::disk('public')->url($jalur) : null;
+        return filled($jalur) ? \App\Models\ProductMedia::urlMedia($jalur) : null;
     }
 }

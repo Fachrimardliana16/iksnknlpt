@@ -8,7 +8,7 @@
     <title>{{ $judul ?? '' }}{{ isset($judul) ? ' · ' : '' }}{{ $toko->teks('site_name', __('site.brand.fallback_name')) }}</title>
     <meta name="description" content="{{ $deskripsi ?? $toko->teks('site_description', __('site.brand.tagline')) }}">
     @if (filled($toko->teks('site_favicon')))
-        <link rel="icon" href="{{ Storage::disk('public')->url($toko->teks('site_favicon')) }}">
+        <link rel="icon" href="{{ \App\Models\ProductMedia::urlMedia($toko->teks('site_favicon')) }}">
     @endif
 
     {{-- Tema dipasang sebelum first paint supaya tidak ada kedip terang lalu gelap. --}}

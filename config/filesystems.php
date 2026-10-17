@@ -38,11 +38,31 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Disk publik untuk media katalog, hero, dan logo.
+         *
+         * 'serve' => true WAJIB ada di sini. Disk ini dipasang di proyek pada
+         * D:, yang berformat exFAT — symlink tidak didukung, sehingga
+         * `php artisan storage:link` melaporkan berhasil padahal tautannya
+         * tidak pernah terbentuk. Tanpa symlink, berkas di public/storage tidak
+         * ada, dan tanpa 'serve' rute /storage/{path} yang dibangkitkan Laravel
+         * menolak setiap permintaan dengan 403. Akibatnya seluruh gambar
+         * katalog gagal dimuat.
+         *
+         * Dengan 'serve', Laravel menyajikan berkasnya sendiri sehingga
+         * aplikasi tidak bergantung pada symlink maupun format volume.
+         *
+         * 'url' sengaja berupa jalur relatif, bukan APP_URL absolut. APP_URL di
+         * mesin ini masih menunjuk port 8000 sementara aplikasi dilayani di
+         * 8090 dan lewat terowongan; URL absolut akan menghasilkan aset dari
+         * asal yang berbeda dan diblokir CSP.
+         */
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => '/storage',
             'visibility' => 'public',
+            'serve' => true,
             'throw' => false,
             'report' => false,
         ],

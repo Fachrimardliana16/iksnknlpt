@@ -29,7 +29,7 @@
             <div class="absolute inset-0 -z-10 transition-opacity duration-700"
                  x-show="i === {{ $idx }}"
                  :style="'opacity: i === {{ $idx }} ? 1 : 0'"
-                 style="background-image: url('{{ Storage::disk('public')->url($slide->media_path) }}');
+                 style="background-image: url('{{ \App\Models\ProductMedia::urlMedia($slide->media_path) }}');
                         background-size: cover;
                         background-position: {{ $slide->posisiFokus() }};">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25"></div>
@@ -106,9 +106,15 @@
                     <button type="button" class="btn-icon !text-white/80 hover:!text-white"
                             @click="jeda = !jeda; jeda ? berhenti() : mulai()"
                             :title="jeda ? 'Jalankan' : 'Jeda'">
+                        {{-- Dua ikon ditukar dengan x-show, bukan <template x-if>.
+                             Element <template> tidak dikenal di dalam SVG: HTML
+                             mengabaikannya saat mengurai isi <svg>, sehingga
+                             x-if tidak pernah punya template untuk di-clone dan
+                             Alpine melempar "Cannot read properties of undefined
+                             (reading 'cloneNode')". --}}
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <template x-if="!jeda"><g><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g></template>
-                            <template x-if="jeda"><path d="M7 4l13 8-13 8z"/></template>
+                            <g x-show="!jeda"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g>
+                            <path x-show="jeda" x-cloak d="M7 4l13 8-13 8z"/>
                         </svg>
                         <span class="visually-hidden">Jeda</span>
                     </button>

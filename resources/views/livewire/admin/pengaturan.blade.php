@@ -135,7 +135,7 @@
                              supaya tidak ada berkas tayang sebelum disetujui. --}}
                         <div class="mt-2 flex flex-wrap items-center gap-3">
                             @if (filled($nilai[$b['kunci']] ?? null))
-                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($nilai[$b['kunci']]) }}"
+                                <img src="{{ \App\Models\ProductMedia::urlMedia($nilai[$b['kunci']]) }}"
                                      alt="{{ $b['label'] }}"
                                      class="h-12 w-auto flex-none rounded border border-line-soft bg-sunken object-contain p-1" />
                             @else
