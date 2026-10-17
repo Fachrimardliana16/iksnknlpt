@@ -12,11 +12,18 @@
                 n: {{ max(1, $slides->count()) }},
                 jeda: false,
                 timer: null,
-                mulai() { if (this.n < 2 || this.jeda) return; this.timer = setInterval(() => this.i = (this.i + 1) % this.n, 7000); },
-                berhenti() { clearInterval(this.timer); },
-                tolakAngka() { clearInterval(this.timer); }
+                bolehGerak: function () {
+                    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                },
+                mulai: function () {
+                    clearInterval(this.timer);
+                    if (this.n < 2 || this.jeda || !this.bolehGerak()) return;
+                    this.timer = setInterval(function () { this.i = (this.i + 1) % this.n; }.bind(this), 7000);
+                },
+                berhenti: function () { clearInterval(this.timer); this.timer = null; }
              }"
-             x-init="if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) mulai()">
+             x-init="mulai()"
+             x-on:livewire:navigated.window="i = 0; jeda = false; berhenti(); mulai()">
 
         @forelse ($slides as $idx => $slide)
             <div class="absolute inset-0 -z-10 transition-opacity duration-700"
@@ -107,7 +114,7 @@
                     </button>
 
                     @foreach ($slides as $idx => $slide)
-                        <button type="button" @click="i = {{ $idx }}; tolakAngka()"
+                        <button type="button" @click="i = {{ $idx }}; berhenti()"
                                 class="h-2.5 transition-all"
                                 :class="i === {{ $idx }} ? 'w-6 bg-white' : 'w-2.5 bg-white/40'"
                                 style="border-radius: 1px">

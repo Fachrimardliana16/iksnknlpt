@@ -1,5 +1,4 @@
 @php
-    $jumlahKeranjang = app(\App\Services\Keranjang::class)->jumlahItem();
     $aktif = fn (string $pola) => request()->routeIs($pola);
 
     $slotNav = [
@@ -26,10 +25,8 @@
                 <x-ikon :name="$slot['nama']" :size="22" />
                 <span class="text-[0.6875rem] font-medium leading-none">{{ $slot['label'] }}</span>
 
-                @if ($slot['nama'] === 'cart' && $jumlahKeranjang > 0)
-                    <span class="dot-count !right-[calc(50%-22px)] !top-1.5">
-                        {{ $jumlahKeranjang > 99 ? '99+' : $jumlahKeranjang }}
-                    </span>
+                @if ($slot['nama'] === 'cart')
+                    <livewire:front.jumlah-keranjang :key="'badge-bawah-'.$slot['nama']" />
                 @endif
 
                 @if ($aktif($slot['pola']))

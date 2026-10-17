@@ -30,9 +30,14 @@ class SetLocale
 
         $response = $next($request);
 
-        // Cookie ditulis hanya saat nilainya berbeda, agar tidak menulis ulang
-        // pada setiap permintaan.
-        if ($request->cookie(self::COOKIE) !== $locale) {
+        // Cookie ditulis hanya saat nilainya berbeda dan saat respons belum
+        // membawa cookie ini. Tanpa pemeriksaan kedua, rute /lang/{locale}
+        // menulis nilai baru lalu ditimpa kembali oleh middleware dengan nilai
+        // lama yang dihitung sebelum rute berjalan.
+        $sudahAda = collect($response->headers->getCookies())
+            ->contains(fn ($cookie) => $cookie->getName() === self::COOKIE);
+
+        if (! $sudahAda && $request->cookie(self::COOKIE) !== $locale) {
             $response->headers->setCookie(cookie(
                 name: self::COOKIE,
                 value: $locale,

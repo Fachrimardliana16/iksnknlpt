@@ -47,8 +47,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
         ]);
 
-        // Nama kue sesi yang jelas, bukan "laravel_session" bawaan.
-        $middleware->encryptCookies(except: []);
+        // Kue bahasa tidak dienkripsi. Nilainya bukan rahasia, dan membiarkannya
+        // terbaca membuat kue ini dapat diperiksa langsung dari sisi klien.
+        $middleware->encryptCookies(except: [
+            \App\Http\Middleware\SetLocale::COOKIE,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*

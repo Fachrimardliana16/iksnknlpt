@@ -63,9 +63,11 @@
         <div class="plate overflow-hidden">
             <div class="flex items-center justify-between border-b border-line-soft px-4 py-3">
                 <p class="part-no">Pesanan terbaru</p>
-                <a href="{{ route('admin.orders.index') }}" class="text-sm text-accent hover:underline" wire:navigate>
-                    Semua
-                </a>
+                @if (\Illuminate\Support\Facades\Route::has('admin.orders.index'))
+                    <a href="{{ route('admin.orders.index') }}" class="text-sm text-accent hover:underline" wire:navigate>
+                        Semua
+                    </a>
+                @endif
             </div>
 
             @if ($terbaru->isEmpty())
@@ -89,9 +91,13 @@
                             @foreach ($terbaru as $o)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('admin.orders.show', $o) }}" class="tech text-accent hover:underline" wire:navigate>
-                                            {{ $o->order_number }}
-                                        </a>
+                                        @if (\Illuminate\Support\Facades\Route::has('admin.orders.show'))
+                                            <a href="{{ route('admin.orders.show', $o) }}" class="tech text-accent hover:underline" wire:navigate>
+                                                {{ $o->order_number }}
+                                            </a>
+                                        @else
+                                            <span class="tech">{{ $o->order_number }}</span>
+                                        @endif
                                         <span class="block text-xs text-dim">{{ $o->created_at?->format('d/m/Y H:i') }}</span>
                                     </td>
                                     <td class="max-w-[12rem] truncate">{{ $o->namaPenerima() }}</td>
@@ -106,18 +112,15 @@
                 {{-- Mobile: satu kartu per pesanan. --}}
                 <ul class="divide-y divide-line-soft sm:hidden">
                     @foreach ($terbaru as $o)
-                        <li>
-                            <a href="{{ route('admin.orders.show', $o) }}" wire:navigate
-                               class="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="tech text-sm">{{ $o->order_number }}</span>
-                                    <x-lencana :nada="$o->status->nada()" :teks="$o->status->label()" />
-                                </div>
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="truncate text-sm text-muted">{{ $o->namaPenerima() }}</span>
-                                    <span class="tech flex-none text-sm">{{ rupiah($o->grand_total) }}</span>
-                                </div>
-                            </a>
+                        <li class="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="tech text-sm">{{ $o->order_number }}</span>
+                                <x-lencana :nada="$o->status->nada()" :teks="$o->status->label()" />
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="truncate text-sm text-muted">{{ $o->namaPenerima() }}</span>
+                                <span class="tech flex-none text-sm">{{ rupiah($o->grand_total) }}</span>
+                            </div>
                         </li>
                     @endforeach
                 </ul>

@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Support\Pengaturan;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -111,7 +112,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'steel',
                 'teks' => $pesanBaru.' pesan kontak belum dibaca.',
-                'rute' => route('admin.customers.index'),
+                'rute' => Route::has('admin.customers.index') ? route('admin.customers.index') : route('admin.dashboard'),
             ];
         }
 
@@ -119,7 +120,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'danger',
                 'teks' => 'Nomor WhatsApp belum diisi. Tombol WhatsApp tidak tampil di situs.',
-                'rute' => route('admin.settings.index', ['tab' => 'contact']),
+                'rute' => Route::has('admin.settings.index') ? route('admin.settings.index', ['tab' => 'contact']) : route('admin.dashboard'),
             ];
         }
 

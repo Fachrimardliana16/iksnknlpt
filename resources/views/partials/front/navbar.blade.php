@@ -1,7 +1,6 @@
 @php
     /** @var \App\Support\Pengaturan $toko */
     $kategoriNav = \App\Models\Category::query()->aktif()->terurut()->take(8)->get();
-    $jumlahKeranjang = app(\App\Services\Keranjang::class)->jumlahItem();
     $logo = $toko->teks('site_logo_light');
     $logoTerang = $toko->teks('site_logo_dark');
 @endphp
@@ -95,9 +94,7 @@
             <a href="{{ route('front.cart') }}" class="btn-icon" title="{{ __('site.nav.cart') }}"
                wire:navigate>
                 <x-ikon name="cart" />
-                @if ($jumlahKeranjang > 0)
-                    <span class="dot-count">{{ $jumlahKeranjang > 99 ? '99+' : $jumlahKeranjang }}</span>
-                @endif
+                <livewire:front.jumlah-keranjang wire:key="badge-atas" />
                 <span class="visually-hidden">{{ __('site.nav.open_cart') }}</span>
             </a>
         </div>

@@ -93,9 +93,11 @@ class PesananService
                     'weight_gram' => $beratBaris,
                 ];
 
-                // Stok fisik dikurangi, dan jumlah yang sama ditandai sebagai
-                // ditahan sampai pesanan selesai atau dibatalkan.
-                $varian->increment('stock_quantity', -$item->quantity);
+                // Stok fisik TIDAK dikurangi di sini. Mengurangi stok fisik dan
+                // menambah reserved sekaligus akan menghitung barang yang sama
+                // dua kali, dan membuat stok dapat dijual lebih kecil dari yang
+                // seharusnya. Stok fisik baru berkurang saat barang benar-benar
+                // keluar, yaitu saat pesanan selesai (lihat PesananService::selesaikan).
                 $varian->increment('reserved_quantity', $item->quantity);
             }
 

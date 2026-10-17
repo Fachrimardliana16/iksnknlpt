@@ -61,6 +61,7 @@
 
         <nav class="flex-1 overflow-y-auto p-2" aria-label="Navigasi panel">
             @foreach ($menu as $item)
+                @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
                 <a href="{{ route($item['rute']) }}" wire:navigate
                    class="flex min-h-[44px] items-center gap-3 px-3 text-sm
                           {{ $aktif($item['pola']) ? 'bg-sunken text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
@@ -106,6 +107,7 @@
 
             <nav class="flex-1 overflow-y-auto p-2">
                 @foreach ($menu as $item)
+                    @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
                     <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
                        class="flex min-h-[48px] items-center gap-3 px-3 text-base
                               {{ $aktif($item['pola']) ? 'bg-sunken text-accent' : 'text-muted' }}">
@@ -163,9 +165,11 @@
                         <p class="truncate text-xs text-muted">{{ auth()->user()?->role?->label() }}</p>
                     </div>
 
-                    <a href="{{ route('admin.profile') }}" class="block px-3 py-2 text-sm hover:bg-sunken">
-                        Profil dan keamanan
-                    </a>
+                    @if (\Illuminate\Support\Facades\Route::has('admin.profile'))
+                        <a href="{{ route('admin.profile') }}" class="block px-3 py-2 text-sm hover:bg-sunken">
+                            Profil dan keamanan
+                        </a>
+                    @endif
 
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
@@ -189,6 +193,7 @@
          aria-label="Navigasi panel">
         <div class="grid grid-cols-4">
             @foreach ($bawah as $item)
+                @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
                 <a href="{{ route($item['rute']) }}" wire:navigate
                    class="relative flex min-h-[60px] flex-col items-center justify-center gap-1
                           {{ $aktif($item['pola']) ? 'text-accent' : 'text-muted' }}">
