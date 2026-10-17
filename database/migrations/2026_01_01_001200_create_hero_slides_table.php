@@ -1,0 +1,51 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('hero_slides', function (Blueprint $table) {
+            $table->id();
+            $table->ulid('ulid')->unique();
+
+            $table->string('title_id')->nullable();
+            $table->string('title_en')->nullable();
+            $table->text('subtitle_id')->nullable();
+            $table->text('subtitle_en')->nullable();
+
+            $table->enum('media_type', ['image', 'video'])->default('image');
+            $table->string('media_path');
+            $table->string('media_path_mobile')->nullable();
+            $table->string('poster_path')->nullable();
+
+            // Titik fokus gambar, dipakai sebagai background-position.
+            $table->float('focal_point_x')->default(0.5);
+            $table->float('focal_point_y')->default(0.5);
+
+            $table->string('primary_button_label_id')->nullable();
+            $table->string('primary_button_label_en')->nullable();
+            $table->string('primary_button_url')->nullable();
+
+            $table->string('secondary_button_label_id')->nullable();
+            $table->string('secondary_button_label_en')->nullable();
+            $table->string('secondary_button_url')->nullable();
+
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('ends_at')->nullable();
+            $table->unsignedInteger('display_order')->default(0);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+
+            $table->index(['is_active', 'display_order'], 'idx_hero_aktif');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('hero_slides');
+    }
+};
