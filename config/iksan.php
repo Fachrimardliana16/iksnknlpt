@@ -14,6 +14,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Hero
+    |--------------------------------------------------------------------------
+    | Batas yang ditegakkan di server, bukan hanya di antarmuka (checklist
+    | F4-11). Berkas dapat dikirim langsung ke titik akhir unggah tanpa
+    | melewati formulir, jadi batas di peramban saja tidak cukup.
+    */
+
+    'hero' => [
+        'max_slides' => (int) env('IKK_HERO_MAX_SLIDES', 5),
+        'video_max_kb' => (int) env('IKK_HERO_VIDEO_MAX_KB', 8192),
+        'video_max_detik' => (int) env('IKK_HERO_VIDEO_MAX_SECONDS', 15),
+        'min_slide_aktif' => 1,
+        'gambar_lebar_maks' => 2560,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Blind index
     |--------------------------------------------------------------------------
     | Kolom ber-cast "encrypted" tidak dapat di-LIKE maupun di-WHERE. Setiap

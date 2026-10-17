@@ -2,7 +2,9 @@
 
 use App\Http\Middleware\PastikanAdmin;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\HeroBuilder;
 use App\Livewire\Admin\Masuk;
+use App\Livewire\Admin\PengaturanSitus;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -38,5 +40,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
     Route::middleware(['auth', PastikanAdmin::class])->group(function (): void {
         Route::get('/', Dashboard::class)->name('dashboard');
+
+        Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');
+        Route::get('hero', HeroBuilder::class)->name('hero.index');
     });
 });
