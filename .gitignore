@@ -1,0 +1,17 @@
+/vendor
+/node_modules
+/.env
+/.env.backup
+/.phpunit.result.cache
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+/database/*.sqlite
+/database/*.sqlite-*
+/public/storage
+/public/build
+/.idea
+/.vscode
+*.log
+.DS_Store
+/uploads-quarantine
