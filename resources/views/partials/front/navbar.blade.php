@@ -75,12 +75,16 @@
                 <span class="visually-hidden">{{ __('site.nav.language') }}</span>
             </a>
 
-            {{-- Tema --}}
-            <button type="button" class="btn-icon" onclick="window.iksanTheme.toggle()"
-                    title="{{ __('site.nav.theme') }}">
-                <span class="hidden [html[data-theme='dark']_&]:block"><x-ikon name="sun" /></span>
-                <span class="block [html[data-theme='dark']_&]:hidden"><x-ikon name="moon" /></span>
-                <span class="visually-hidden">{{ __('site.nav.theme') }}</span>
+            {{-- Tombol tema.
+                 Dulu memakai onclick="..." di dalam HTML. CSP proyek ini tidak memuat
+                 'unsafe-inline', jadi atribut itu diblokir peramban dan tombolnya mati
+                 tanpa pesan apa pun. Sekarang memakai penanda data-aksi yang ditangani
+                 satu pendengar klik di app.js, sehingga tidak bergantung pada Alpine
+                 maupun pada skrip inline. --}}
+            <button type="button" class="btn-icon" data-aksi="ganti-tema"
+                    title="{{ __('site.nav.theme') }}" aria-label="{{ __('site.nav.theme') }}">
+                <span data-tema-ikon="gelap" class="hidden"><x-ikon name="sun" /></span>
+                <span data-tema-ikon="terang" class="block"><x-ikon name="moon" /></span>
             </button>
 
             {{-- Pencarian --}}

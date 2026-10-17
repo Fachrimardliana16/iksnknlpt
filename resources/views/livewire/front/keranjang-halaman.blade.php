@@ -66,30 +66,38 @@
                                 @endif
 
                                 <div class="mt-auto flex items-end justify-between gap-3 pt-3">
+                                    {{-- Tombol jumlah 40x40px. Sebelumnya 36x36
+                                         karena kelas !h-9 !w-9 menimpa ukuran
+                                         bawaan btn-icon. --}}
                                     <div class="flex items-center">
-                                        <button type="button" class="btn-icon !h-9 !w-9 !border !border-line"
+                                        <button type="button" class="btn-icon !h-10 !w-10 !border !border-line"
                                                 wire:click="ubahJumlah({{ $item->id }}, {{ $item->quantity - 1 }})">
-                                            <x-ikon name="minus" :size="14" />
+                                            <x-ikon name="minus" :size="15" />
                                             <span class="visually-hidden">Kurangi</span>
                                         </button>
 
                                         <span class="tech w-12 text-center">{{ $item->quantity }}</span>
 
-                                        <button type="button" class="btn-icon !h-9 !w-9 !border !border-line"
+                                        <button type="button" class="btn-icon !h-10 !w-10 !border !border-line"
                                                 wire:click="ubahJumlah({{ $item->id }}, {{ $item->quantity + 1 }})"
                                                 @disabled($item->quantity >= $maks)>
-                                            <x-ikon name="plus" :size="14" />
+                                            <x-ikon name="plus" :size="15" />
                                             <span class="visually-hidden">Tambah</span>
                                         </button>
                                     </div>
 
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
                                         <p class="tech font-medium">{{ rupiah($item->subtotal()) }}</p>
 
-                                        <button type="button" class="btn-icon !h-9 !w-9"
+                                        {{-- Hapus sengaja dipisah dari tombol
+                                             jumlah: menekannya keliru tidak
+                                             dapat dibatalkan, jadi jaraknya
+                                             dijauhkan dan ukurannya dibuat
+                                             penuh, bukan 30x36. --}}
+                                        <button type="button" class="btn-icon !h-10 !w-10 text-danger"
                                                 wire:click="hapusItem({{ $item->id }})"
                                                 wire:confirm="{{ __('site.cart.remove') }}?">
-                                            <x-ikon name="trash" :size="16" />
+                                            <x-ikon name="trash" :size="17" />
                                             <span class="visually-hidden">{{ __('site.cart.remove') }}</span>
                                         </button>
                                     </div>

@@ -32,11 +32,11 @@
                  style="background-image: url('{{ \App\Models\ProductMedia::urlMedia($slide->media_path) }}');
                         background-size: cover;
                         background-position: {{ $slide->posisiFokus() }};">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/45"></div>
             </div>
         @empty
             <div class="absolute inset-0 -z-10 carbon-panel">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/30"></div>
             </div>
         @endforelse
 
@@ -120,11 +120,16 @@
                     </button>
 
                     @foreach ($slides as $idx => $slide)
+                        {{-- Sasaran sentuh 40x40px dengan batang visual 10px di
+                             tengahnya. Sebelumnya tombolnya hanya 10x10px,
+                             jauh di bawah ukuran yang dapat dipencet dengan
+                             jempol. --}}
                         <button type="button" @click="i = {{ $idx }}; berhenti()"
-                                class="h-2.5 transition-all"
-                                :class="i === {{ $idx }} ? 'w-6 bg-white' : 'w-2.5 bg-white/40'"
-                                style="border-radius: 1px">
-                            <span class="visually-hidden">Slide {{ $idx + 1 }}</span>
+                                class="group/titik flex h-10 w-10 items-center justify-center"
+                                aria-label="Slide {{ $idx + 1 }}">
+                            <span class="block h-2.5 transition-all duration-300"
+                                  :class="i === {{ $idx }} ? 'w-6 bg-white' : 'w-2.5 bg-white/50 group-hover/titik:bg-white/80'"
+                                  style="border-radius: 999px"></span>
                         </button>
                     @endforeach
                 </div>

@@ -37,11 +37,56 @@ window.iksanTheme = {
     set(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(THEME_KEY, theme);
+        window.iksanTheme.perbaruiIkon();
     },
     toggle() {
         this.set(this.current === 'dark' ? 'light' : 'dark');
     },
+
+    /**
+     * Tampilkan ikon yang sesuai dengan tema aktif.
+     *
+     * Dulu pergantian ikon bersandar pada varian arbitrer Tailwind
+     * [html[data-theme='dark']_&], yang rapuh: satu perubahan tanda kurung
+     * membuat kedua ikon tampil bersamaan atau tidak tampil sama sekali, tanpa
+     * galat apa pun. Sekarang kelasnya ditukar langsung, dan keadaannya
+     * terbaca dari DOM.
+     */
+    perbaruiIkon() {
+        const gelap = window.iksanTheme.current === 'dark';
+
+        document.querySelectorAll('[data-tema-ikon]').forEach((el) => {
+            const untukTemaGelap = el.dataset.temaIkon === 'gelap';
+            el.classList.toggle('hidden', untukTemaGelap !== gelap);
+            el.classList.toggle('block', untukTemaGelap === gelap);
+        });
+    },
 };
+
+window.iksanTheme.perbaruiIkon();
+
+/**
+ * Satu pendengar klik untuk seluruh halaman.
+ *
+ * CSP proyek ini tidak memuat 'unsafe-inline', sehingga atribut onclick di
+ * dalam HTML tidak pernah dijalankan. Penanganan lewat data-aksi membuat
+ * tombol tetap bekerja tanpa membuka 'unsafe-inline' dan tanpa bergantung
+ * pada Alpine — penting karena tombol tema juga ada di halaman yang belum
+ * menjalankan Alpine.
+ */
+document.addEventListener('click', (event) => {
+    const pemicu = event.target.closest('[data-aksi]');
+
+    if (!pemicu) {
+        return;
+    }
+
+    const aksi = pemicu.dataset.aksi;
+
+    if (aksi === 'ganti-tema') {
+        window.iksanTheme.toggle();
+    }
+});
 
 window.iksanLang = {
     get current() {

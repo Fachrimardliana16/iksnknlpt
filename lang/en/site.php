@@ -55,6 +55,8 @@ return [
         'description' => 'Description',
         'related' => 'More products',
         'sku' => 'SKU',
+        'added_to_cart' => 'Added',
+        'in_cart' => 'in cart',
         'empty' => 'No product matches this filter.',
         'empty_hint' => 'Loosen the filter or clear the keyword.',
     ],

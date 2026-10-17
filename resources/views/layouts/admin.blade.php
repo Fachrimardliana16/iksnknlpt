@@ -145,11 +145,12 @@
                 <span class="visually-hidden">Lihat situs</span>
             </a>
 
-            <button type="button" class="btn-icon" onclick="window.iksanTheme.toggle()"
-                    title="{{ __('site.nav.theme') }}">
-                <span class="hidden [html[data-theme='dark']_&]:block"><x-ikon name="sun" /></span>
-                <span class="block [html[data-theme='dark']_&]:hidden"><x-ikon name="moon" /></span>
-                <span class="visually-hidden">{{ __('site.nav.theme') }}</span>
+            {{-- Tombol tema. Sama seperti di sisi depan: memakai penanda
+                 data-aksi, bukan onclick inline yang diblokir CSP. --}}
+            <button type="button" class="btn-icon" data-aksi="ganti-tema"
+                    title="{{ __('site.nav.theme') }}" aria-label="{{ __('site.nav.theme') }}">
+                <span data-tema-ikon="gelap" class="hidden"><x-ikon name="sun" /></span>
+                <span data-tema-ikon="terang" class="block"><x-ikon name="moon" /></span>
             </button>
 
             <div class="relative" @click.outside="akun = false">
