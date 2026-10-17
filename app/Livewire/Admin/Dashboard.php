@@ -83,6 +83,14 @@ class Dashboard extends Component
         // Peringatan yang berasal dari data nyata, bukan daftar tetap.
         $peringatan = [];
 
+        // Sebagian modul yang dituju peringatan ini belum dibangun. Memanggil
+        // route() untuk rute yang tidak ada melempar pengecualian, dan seluruh
+        // dashboard gagal render — peringatan yang seharusnya membantu justru
+        // mematikan halaman. Arahkan ke dashboard bila rutenya belum ada.
+        $rute = fn (string $nama, array $parameter = []): string => Route::has($nama)
+            ? route($nama, $parameter)
+            : route('admin.dashboard');
+
         $pendingTua = Order::query()
             ->where('status', StatusPesanan::Pending->value)
             ->where('created_at', '<=', now()->subDay())
@@ -92,7 +100,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'warn',
                 'teks' => $pendingTua.' pesanan belum dibayar lebih dari 24 jam.',
-                'rute' => route('admin.orders.index', ['status' => 'pending']),
+                'rute' => $rute('admin.orders.index', ['status' => 'pending']),
             ];
         }
 
@@ -102,7 +110,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'warn',
                 'teks' => $tanpaGambar.' produk belum punya gambar.',
-                'rute' => route('admin.products.index'),
+                'rute' => $rute('admin.products.index'),
             ];
         }
 
@@ -112,7 +120,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'steel',
                 'teks' => $pesanBaru.' pesan kontak belum dibaca.',
-                'rute' => Route::has('admin.customers.index') ? route('admin.customers.index') : route('admin.dashboard'),
+                'rute' => $rute('admin.customers.index'),
             ];
         }
 
@@ -120,7 +128,7 @@ class Dashboard extends Component
             $peringatan[] = [
                 'nada' => 'danger',
                 'teks' => 'Nomor WhatsApp belum diisi. Tombol WhatsApp tidak tampil di situs.',
-                'rute' => Route::has('admin.settings.index') ? route('admin.settings.index', ['tab' => 'contact']) : route('admin.dashboard'),
+                'rute' => $rute('admin.settings.index', ['tab' => 'contact']),
             ];
         }
 

@@ -25,8 +25,21 @@ return Application::configure(basePath: dirname(__DIR__))
          * JANGAN pakai '*' di produksi: itu membuat Laravel mempercayai header
          * X-Forwarded-For dari siapa pun, dan pemanggil dapat memalsukan alamat
          * IP untuk melewati pembatas laju.
+         *
+         * Di lingkungan lokal, cloudflared berjalan di mesin yang sama, jadi
+         * hanya 127.0.0.1 yang perlu dipercaya. Default itu dipasang di sini,
+         * bukan sebagai '*' lebar, supaya terowongan pengembangan bekerja tanpa
+         * membuka celah yang sama sekali tidak perlu.
          */
         $proxies = env('IKK_TRUSTED_PROXIES');
+
+        // env('APP_ENV') dipakai langsung, bukan app()->isLocal(). Closure ini
+        // berjalan saat HttpKernel diselesaikan, dan pada titik itu kontainer
+        // belum punya binding "env" — memanggil app() di sini melempar
+        // ReflectionException: Class "env" does not exist.
+        if (($proxies === null || $proxies === '') && env('APP_ENV', 'production') === 'local') {
+            $proxies = '127.0.0.1';
+        }
 
         if (is_string($proxies) && $proxies !== '') {
             $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
