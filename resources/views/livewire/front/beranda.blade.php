@@ -133,18 +133,18 @@
     </section>
 
     {{-- 02 / TENTANG --}}
-    <section class="container-page py-16 lg:py-24">
+    <section class="container-page py-10 lg:py-24">
         <span class="part-no">02 / {{ __('site.home.about_part') }}</span>
 
-        <div class="mt-6 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div class="mt-5 grid gap-8 lg:mt-6 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
             <div>
                 <h2 class="text-3xl font-semibold sm:text-4xl">{{ __('site.home.about_title') }}</h2>
 
-                <p class="mt-5 text-muted">
+                <p class="mt-4 text-muted lg:mt-5">
                     {{ $toko->teks('site_description') }}
                 </p>
 
-                <ol class="mt-8 space-y-5">
+                <ol class="mt-6 space-y-4 lg:mt-8 lg:space-y-5">
                     <li class="flex gap-4">
                         <span class="tech flex-none text-accent">01</span>
                         <div>
@@ -168,15 +168,17 @@
                     </li>
                 </ol>
 
-                <a href="{{ route('front.about') }}" class="btn btn-outline mt-8">
+                <a href="{{ route('front.about') }}" class="btn btn-outline mt-6 lg:mt-8">
                     {{ __('site.nav.about') }}
                     <x-ikon name="arrow-right" :size="16" />
                 </a>
             </div>
 
-            {{-- Angka nyata dari basis data. Bila nol, barisnya tidak dirender. --}}
-            <div class="plate dl-grid self-start p-6 lg:p-8">
-                <dl class="grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-1">
+            {{-- Angka nyata dari basis data. Bila nol, barisnya tidak dirender.
+                 Di ponsel tiga angka ditampilkan sebaris, bukan bertumpuk, agar
+                 tidak menambah tinggi halaman. --}}
+            <div class="plate dl-grid self-start p-5 lg:p-8">
+                <dl class="grid grid-cols-3 gap-4 lg:grid-cols-1 lg:gap-6">
                     @if (($angka['produk'] ?? 0) > 0)
                         <div>
                             <dt class="part-no">{{ __('site.home.stats_products') }}</dt>
@@ -205,7 +207,7 @@
     <div class="container-page"><div class="measure-line"></div></div>
 
     {{-- 03 / KATALOG --}}
-    <section class="container-page py-16 lg:py-24">
+    <section class="container-page py-10 lg:py-24">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <span class="part-no">03 / {{ __('site.home.products_part') }}</span>
@@ -221,19 +223,30 @@
         </div>
 
         @if ($unggulan->isEmpty())
-            <div class="plate mt-8 p-8 text-center">
+            <div class="plate mt-6 p-8 text-center lg:mt-8">
                 <p class="font-semibold">{{ __('site.product.empty') }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('site.product.empty_hint') }}</p>
             </div>
         @else
-            <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+            {{-- Di ponsel hanya sebagian kartu dirender; sisanya lewat tombol
+                 lihat semua. Kartu ke-5 dan seterusnya disembunyikan dengan
+                 kelas, bukan dipotong dari koleksi, supaya markup-nya tetap
+                 satu sumber untuk kedua ukuran layar.
+
+                 Catatan: "hidden" mengeluarkan elemen dari pohon aksesibilitas,
+                 jadi di ponsel kartu itu memang tidak terbaca pembaca layar.
+                 Itu disengaja — jalan menuju produk tersebut adalah tombol
+                 lihat semua, bukan gulir. --}}
+            <div class="mt-6 grid grid-cols-2 gap-3 lg:mt-8 lg:grid-cols-4 lg:gap-6">
                 @foreach ($unggulan as $produk)
-                    <x-kartu-produk :produk="$produk" />
+                    <div class="{{ $loop->index >= $batasKatalog ? 'hidden lg:block' : '' }} h-full">
+                        <x-kartu-produk :produk="$produk" />
+                    </div>
                 @endforeach
             </div>
         @endif
 
-        <a href="{{ route('front.products.index') }}" class="btn btn-primary mt-8 w-full lg:hidden">
+        <a href="{{ route('front.products.index') }}" class="btn btn-primary mt-6 w-full lg:hidden">
             {{ __('site.home.view_all_products') }}
             <x-ikon name="arrow-right" :size="16" />
         </a>
@@ -241,8 +254,8 @@
 
     {{-- 04 / CTA --}}
     <section class="carbon-panel">
-        <div class="container-page py-16 lg:py-20">
-            <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+        <div class="container-page py-12 lg:py-20">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
                 <div class="max-w-xl">
                     <span class="torque-stripe mb-4" aria-hidden="true"><i></i><i></i><i></i></span>
                     <h2 class="text-3xl font-semibold sm:text-4xl">{{ __('site.home.cta_title') }}</h2>

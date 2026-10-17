@@ -31,6 +31,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Halaman depan
+    |--------------------------------------------------------------------------
+    | Diukur pada viewport 390x844: katalog delapan kartu dalam dua kolom
+    | menghabiskan 1,96 layar, dan halaman depan seluruhnya mencapai 6 layar.
+    | Angka di bawah memangkasnya tanpa menghilangkan isi — sisanya tetap
+    | terjangkau lewat tombol "lihat semua".
+    */
+
+    'home' => [
+        // Kartu unggulan yang tampil sebelum tombol lihat semua di ponsel.
+        'featured_mobile' => (int) env('IKK_HOME_FEATURED_MOBILE', 4),
+        // Kategori yang tampil di footer, maksimum.
+        'footer_categories' => (int) env('IKK_HOME_FOOTER_CATEGORIES', 4),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Blind index
     |--------------------------------------------------------------------------
     | Kolom ber-cast "encrypted" tidak dapat di-LIKE maupun di-WHERE. Setiap

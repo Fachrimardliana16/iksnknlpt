@@ -1,28 +1,48 @@
 @php
     /** @var \App\Support\Pengaturan $toko */
     $tahun = now()->year;
-    $kategoriFooter = \App\Models\Category::query()->aktif()->terurut()->take(6)->get();
+
+    // Diukur pada 390x844: enam kategori berarti enam baris di kolom yang
+    // sempit. Empat sudah cukup untuk mengenalkan struktur katalog.
+    $kategoriFooter = \App\Models\Category::query()
+        ->aktif()
+        ->terurut()
+        ->take(max(2, (int) config('iksan.home.footer_categories', 4)))
+        ->get();
 @endphp
 
-<footer class="carbon-panel mt-16 lg:mt-24">
-    <div class="container-page py-12 lg:py-16">
+{{-- Footer.
+     Diukur pada viewport 390x844, footer lama setinggi 1007 px — 1,19 layar
+     penuh, lebih tinggi daripada hero. Penyebabnya: empat blok ditumpuk
+     vertikal dengan jarak 40 px, padding 48 px atas dan bawah, margin atas
+     64 px, dan dua kolom tautan yang sebagian besar mengulang bar navigasi
+     bawah (Home, Produk, dan Kontak sudah ada di sana).
 
-        {{-- Empat kolom dengan lebar berbeda, bukan empat kolom sama rata. --}}
-        <div class="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+     Di ponsel, susunannya sekarang: identitas dan kontak masing-masing
+     selebar penuh, lalu kategori dan navigasi berdampingan dalam dua kolom.
+     Tautan yang sudah ada di bar bawah dibuang dari sini, kecuali "Lacak
+     pesanan" yang tidak ada di sana dan dipindah ke baris hak cipta. --}}
+<footer class="carbon-panel mt-10 lg:mt-24">
+    <div class="container-page py-10 lg:py-16">
 
-            <div>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:gap-10">
+
+            <div class="col-span-2 lg:col-span-1">
                 <p class="font-display text-2xl font-semibold">
                     {{ $toko->teks('site_name', __('site.brand.fallback_name')) }}
                 </p>
                 <p class="mt-3 max-w-xs text-sm text-[#a5a5a8]">
                     {{ $toko->teks('site_tagline', __('site.brand.tagline')) }}
                 </p>
-                <p class="mt-4 text-sm text-[#a5a5a8]">
+                <p class="mt-3 text-sm text-[#a5a5a8]">
                     {{ $toko->teks('address_full') }}
                 </p>
             </div>
 
-            <nav aria-label="{{ __('site.footer.navigation') }}">
+            {{-- Navigasi: hanya desktop. Di ponsel, Home, Produk, dan Kontak
+                 sudah tersedia di bar navigasi bawah sehingga mengulanginya di
+                 sini hanya menambah tinggi tanpa menambah jalan. --}}
+            <nav class="hidden lg:block" aria-label="{{ __('site.footer.navigation') }}">
                 <p class="part-no mb-3">{{ __('site.footer.navigation') }}</p>
                 <ul class="space-y-2 text-sm">
                     <li><a href="{{ route('front.home') }}" class="hover:text-white">{{ __('site.nav.home') }}</a></li>
@@ -45,12 +65,12 @@
                 </ul>
             </nav>
 
-            <div>
+            <div class="col-span-2 lg:col-span-1">
                 <p class="part-no mb-3">{{ __('site.footer.contact') }}</p>
-                <ul class="space-y-3 text-sm">
+                <ul class="space-y-2 text-sm">
                     @if ($wa = $toko->teks('whatsapp_number'))
                         <li class="flex items-center gap-2">
-                            <x-ikon name="whatsapp" :size="16" />
+                            <x-ikon name="whatsapp" :size="16" class="flex-none" />
                             <a href="https://wa.me/{{ preg_replace('/\D/', '', $wa) }}" rel="noopener"
                                class="tech hover:text-white">+{{ preg_replace('/\D/', '', $wa) }}</a>
                         </li>
@@ -58,8 +78,8 @@
 
                     @if ($email = $toko->teks('contact_email'))
                         <li class="flex items-center gap-2">
-                            <x-ikon name="mail" :size="16" />
-                            <a href="mailto:{{ $email }}" class="hover:text-white">{{ $email }}</a>
+                            <x-ikon name="mail" :size="16" class="flex-none" />
+                            <a href="mailto:{{ $email }}" class="truncate hover:text-white">{{ $email }}</a>
                         </li>
                     @endif
 
@@ -72,8 +92,7 @@
                 </ul>
 
                 @if ($toko->mediaSosial()->isNotEmpty())
-                    <p class="part-no mb-2 mt-6">{{ __('site.footer.follow') }}</p>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="mt-4 flex flex-wrap gap-2">
                         @foreach ($toko->mediaSosial() as $sosial)
                             <a href="{{ $sosial['url'] }}" target="_blank" rel="noopener noreferrer"
                                class="btn-icon !text-[#a5a5a8] hover:!text-white"
@@ -87,14 +106,19 @@
             </div>
         </div>
 
-        <div class="measure-line mt-12 mb-6" style="background: rgba(255,255,255,.14)"></div>
+        <div class="measure-line mt-8 mb-5 lg:mt-12 lg:mb-6" style="background: rgba(255,255,255,.14)"></div>
 
-        <div class="flex flex-col gap-3 text-xs text-[#a5a5a8] sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-2 text-xs text-[#a5a5a8] sm:flex-row sm:items-center sm:justify-between">
             <p>&copy; {{ $tahun }} {{ $toko->teks('site_name', __('site.brand.fallback_name')) }}. {{ __('site.footer.rights') }}</p>
-            <div class="flex gap-4">
+            <div class="flex flex-wrap gap-4">
+                {{-- Lacak pesanan tidak ada di bar navigasi bawah, jadi
+                     dipindahkan ke sini agar tetap terjangkau dari ponsel. --}}
+                <a href="{{ route('front.order.track') }}" class="hover:text-white lg:hidden">{{ __('site.order.track') }}</a>
+                <a href="{{ route('front.about') }}" class="hover:text-white lg:hidden">{{ __('site.nav.about') }}</a>
                 <a href="{{ route('front.page', 'kebijakan-privasi') }}" class="hover:text-white">{{ __('site.footer.privacy') }}</a>
                 <a href="{{ route('front.page', 'syarat-ketentuan') }}" class="hover:text-white">{{ __('site.footer.terms') }}</a>
             </div>
         </div>
     </div>
 </footer>
+

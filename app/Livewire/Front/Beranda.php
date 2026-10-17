@@ -35,9 +35,23 @@ class Beranda extends Component
         return view('livewire.front.beranda', [
             'slides' => $slides,
             'unggulan' => $unggulan,
+            'batasKatalog' => $this->batasKatalogPonsel(),
             'kategori' => Category::query()->aktif()->terurut()->take(6)->get(),
             'angka' => $this->angkaNyata(),
         ])->title($toko->teks('site_name').' · '.$toko->teks('site_tagline'));
+    }
+
+    /**
+     * Jumlah kartu unggulan yang dirender sebelum "lihat semua" di ponsel.
+     *
+     * Delapan kartu dalam dua kolom berarti empat baris dan hampir dua layar
+     * penuh hanya untuk katalog — halaman depan menjadi 6 layar panjangnya.
+     * Tampilan penuh tetap tersedia lewat tombol, jadi memangkasnya di sini
+     * tidak menghilangkan apa pun selain menggulir.
+     */
+    private function batasKatalogPonsel(): int
+    {
+        return max(2, (int) config('iksan.home.featured_mobile', 4));
     }
 
     /**
