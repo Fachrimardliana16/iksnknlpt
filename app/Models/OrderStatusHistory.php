@@ -12,8 +12,6 @@ class OrderStatusHistory extends Model
 {
     use HasFactory, PunyaUlid;
 
-    public $timestamps = false;
-
     protected $table = 'order_status_history';
 
     protected $fillable = [
@@ -30,6 +28,7 @@ class OrderStatusHistory extends Model
             'from_status' => StatusPesanan::class,
             'to_status' => StatusPesanan::class,
             'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 

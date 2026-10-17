@@ -27,7 +27,7 @@ return new class extends Migration
             $table->boolean('is_read')->default(false);
             $table->timestamp('replied_at')->nullable();
             $table->foreignId('replied_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('created_at')->nullable();
+            $table->timestamps();
 
             $table->index(['is_read', 'created_at'], 'idx_contact_belum_dibaca');
             $table->index('email_bidx', 'idx_contact_email');

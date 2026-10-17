@@ -33,7 +33,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->text('payload_summary')->nullable();
 
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
 
             $table->index(['event_type', 'created_at'], 'idx_sec_kejadian');
             $table->index(['ip_hash', 'created_at'], 'idx_sec_ip');
@@ -55,7 +55,7 @@ return new class extends Migration
             $table->string('ip_hash', 64)->unique();
             $table->string('reason');
             $table->timestamp('blocked_until');
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
 
             $table->index('blocked_until', 'idx_blocked_sampai');
         });

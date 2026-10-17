@@ -1,0 +1,256 @@
+@php
+    /** @var \App\Support\Pengaturan $toko */
+    $slides = $slides ?? collect();
+@endphp
+
+<div>
+
+    {{-- 01 / HERO — full viewport --}}
+    <section class="relative isolate" style="min-height: calc(100svh - 56px); height: 100dvh; max-height: 100dvh;"
+             x-data="{
+                i: 0,
+                n: {{ max(1, $slides->count()) }},
+                jeda: false,
+                timer: null,
+                mulai() { if (this.n < 2 || this.jeda) return; this.timer = setInterval(() => this.i = (this.i + 1) % this.n, 7000); },
+                berhenti() { clearInterval(this.timer); },
+                tolakAngka() { clearInterval(this.timer); }
+             }"
+             x-init="if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) mulai()">
+
+        @forelse ($slides as $idx => $slide)
+            <div class="absolute inset-0 -z-10 transition-opacity duration-700"
+                 x-show="i === {{ $idx }}"
+                 :style="'opacity: i === {{ $idx }} ? 1 : 0'"
+                 style="background-image: url('{{ Storage::disk('public')->url($slide->media_path) }}');
+                        background-size: cover;
+                        background-position: {{ $slide->posisiFokus() }};">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25"></div>
+            </div>
+        @empty
+            <div class="absolute inset-0 -z-10 carbon-panel">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            </div>
+        @endforelse
+
+        <div class="container-page relative flex h-full flex-col justify-end pb-24 text-white sm:justify-center sm:pb-0">
+
+            @if ($slides->isEmpty())
+                <span class="torque-stripe mb-4" aria-hidden="true"><i></i><i></i><i></i></span>
+                <h1 class="max-w-3xl text-4xl font-semibold sm:text-6xl lg:text-7xl">
+                    {{ $toko->teks('site_tagline', __('site.brand.tagline')) }}
+                </h1>
+                <p class="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
+                    {{ $toko->teks('site_description') }}
+                </p>
+                <div class="mt-8 flex flex-wrap gap-3">
+                    <a href="{{ route('front.products.index') }}" class="btn btn-primary">
+                        {{ __('site.home.view_all_products') }}
+                    </a>
+                    @if ($toko->teks('whatsapp_number'))
+                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $toko->teks('whatsapp_number')) }}"
+                           target="_blank" rel="noopener noreferrer" class="btn btn-outline !border-white/40 !text-white">
+                            {{ __('site.home.cta_primary') }}
+                        </a>
+                    @endif
+                </div>
+            @else
+                @foreach ($slides as $idx => $slide)
+                    <div x-show="i === {{ $idx }}" x-cloak x-transition.opacity.duration.500ms>
+                        <span class="torque-stripe mb-4" aria-hidden="true"><i></i><i></i><i></i></span>
+
+                        <h1 class="max-w-3xl text-4xl font-semibold sm:text-6xl lg:text-7xl">
+                            {{ $slide->judul() }}
+                        </h1>
+
+                        @if (filled($slide->subjudul()))
+                            <p class="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
+                                {{ $slide->subjudul() }}
+                            </p>
+                        @endif
+
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            @if (filled($slide->primary_button_url) && filled($slide->labelTombolUtama()))
+                                <a href="{{ $slide->primary_button_url }}" class="btn btn-primary">
+                                    {{ $slide->labelTombolUtama() }}
+                                </a>
+                            @endif
+
+                            @if (filled($slide->secondary_button_url) && filled($slide->labelTombolKedua()))
+                                <a href="{{ $slide->secondary_button_url }}"
+                                   class="btn btn-outline !border-white/40 !text-white">
+                                    {{ $slide->labelTombolKedua() }}
+                                </a>
+                            @elseif ($toko->teks('whatsapp_number'))
+                                <a href="https://wa.me/{{ preg_replace('/\D/', '', $toko->teks('whatsapp_number')) }}"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="btn btn-outline !border-white/40 !text-white">
+                                    {{ __('site.home.cta_primary') }}
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+
+            {{-- Kendali slider. Tombol jeda selalu terlihat, bukan tersembunyi. --}}
+            @if ($slides->count() > 1)
+                <div class="absolute bottom-6 right-4 flex items-center gap-2 sm:bottom-8 sm:right-8">
+                    <button type="button" class="btn-icon !text-white/80 hover:!text-white"
+                            @click="jeda = !jeda; jeda ? berhenti() : mulai()"
+                            :title="jeda ? 'Jalankan' : 'Jeda'">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <template x-if="!jeda"><g><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g></template>
+                            <template x-if="jeda"><path d="M7 4l13 8-13 8z"/></template>
+                        </svg>
+                        <span class="visually-hidden">Jeda</span>
+                    </button>
+
+                    @foreach ($slides as $idx => $slide)
+                        <button type="button" @click="i = {{ $idx }}; tolakAngka()"
+                                class="h-2.5 transition-all"
+                                :class="i === {{ $idx }} ? 'w-6 bg-white' : 'w-2.5 bg-white/40'"
+                                style="border-radius: 1px">
+                            <span class="visually-hidden">Slide {{ $idx + 1 }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </section>
+
+    {{-- 02 / TENTANG --}}
+    <section class="container-page py-16 lg:py-24">
+        <span class="part-no">02 / {{ __('site.home.about_part') }}</span>
+
+        <div class="mt-6 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+            <div>
+                <h2 class="text-3xl font-semibold sm:text-4xl">{{ __('site.home.about_title') }}</h2>
+
+                <p class="mt-5 text-muted">
+                    {{ $toko->teks('site_description') }}
+                </p>
+
+                <ol class="mt-8 space-y-5">
+                    <li class="flex gap-4">
+                        <span class="tech flex-none text-accent">01</span>
+                        <div>
+                            <p class="font-semibold">Diukur per unit</p>
+                            <p class="mt-1 text-sm text-muted">Panjang pipa dan diameter dalam diperiksa sebelum pengelasan, bukan setelah.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <span class="tech flex-none text-accent">02</span>
+                        <div>
+                            <p class="font-semibold">Bahan dari satu pemasok</p>
+                            <p class="mt-1 text-sm text-muted">Stainless dan titanium dari pemasok yang sama untuk setiap batch, sehingga warna las tidak berbeda.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <span class="tech flex-none text-accent">03</span>
+                        <div>
+                            <p class="font-semibold">Dipasang lalu diuji</p>
+                            <p class="mt-1 text-sm text-muted">Setiap unit dicoba pasang sebelum dikirim, termasuk clearance terhadap bodi.</p>
+                        </div>
+                    </li>
+                </ol>
+
+                <a href="{{ route('front.about') }}" class="btn btn-outline mt-8">
+                    {{ __('site.nav.about') }}
+                    <x-ikon name="arrow-right" :size="16" />
+                </a>
+            </div>
+
+            {{-- Angka nyata dari basis data. Bila nol, barisnya tidak dirender. --}}
+            <div class="plate dl-grid self-start p-6 lg:p-8">
+                <dl class="grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-1">
+                    @if (($angka['produk'] ?? 0) > 0)
+                        <div>
+                            <dt class="part-no">{{ __('site.home.stats_products') }}</dt>
+                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['produk'], 0, ',', '.') }}</dd>
+                        </div>
+                    @endif
+
+                    @if (($angka['pesanan'] ?? 0) > 0)
+                        <div>
+                            <dt class="part-no">{{ __('site.home.stats_customers') }}</dt>
+                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['pesanan'], 0, ',', '.') }}</dd>
+                        </div>
+                    @endif
+
+                    @if (($angka['kategori'] ?? 0) > 0)
+                        <div>
+                            <dt class="part-no">{{ __('site.footer.categories') }}</dt>
+                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['kategori'], 0, ',', '.') }}</dd>
+                        </div>
+                    @endif
+                </dl>
+            </div>
+        </div>
+    </section>
+
+    <div class="container-page"><div class="measure-line"></div></div>
+
+    {{-- 03 / KATALOG --}}
+    <section class="container-page py-16 lg:py-24">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <span class="part-no">03 / {{ __('site.home.products_part') }}</span>
+                <h2 class="mt-3 text-3xl font-semibold sm:text-4xl">{{ __('site.home.products_title') }}</h2>
+                <p class="mt-2 text-muted">{{ __('site.home.products_subtitle') }}</p>
+            </div>
+
+            {{-- Di mobile tombol ini pindah ke bawah grid supaya tidak mendorong judul. --}}
+            <a href="{{ route('front.products.index') }}" class="btn btn-outline hidden lg:inline-flex">
+                {{ __('site.home.view_all_products') }}
+                <x-ikon name="arrow-right" :size="16" />
+            </a>
+        </div>
+
+        @if ($unggulan->isEmpty())
+            <div class="plate mt-8 p-8 text-center">
+                <p class="font-semibold">{{ __('site.product.empty') }}</p>
+                <p class="mt-1 text-sm text-muted">{{ __('site.product.empty_hint') }}</p>
+            </div>
+        @else
+            <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+                @foreach ($unggulan as $produk)
+                    <x-kartu-produk :produk="$produk" />
+                @endforeach
+            </div>
+        @endif
+
+        <a href="{{ route('front.products.index') }}" class="btn btn-primary mt-8 w-full lg:hidden">
+            {{ __('site.home.view_all_products') }}
+            <x-ikon name="arrow-right" :size="16" />
+        </a>
+    </section>
+
+    {{-- 04 / CTA --}}
+    <section class="carbon-panel">
+        <div class="container-page py-16 lg:py-20">
+            <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+                <div class="max-w-xl">
+                    <span class="torque-stripe mb-4" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <h2 class="text-3xl font-semibold sm:text-4xl">{{ __('site.home.cta_title') }}</h2>
+                    <p class="mt-3 text-[#a5a5a8]">{{ __('site.home.cta_body') }}</p>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    @if ($wa = $toko->teks('whatsapp_number'))
+                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $wa) }}?text={{ rawurlencode($toko->teks('whatsapp_message_template')) }}"
+                           target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                            <x-ikon name="whatsapp" :size="18" />
+                            {{ __('site.home.cta_primary') }}
+                        </a>
+                    @endif
+
+                    <a href="{{ route('front.contact') }}" class="btn btn-outline !border-white/30 !text-white">
+                        {{ __('site.home.cta_secondary') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

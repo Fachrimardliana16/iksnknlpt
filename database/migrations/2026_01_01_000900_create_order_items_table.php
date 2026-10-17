@@ -26,7 +26,7 @@ return new class extends Migration
             $table->decimal('subtotal', 12, 2);
             $table->unsignedInteger('weight_gram')->default(1000);
 
-            $table->timestamp('created_at')->nullable();
+            $table->timestamps();
 
             $table->index('order_id', 'idx_order_items_order');
         });
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->timestamp('created_at')->nullable();
+            $table->timestamps();
 
             $table->index(['order_id', 'created_at'], 'idx_osh_order');
         });

@@ -11,8 +11,6 @@ class OrderItem extends Model
 {
     use HasFactory, PunyaUlid;
 
-    public $timestamps = false;
-
     protected $fillable = [
         'order_id',
         'product_id',
@@ -34,6 +32,7 @@ class OrderItem extends Model
             'quantity' => 'integer',
             'weight_gram' => 'integer',
             'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 

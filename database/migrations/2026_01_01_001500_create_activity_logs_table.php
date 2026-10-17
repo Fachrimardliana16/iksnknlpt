@@ -21,7 +21,7 @@ return new class extends Migration
             // berisi nilai lama atau nilai baru.
             $table->text('changes_json')->nullable();
 
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
 
             $table->index(['subject_type', 'subject_id', 'created_at'], 'idx_activity_subjek');
             $table->index(['user_id', 'created_at'], 'idx_activity_user');
@@ -44,7 +44,7 @@ return new class extends Migration
             $table->foreignId('product_media_id')->nullable()->constrained('product_media')->nullOnDelete();
             $table->unsignedInteger('processing_ms')->nullable();
 
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
 
             $table->index(['status', 'created_at'], 'idx_upload_status');
             $table->index('content_hash', 'idx_upload_hash');
