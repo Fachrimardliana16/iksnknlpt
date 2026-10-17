@@ -11,11 +11,14 @@ class ViewServiceProvider extends ServiceProvider
     public function boot(): void
     {
         /*
-         * $toko tersedia di seluruh layout. Nilainya berasal dari cache, jadi
-         * navbar dan footer tidak menambah kueri pada setiap permintaan.
+         * $toko dipakai di navbar, footer, bar navigasi bawah, widget WhatsApp,
+         * halaman galat, dan sebagian view komponen. Dibagikan ke semua view,
+         * bukan lewat composer bernama, karena view komponen Livewire dirender
+         * di luar rantai layout dan komposer bernama tidak menjangkaunya.
+         *
+         * Nilainya diambil dari cache pada akses pertama, jadi berbagi objek
+         * ini tidak menambah kueri pada setiap permintaan.
          */
-        View::composer(['layouts.front', 'layouts.admin', 'errors.*'], function ($view): void {
-            $view->with('toko', Pengaturan::instance());
-        });
+        View::share('toko', Pengaturan::instance());
     }
 }

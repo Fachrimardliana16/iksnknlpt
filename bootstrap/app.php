@@ -38,6 +38,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'security.headers' => SecurityHeaders::class,
+            'admin' => \App\Http\Middleware\PastikanAdmin::class,
+        ]);
+
+        // Bahasa dari cookie. Dipasang pada grup web supaya berlaku di front
+        // maupun panel admin.
+        $middleware->web(prepend: [
+            \App\Http\Middleware\SetLocale::class,
         ]);
 
         // Nama kue sesi yang jelas, bukan "laravel_session" bawaan.
