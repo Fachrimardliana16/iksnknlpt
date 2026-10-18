@@ -45,6 +45,8 @@
                 ['rute' => 'admin.orders.index', 'pola' => 'admin.orders.*', 'ikon' => 'receipt', 'label' => 'Pesanan', 'bawah' => true],
                 ['rute' => 'admin.carts.index', 'pola' => 'admin.carts.*', 'ikon' => 'cart', 'label' => 'Keranjang Terbuka', 'bawah' => false],
                 ['rute' => 'admin.customers.index', 'pola' => 'admin.customers.*', 'ikon' => 'users', 'label' => 'Pelanggan', 'bawah' => false],
+                ['rute' => 'admin.messages.index', 'pola' => 'admin.messages.*', 'ikon' => 'mail', 'label' => 'Pesan', 'bawah' => false],
+                ['rute' => 'admin.coupons.index', 'pola' => 'admin.coupons.*', 'ikon' => 'tag', 'label' => 'Kupon', 'bawah' => false],
             ],
         ],
         [
