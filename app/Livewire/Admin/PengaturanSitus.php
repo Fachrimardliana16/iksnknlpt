@@ -269,7 +269,7 @@ class PengaturanSitus extends Component
             ]),
             'grup' => $grup,
             'baris' => $this->barisTampil($grup),
-        ]);
+        ])->layout('layouts.admin', ['judul' => 'Pengaturan Situs', 'bagian' => 'Situs']);
     }
 
     /**

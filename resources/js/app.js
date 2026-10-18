@@ -86,6 +86,13 @@ document.addEventListener('click', (event) => {
     if (aksi === 'ganti-tema') {
         window.iksanTheme.toggle();
     }
+
+    // Halaman cetak: resi, invoice, surat jalan. Tombolnya memanggil
+    // window.print() dari berkas ini, bukan dari atribut onclick, karena CSP
+    // proyek ini tidak memuat 'unsafe-inline'.
+    if (aksi === 'cetak') {
+        window.print();
+    }
 });
 
 window.iksanLang = {

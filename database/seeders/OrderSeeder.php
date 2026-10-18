@@ -135,6 +135,24 @@ class OrderSeeder extends Seeder
 
             foreach ($itemBaris as $baris) {
                 $pesanan->items()->create($baris);
+
+                // Stok yang ditahan harus dicatat.
+                //
+                // Aturannya sudah ditetapkan di StatusPesananService: pesanan
+                // pada status pending, paid, processing, dan shipped MENAHAN
+                // stok lewat reserved_quantity. Seeder sebelumnya tidak pernah
+                // mengisi kolom itu, sehingga data contoh menampilkan stok yang
+                // seolah-olah masih bebas padahal barangnya sudah terikat
+                // pesanan — persis keadaan yang memicu oversell.
+                //
+                // Harga dan jumlah tetap memakai snapshot pada baris pesanan,
+                // hanya kolom tahanan yang disesuaikan.
+                if ($status->menahanStok() && $baris['product_variant_id'] !== null) {
+                    ProductVariant::query()
+                        ->whereKey($baris['product_variant_id'])
+                        ->whereRaw('(stock_quantity - reserved_quantity) >= ?', [$baris['quantity']])
+                        ->increment('reserved_quantity', $baris['quantity']);
+                }
             }
 
             $this->catatRiwayat($pesanan, $status, $dibuat);

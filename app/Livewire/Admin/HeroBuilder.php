@@ -468,7 +468,7 @@ class HeroBuilder extends Component
             'maksSlide' => (int) config('iksan.hero.max_slides'),
             'videoMaksKb' => (int) config('iksan.hero.video_max_kb'),
             'videoMaksDetik' => (int) config('iksan.hero.video_max_detik'),
-        ]);
+        ])->layout('layouts.admin', ['judul' => 'Hero Beranda', 'bagian' => 'Situs']);
     }
 
     /** URL gambar untuk pratinjau. Jalur kosong berarti belum ada berkas. */

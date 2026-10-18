@@ -133,6 +133,8 @@ class Dashboard extends Component
         }
 
         return view('livewire.admin.dashboard', [
+            'judul' => 'Dashboard',
+            'bagian' => 'Ringkasan',
             'kartu' => [
                 ['label' => 'Pesanan hari ini', 'nilai' => (string) $pesananHariIni, 'ikon' => 'receipt'],
                 ['label' => 'Pendapatan hari ini', 'nilai' => rupiah($pendapatanHariIni), 'ikon' => 'chart'],
@@ -144,6 +146,6 @@ class Dashboard extends Component
             'terbaru' => $terbaru,
             'terlaris' => $terlaris,
             'peringatan' => $peringatan,
-        ]);
+        ])->layout('layouts.admin', ['judul' => 'Dashboard', 'bagian' => 'Ringkasan']);
     }
 }

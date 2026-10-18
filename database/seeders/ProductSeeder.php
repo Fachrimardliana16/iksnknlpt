@@ -107,6 +107,15 @@ class ProductSeeder extends Seeder
             foreach ($varianList as $urutan => [$namaVarian, $selisih, $stok]) {
                 $stokAkhir = $produk->sku === self::SKU_STOK_NOL ? 0 : $stok;
 
+                // reserved_quantity sengaja TIDAK ikut ditulis di sini.
+                //
+                // Kolom itu bukan data katalog, melainkan catatan pesanan yang
+                // sedang menahan stok. Menyetelnya ke 0 pada setiap seed berarti
+                // menghapus catatan tahanan milik pesanan yang masih berjalan:
+                // stok tampak bebas padahal barangnya sudah terikat, dan barang
+                // yang sama bisa terjual dua kali. Seeder ini hanya menetapkan
+                // stok fisik; tahanan diatur oleh OrderSeeder dan oleh
+                // StatusPesananService saat pesanan berpindah status.
                 ProductVariant::query()->updateOrCreate(
                     ['sku_variant' => $produk->sku.'-V'.($urutan + 1)],
                     [
@@ -115,7 +124,6 @@ class ProductSeeder extends Seeder
                         'variant_name_en' => $namaVarian,
                         'price_adjustment' => $selisih,
                         'stock_quantity' => $stokAkhir,
-                        'reserved_quantity' => 0,
                         'display_order' => $urutan,
                         'is_active' => true,
                     ],

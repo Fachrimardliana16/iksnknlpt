@@ -24,22 +24,72 @@
 <body class="min-h-screen bg-bg text-ink">
 
 @php
-    // Sidebar admin. Desktop: kolom tetap yang dapat diringkas. Tablet dan
-    // mobile: drawer, dan bar navigasi bawah mengambil alih menu utama.
+    // Sidebar admin.
+    //
+    // Dikelompokkan per pekerjaan, bukan satu daftar panjang. Sebelumnya
+    // sembilan menu berturut-turut tanpa pemisah, sehingga "Pengaturan" dan
+    // "Pesanan" tampak sederajat padahal dipakai dengan frekuensi yang sangat
+    // berbeda. Yang punya halaman baru (Produk, Kategori, Pesanan, Keranjang)
+    // baru muncul setelah rutenya terdaftar, jadi menu tidak pernah menautkan
+    // halaman yang belum ada.
     $menu = [
-        ['rute' => 'admin.dashboard', 'pola' => 'admin.dashboard', 'ikon' => 'activity', 'label' => 'Dashboard', 'bawah' => true],
-        ['rute' => 'admin.products.index', 'pola' => 'admin.products.*', 'ikon' => 'box', 'label' => 'Produk', 'bawah' => true],
-        ['rute' => 'admin.categories.index', 'pola' => 'admin.categories.*', 'ikon' => 'tag', 'label' => 'Kategori', 'bawah' => false],
-        ['rute' => 'admin.orders.index', 'pola' => 'admin.orders.*', 'ikon' => 'receipt', 'label' => 'Pesanan', 'bawah' => true],
-        ['rute' => 'admin.hero.index', 'pola' => 'admin.hero.*', 'ikon' => 'image', 'label' => 'Hero', 'bawah' => false],
-        ['rute' => 'admin.customers.index', 'pola' => 'admin.customers.*', 'ikon' => 'users', 'label' => 'Pelanggan', 'bawah' => false],
-        ['rute' => 'admin.reports.index', 'pola' => 'admin.reports.*', 'ikon' => 'chart', 'label' => 'Laporan', 'bawah' => false],
-        ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => true],
-        ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false],
+        [
+            'kelompok' => null,
+            'butir' => [
+                ['rute' => 'admin.dashboard', 'pola' => 'admin.dashboard', 'ikon' => 'activity', 'label' => 'Dashboard', 'bawah' => true],
+            ],
+        ],
+        [
+            'kelompok' => 'Penjualan',
+            'butir' => [
+                ['rute' => 'admin.orders.index', 'pola' => 'admin.orders.*', 'ikon' => 'receipt', 'label' => 'Pesanan', 'bawah' => true],
+                ['rute' => 'admin.carts.index', 'pola' => 'admin.carts.*', 'ikon' => 'cart', 'label' => 'Keranjang Terbuka', 'bawah' => false],
+                ['rute' => 'admin.customers.index', 'pola' => 'admin.customers.*', 'ikon' => 'users', 'label' => 'Pelanggan', 'bawah' => false],
+            ],
+        ],
+        [
+            'kelompok' => 'Katalog',
+            'butir' => [
+                ['rute' => 'admin.products.index', 'pola' => 'admin.products.*', 'ikon' => 'box', 'label' => 'Produk', 'bawah' => true],
+                ['rute' => 'admin.categories.index', 'pola' => 'admin.categories.*', 'ikon' => 'tag', 'label' => 'Kategori', 'bawah' => false],
+            ],
+        ],
+        [
+            'kelompok' => 'Situs',
+            'butir' => [
+                ['rute' => 'admin.hero.index', 'pola' => 'admin.hero.*', 'ikon' => 'image', 'label' => 'Hero', 'bawah' => false],
+                ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => true],
+                ['rute' => 'admin.reports.index', 'pola' => 'admin.reports.*', 'ikon' => 'chart', 'label' => 'Laporan', 'bawah' => false],
+                ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false],
+            ],
+        ],
     ];
 
-    $bawah = array_values(array_filter($menu, fn ($m) => $m['bawah']));
+    // Butir yang rutenya belum terdaftar tidak dirender sama sekali.
+    $menu = collect($menu)->map(function (array $g): array {
+        $g['butir'] = array_values(array_filter(
+            $g['butir'],
+            fn (array $m): bool => \Illuminate\Support\Facades\Route::has($m['rute']),
+        ));
+
+        return $g;
+    })->filter(fn (array $g): bool => $g['butir'] !== [])->all();
+
+    // Bar bawah hanya memuat empat yang paling sering dipakai.
+    $bawah = array_values(array_filter(
+        array_merge(...array_map(fn (array $g): array => $g['butir'], $menu)),
+        fn (array $m): bool => $m['bawah'],
+    ));
+
+    $bawah = array_slice($bawah, 0, 4);
+
     $aktif = fn (string $pola) => request()->routeIs($pola);
+
+    // Dua butir yang paling sering dibuka admin, dipasang sebagai tindakan
+    // cepat di kepala panel supaya tidak perlu mencari di sidebar.
+    $cepat = collect(array_merge(...array_map(fn (array $g): array => $g['butir'], $menu)))
+        ->filter(fn (array $m): bool => in_array($m['rute'], ['admin.orders.index', 'admin.carts.index'], true))
+        ->all();
 @endphp
 
 <div x-data="{ ringkas: localStorage.getItem('iksan.admin.ringkas') === '1', drawer: false, akun: false }"
@@ -60,15 +110,24 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto p-2" aria-label="Navigasi panel">
-            @foreach ($menu as $item)
-                @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
-                <a href="{{ route($item['rute']) }}" wire:navigate
-                   class="flex min-h-[44px] items-center gap-3 px-3 text-sm
-                          {{ $aktif($item['pola']) ? 'bg-sunken text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
-                   :title="ringkas ? '{{ $item['label'] }}' : null">
-                    <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
-                    <span x-show="!ringkas" class="truncate">{{ $item['label'] }}</span>
-                </a>
+            @foreach ($menu as $grup)
+                @if ($grup['kelompok'] !== null)
+                    {{-- Judul kelompok hanya tampil saat sidebar tidak diringkas;
+                         saat ringkas, garis pemisah menggantikannya supaya
+                         pengelompokannya masih terbaca. --}}
+                    <p x-show="!ringkas" class="part-no px-3 pb-1 pt-4">{{ $grup['kelompok'] }}</p>
+                    <div x-show="ringkas" class="mx-3 my-3 border-t border-line-soft" aria-hidden="true"></div>
+                @endif
+
+                @foreach ($grup['butir'] as $item)
+                    <a href="{{ route($item['rute']) }}" wire:navigate
+                       class="flex min-h-[44px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-sm
+                              {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
+                       :title="ringkas ? '{{ $item['label'] }}' : null">
+                        <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                        <span x-show="!ringkas" class="truncate">{{ $item['label'] }}</span>
+                    </a>
+                @endforeach
             @endforeach
         </nav>
 
@@ -106,14 +165,19 @@
             </div>
 
             <nav class="flex-1 overflow-y-auto p-2">
-                @foreach ($menu as $item)
-                    @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
-                    <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
-                       class="flex min-h-[48px] items-center gap-3 px-3 text-base
-                              {{ $aktif($item['pola']) ? 'bg-sunken text-accent' : 'text-muted' }}">
-                        <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
-                        {{ $item['label'] }}
-                    </a>
+                @foreach ($menu as $grup)
+                    @if ($grup['kelompok'] !== null)
+                        <p class="part-no px-3 pb-1 pt-4">{{ $grup['kelompok'] }}</p>
+                    @endif
+
+                    @foreach ($grup['butir'] as $item)
+                        <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
+                           class="flex min-h-[48px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-base
+                                  {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted' }}">
+                            <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                            {{ $item['label'] }}
+                        </a>
+                    @endforeach
                 @endforeach
             </nav>
 
@@ -135,9 +199,26 @@
             </button>
 
             <div class="min-w-0 flex-1">
-                <p class="part-no truncate">{{ $bagian ?? 'Panel' }}</p>
+                <p class="part-no truncate">{{ $bagian ?? ($judul ?? 'Panel') }}</p>
                 <p class="truncate font-display text-lg font-semibold">{{ $judul ?? 'Dashboard' }}</p>
             </div>
+
+            {{-- Tindakan cepat: dua halaman yang paling sering dibuka admin,
+                 supaya tidak perlu mencarinya di sidebar. --}}
+            <div class="hidden items-center gap-1 lg:flex">
+                @foreach ($cepat as $c)
+                    <a href="{{ route($c['rute']) }}" wire:navigate
+                       class="btn btn-ghost {{ $aktif($c['pola']) ? 'text-accent' : '' }}"
+                       title="{{ $c['label'] }}">
+                        <x-ikon :name="$c['ikon']" :size="17" />
+                        <span class="hidden xl:inline">{{ $c['label'] }}</span>
+                    </a>
+                @endforeach
+            </div>
+
+            {{-- Notifikasi: stok menipis, stok habis, pesanan dibeli,
+                 keranjang terisi, dan pesanan yang hampir batal. --}}
+            <livewire:admin.lonceng-notifikasi />
 
             <a href="{{ route('front.home') }}" target="_blank" rel="noopener" class="btn-icon hidden lg:inline-flex"
                title="Lihat situs">

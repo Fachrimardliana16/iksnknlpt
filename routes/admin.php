@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\DokumenPesanan;
 use App\Http\Middleware\PastikanAdmin;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\HeroBuilder;
+use App\Livewire\Admin\KeranjangTerbuka;
 use App\Livewire\Admin\Masuk;
+use App\Livewire\Admin\PesananDaftar;
+use App\Livewire\Admin\PesananDetail;
 use App\Livewire\Admin\PengaturanSitus;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +45,21 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware(['auth', PastikanAdmin::class])->group(function (): void {
         Route::get('/', Dashboard::class)->name('dashboard');
 
+        // ── Penjualan ────────────────────────────────────────────────
+        Route::get('keranjang-terbuka', KeranjangTerbuka::class)->name('carts.index');
+
+        Route::get('pesanan', PesananDaftar::class)->name('orders.index');
+        Route::get('pesanan/{ulid}', PesananDetail::class)->name('orders.show');
+
+        // Dokumen cetak. Dibuka di tab baru, jadi tidak memakai tata letak
+        // panel: saat mencetak, navigasi hanya memakan kertas.
+        Route::get('pesanan/{ulid}/resi', [DokumenPesanan::class, 'resi'])->name('orders.receipt');
+        Route::get('pesanan/{ulid}/invoice', [DokumenPesanan::class, 'invoice'])->name('orders.invoice');
+        Route::get('pesanan/{ulid}/surat-jalan', [DokumenPesanan::class, 'suratJalan'])->name('orders.delivery');
+
+        Route::get('ekspor/pesanan', [DokumenPesanan::class, 'eksporCsv'])->name('exports.orders');
+
+        // ── Situs ────────────────────────────────────────────────────
         Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');
         Route::get('hero', HeroBuilder::class)->name('hero.index');
     });
