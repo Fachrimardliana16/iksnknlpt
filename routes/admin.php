@@ -5,6 +5,7 @@ use App\Http\Middleware\PastikanAdmin;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\HeroBuilder;
 use App\Livewire\Admin\Kategori;
+use App\Livewire\Admin\KeamananPanel;
 use App\Livewire\Admin\Kupon;
 use App\Livewire\Admin\KeranjangTerbuka;
 use App\Livewire\Admin\Masuk;
@@ -81,6 +82,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('kategori', Kategori::class)->name('categories.index');
 
         // ── Situs ────────────────────────────────────────────────────
+        // Keamanan: satu-satunya jalan membuka blokir alamat dari dalam
+        // aplikasi. Tanpa halaman ini, IP pelanggan yang diblokir otomatis
+        // hanya dapat dipulihkan lewat basis data langsung.
+        Route::get('keamanan', KeamananPanel::class)->name('security.index');
+
         Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');
         Route::get('hero', HeroBuilder::class)->name('hero.index');
     });
