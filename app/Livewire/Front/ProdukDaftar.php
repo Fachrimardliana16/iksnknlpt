@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Front;
 
+use App\Support\CacheKatalog;
+
 use App\Models\Product;
 use App\Support\Pengaturan;
 use Illuminate\Contracts\View\View;
@@ -57,18 +59,40 @@ class ProdukDaftar extends Component
             ? \App\Models\Category::query()->where('slug', $this->kategoriSlug)->first()
             : null;
 
-        $daftar = Product::query()
-            ->terbit()
-            ->with(['media', 'variants', 'category'])
-            ->when($kategori !== null, fn ($q) => $q->where('category_id', $kategori->id))
-            ->cari($this->kata)
-            ->when($this->hargaMin !== '' && is_numeric($this->hargaMin), fn ($q) => $q->where('base_price', '>=', (float) $this->hargaMin))
-            ->when($this->hargaMaks !== '' && is_numeric($this->hargaMaks), fn ($q) => $q->where('base_price', '<=', (float) $this->hargaMaks))
-            ->when($this->urut === 'price_asc', fn ($q) => $q->orderBy('base_price'))
-            ->when($this->urut === 'price_desc', fn ($q) => $q->orderByDesc('base_price'))
-            ->when($this->urut === 'name', fn ($q) => $q->orderBy('title_id'))
-            ->when($this->urut === 'newest', fn ($q) => $q->orderByDesc('published_at'))
-            ->paginate($this->perHalaman);
+        // Hasil daftar di-cache per kombinasi saringan dan nomor halaman
+        // (checklist F11-01). Kuncinya memuat versi katalog, sehingga setiap
+        // perubahan dari panel admin langsung membuat kunci lama tidak cocok —
+        // tanpa perlu menebak saringan mana yang harus dihapus.
+        //
+        // Masa simpannya lima menit, cukup untuk menghilangkan pengulangan
+        // kueri saat pembeli berpindah halaman dan kembali.
+        $saringan = [
+            'kategori' => $this->kategoriSlug,
+            'kata' => $this->kata,
+            'urut' => $this->urut,
+            'min' => $this->hargaMin,
+            'maks' => $this->hargaMaks,
+            'per' => $this->perHalaman,
+            'hal' => $this->getPage(),
+        ];
+
+        $daftar = CacheKatalog::ingat(
+            'katalog.daftar',
+            $saringan,
+            300,
+            fn () => Product::query()
+                ->terbit()
+                ->with(['media', 'variants', 'category'])
+                ->when($kategori !== null, fn ($q) => $q->where('category_id', $kategori->id))
+                ->cari($this->kata)
+                ->when($this->hargaMin !== '' && is_numeric($this->hargaMin), fn ($q) => $q->where('base_price', '>=', (float) $this->hargaMin))
+                ->when($this->hargaMaks !== '' && is_numeric($this->hargaMaks), fn ($q) => $q->where('base_price', '<=', (float) $this->hargaMaks))
+                ->when($this->urut === 'price_asc', fn ($q) => $q->orderBy('base_price'))
+                ->when($this->urut === 'price_desc', fn ($q) => $q->orderByDesc('base_price'))
+                ->when($this->urut === 'name', fn ($q) => $q->orderBy('title_id'))
+                ->when($this->urut === 'newest', fn ($q) => $q->orderByDesc('published_at'))
+                ->paginate($this->perHalaman),
+        );
 
         return view('livewire.front.produk-daftar', [
             'daftar' => $daftar,

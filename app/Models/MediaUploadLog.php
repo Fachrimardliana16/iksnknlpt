@@ -15,6 +15,7 @@ class MediaUploadLog extends Model
 
     protected $fillable = [
         'user_id',
+        'product_id',
         'original_filename',
         'byte_size',
         'mime_declared',

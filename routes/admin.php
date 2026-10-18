@@ -4,11 +4,14 @@ use App\Http\Controllers\Admin\DokumenPesanan;
 use App\Http\Middleware\PastikanAdmin;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\HeroBuilder;
+use App\Livewire\Admin\Kategori;
 use App\Livewire\Admin\KeranjangTerbuka;
 use App\Livewire\Admin\Masuk;
 use App\Livewire\Admin\PesananDaftar;
 use App\Livewire\Admin\PesananDetail;
 use App\Livewire\Admin\PengaturanSitus;
+use App\Livewire\Admin\ProdukDaftar;
+use App\Livewire\Admin\ProdukForm;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +61,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('pesanan/{ulid}/surat-jalan', [DokumenPesanan::class, 'suratJalan'])->name('orders.delivery');
 
         Route::get('ekspor/pesanan', [DokumenPesanan::class, 'eksporCsv'])->name('exports.orders');
+
+        // ── Katalog ──────────────────────────────────────────────────
+        Route::get('produk', ProdukDaftar::class)->name('products.index');
+        Route::get('produk/baru', ProdukForm::class)->name('products.create');
+        Route::get('produk/{ulid}/sunting', ProdukForm::class)->name('products.edit');
+
+        Route::get('kategori', Kategori::class)->name('categories.index');
 
         // ── Situs ────────────────────────────────────────────────────
         Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');

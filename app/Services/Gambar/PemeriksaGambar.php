@@ -11,21 +11,68 @@ use RuntimeException;
  * Setiap pemeriksaan mengembalikan alasan penolakan yang spesifik, bukan pesan
  * umum. Alasan itu disimpan di media_upload_logs, sehingga kegagalan unggahan
  * dapat ditelusuri tanpa menebak.
+ *
+ * Dua pintu masuk, satu pemeriksaan:
+ *
+ *   periksa()      — untuk berkas yang baru datang dari formulir.
+ *   periksaJalur() — untuk berkas yang sudah ada di disk.
+ *
+ * Pemisahan ini bukan kerapian belaka. UploadedFile::isValid() memanggil
+ * is_uploaded_file(), yang hanya benar untuk berkas yang benar-benar tiba lewat
+ * unggahan HTTP. Berkas yang dibuat dari disk — seperti berkas karantina yang
+ * diproses pekerja antrean — selalu dilaporkan tidak sah meskipun isinya
+ * sempurna. Ketika pemeriksaan itu dijalankan lebih dulu di dalam pekerja,
+ * SETIAP gambar ditolak dengan alasan "unggahan gagal diterima server", dan
+ * galatnya tidak terlihat sampai ada yang benar-benar mengunggah.
  */
 class PemeriksaGambar
 {
     /**
+     * Memeriksa berkas yang baru diterima dari unggahan.
+     *
      * @return array{alasan: string, mime: string|null, hash: string|null}
      */
     public function periksa(UploadedFile $berkas, int $jumlahBerkasProduk = 0, int $totalByteProduk = 0): array
     {
-        $konfig = config('iksan.uploads');
+        $jalur = $berkas->getRealPath() ?: $berkas->getPathname();
 
-        if (! $berkas->isValid()) {
-            return $this->tolak('Unggahan gagal diterima server.', null, null);
+        // Unggahan yang benar-benar gagal tidak meninggalkan berkas apa pun.
+        // Yang diperiksa di sini adalah keberadaan berkasnya, bukan hasil
+        // isValid(), supaya berkas dari disk tetap dapat melewati pintu ini.
+        if (! is_string($jalur) || $jalur === '' || ! is_file($jalur)) {
+            return $this->tolak('Unggahan gagal diterima server: berkas sementara tidak ada.', null, null);
         }
 
-        $ukuranKb = (int) ceil($berkas->getSize() / 1024);
+        return $this->periksaJalur($jalur, $berkas->getSize() ?: null, $jumlahBerkasProduk, $totalByteProduk);
+    }
+
+    /**
+     * Memeriksa berkas yang sudah berada di disk.
+     *
+     * Dipakai pekerja antrean, yang menerima berkas karantina tanpa objek
+     * unggahan. Seluruh pemeriksaan isi, tipe, dan dimensi tetap sama.
+     *
+     * @return array{alasan: string, mime: string|null, hash: string|null}
+     */
+    public function periksaJalur(
+        string $jalur,
+        ?int $ukuranByte = null,
+        int $jumlahBerkasProduk = 0,
+        int $totalByteProduk = 0,
+    ): array {
+        $konfig = config('iksan.uploads');
+
+        if (! is_file($jalur) || ! is_readable($jalur)) {
+            return $this->tolak('Berkas tidak ditemukan atau tidak dapat dibaca.', null, null);
+        }
+
+        $ukuranByte ??= (int) filesize($jalur);
+
+        if ($ukuranByte <= 0) {
+            return $this->tolak('Berkas kosong.', null, null);
+        }
+
+        $ukuranKb = (int) ceil($ukuranByte / 1024);
 
         if ($ukuranKb > $konfig['image_max_kb']) {
             return $this->tolak(
@@ -35,11 +82,7 @@ class PemeriksaGambar
             );
         }
 
-        $jalur = $berkas->getRealPath();
-
-        // Isi dibaca lewat jalur, fopen, atau getContent(). getRealPath() boleh
-        // false, dan getContent() boleh melempar FileException ketika berkas
-        // sementara sudah tidak ada. Pembacaan gagal bukan alasan untuk membalas
+        // Isi dibaca lewat jalur. Pembacaan gagal bukan alasan untuk membalas
         // 500 — unggahan seperti itu ditolak dengan alasan yang jelas.
         //
         // Catatan Windows: berkas sementara yang isinya cocok dengan signature
@@ -49,25 +92,19 @@ class PemeriksaGambar
         // mengandalkan pembacaan berhasil; cukup tolak bila gagal.
         $isi = '';
 
-        if (is_string($jalur) && is_readable($jalur)) {
-            $handle = @fopen($jalur, 'rb');
+        $handle = @fopen($jalur, 'rb');
 
-            if (is_resource($handle)) {
-                $isi = (string) stream_get_contents($handle);
-                fclose($handle);
-            }
-
-            if ($isi === '') {
-                try {
-                    $isi = (string) $berkas->getContent();
-                } catch (\Throwable) {
-                    $isi = '';
-                }
-            }
+        if (is_resource($handle)) {
+            $isi = (string) stream_get_contents($handle);
+            fclose($handle);
         }
 
-        if ($jalur === false && $isi === '') {
-            return $this->tolak('Berkas sementara tidak dapat dibaca.', null, null);
+        if ($isi === '') {
+            $isi = (string) @file_get_contents($jalur);
+        }
+
+        if ($isi === '') {
+            return $this->tolak('Isi berkas tidak dapat dibaca untuk diperiksa.', null, null);
         }
 
         // Tipe dideteksi dari ISI berkas, bukan dari ekstensi maupun header yang
@@ -82,19 +119,19 @@ class PemeriksaGambar
         // berubah. Peringatan finfo ditahan dengan @ karena Laravel mengubahnya
         // menjadi ErrorException sebelum fungsinya sempat mengembalikan nilai.
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $isi !== '' ? (string) @$finfo->buffer($isi) : '';
+        $mime = (string) @$finfo->buffer($isi);
 
-        if ($mime === '' && is_string($jalur) && is_readable($jalur)) {
+        if ($mime === '') {
             $mime = (string) @$finfo->file($jalur);
         }
 
-        if ($mime === '' && $isi === '') {
-            return $this->tolak('Isi berkas tidak dapat dibaca untuk diperiksa.', null, null);
+        if ($mime === '') {
+            return $this->tolak('Tipe berkas tidak dapat dikenali.', null, null);
         }
 
         if (! in_array($mime, $konfig['allowed_mimes'], true)) {
             return $this->tolak(
-                sprintf('Tipe berkas terdeteksi "%s" dan tidak diizinkan.', $mime === '' ? 'tidak dikenal' : $mime),
+                sprintf('Tipe berkas terdeteksi "%s" dan tidak diizinkan.', $mime),
                 $mime,
                 null,
             );
@@ -102,7 +139,7 @@ class PemeriksaGambar
 
         // Dimensi dibaca dari isi, bukan jalur, supaya tetap bekerja ketika
         // berkas sementara tidak dapat dibuka ulang lewat nama.
-        $info = $isi !== '' ? @getimagesizefromstring($isi) : @getimagesize($jalur);
+        $info = @getimagesizefromstring($isi);
 
         if ($info === false) {
             return $this->tolak('Isi berkas bukan gambar yang sah meskipun tipe MIME-nya diizinkan.', $mime, null);
@@ -144,7 +181,7 @@ class PemeriksaGambar
             );
         }
 
-        $totalMb = ($totalByteProduk + $berkas->getSize()) / 1024 / 1024;
+        $totalMb = ($totalByteProduk + $ukuranByte) / 1024 / 1024;
 
         if ($totalMb > $konfig['max_total_mb_per_product']) {
             return $this->tolak(
@@ -154,7 +191,7 @@ class PemeriksaGambar
             );
         }
 
-        $hash = ($isi !== '' ? hash('sha256', $isi) : hash_file('sha256', (string) $jalur)) ?: null;
+        $hash = hash('sha256', $isi) ?: null;
 
         return ['alasan' => '', 'mime' => $mime, 'hash' => $hash];
     }

@@ -325,6 +325,14 @@
         text-decoration: none;
         white-space: nowrap;
     }
+    /* Tombol kecil untuk bilah aksi massal. Tinggi 44px tetap dipakai pada
+       area sentuh utama; di sini ruangnya sempit dan tindakannya sekunder,
+       tetapi tidak lebih kecil dari 36px supaya masih nyaman ditekan. */
+    .btn-sm {
+        min-height: 36px;
+        padding: 0 0.75rem;
+        font-size: 0.8125rem;
+    }
     .btn-primary {
         background: var(--c-accent);
         color: var(--c-accent-fg);
