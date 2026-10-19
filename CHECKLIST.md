@@ -223,9 +223,9 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 | [ ] | F9-03 | Webhook PayPal dengan verifikasi tanda tangan; tanda tangan tidak sah ditolak | Test tanda tangan palsu ditolak |
 | [ ] | F9-04 | Webhook ganda tidak tercatat dua kali (indeks unik penyedia + ID transaksi) | Kirim webhook dua kali, periksa 1 baris |
 | [x] | F9-05 | Alur manual: halaman rekening, unggah bukti transfer (3 per jam per pesanan), verifikasi admin | `PembayaranManualTest` 5 test hijau (18 asersi): bukti tersimpan di disk **privat** (0 berkas di disk publik), baris `payments` terbentuk dengan provider `manual`, unggahan ke-4/jam ditolak (`ValidationException` "3 kali"), pesanan lunas menolak bukti baru, verifikasi admin → `payment_status=paid`, `status=paid`, `paid_at` terisi + riwayat status; penolakan → `provider_status=ditolak`, alasan tersimpan, pesanan kembali `unpaid` |
-| [ ] | F9-06 | Notifikasi email: pesanan dibuat, pembayaran diterima, barang dikirim | Periksa kotak surat uji |
-| [ ] | F9-07 | Notifikasi WhatsApp otomatis pada tiga kejadian yang sama | Uji kirim, periksa log |
-| [ ] | F9-08 | Semua notifikasi berjalan sebagai job antrean, tidak memblokir permintaan | Test antrean hijau |
+| [x] | F9-06 | Notifikasi email: pesanan dibuat, pembayaran diterima, barang dikirim | `NotifikasiPesananTest` 9 test hijau (16 asersi): tiga kejadian masing-masing mengirim satu surel, semuanya ke `pembeli@contoh.test` (diperiksa dari transport `array`, karena `Mail::raw` bukan mailable sehingga tidak tercatat MailFake); pesanan tanpa surel/telepon tidak melempar galat
+| [x] | F9-07 | Notifikasi WhatsApp otomatis pada tiga kejadian yang sama | `Http::fake` + `Http::assertSent`: job memanggil `https://api.fonnte.com/send` dengan header `Authorization: token-uji-123` dari pengaturan dan target dinormalkan `081234567890` → `6281234567890`; token kosong → WhatsApp dilewati tanpa galat (surel tetap terkirim); penyedia menolak (HTTP 500, `status=false`) → tidak melempar, surel tetap terkirim
+| [x] | F9-08 | Semua notifikasi berjalan sebagai job antrean, tidak memblokir permintaan | `KirimNotifikasiPesanan` mengimplementasikan `ShouldQueue` (assert `ReflectionClass`); `Queue::fake` + `assertPushed`: transisi ke `shipped` mengantrekan kejadian `dikirim` (lewat alur sah pending→paid→processing→shipped), verifikasi bukti bayar mengantrekan kejadian `dibayar`, pembatalan mengantrekan 0 job
 
 **Gerbang G4:** alur pesanan ujung ke ujung lulus di mode sandbox.
 
