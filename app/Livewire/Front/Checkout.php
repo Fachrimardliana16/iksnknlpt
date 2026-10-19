@@ -8,9 +8,11 @@ use App\Services\PesananService;
 use App\Support\Pengaturan;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
+#[Layout('layouts.front')]
 class Checkout extends Component
 {
     public const KUNCI_BATAS = 'checkout';
@@ -65,6 +67,23 @@ class Checkout extends Component
 
         $this->dimulaiPada = now()->timestamp;
 
+        // Catatan yang sudah ditulis di halaman keranjang diteruskan ke sini
+        // (checklist F7-03), sehingga pembeli tidak perlu menulisnya dua kali.
+        $this->catatan = $keranjang->catatan();
+
+        // Kurir mengikuti nilai yang tersimpan di pengaturan, bukan pilihan
+        // bawaan yang ditulis di kode. Tanpa ini, mengubah daftar kurir
+        // menuntut perubahan kode.
+        $this->kurir = (string) (Pengaturan::instance()->teks('shipping_courier_default') ?: 'JNE');
+
+        // Metode pembayaran mengikuti mode yang aktif. Mode "manual" tidak boleh
+        // menyodorkan PayPal, dan sebaliknya.
+        $this->metode = match (Pengaturan::instance()->teks('payment_mode', 'manual')) {
+            'paypal' => 'paypal',
+            'both' => 'paypal',
+            default => 'manual',
+        };
+
         if (auth()->check()) {
             $user = auth()->user();
             $this->nama = (string) $user->name;
@@ -100,15 +119,45 @@ class Checkout extends Component
 
         $kunci = self::KUNCI_BATAS.':'.request()->ip();
 
+        // 5 percobaan per 10 menit (PRD Bagian 11.1), dijawab sebagai 429 —
+        // bukan sebagai pesan galat di dalam halaman.
+        //
+        // Pembatas di dalam komponen hanya dapat mengubah tampilan: responsnya
+        // tetap 200, sehingga pengawas lalu lintas dan peramban tidak pernah
+        // tahu ada yang sedang dibatasi. Karena `buatPesanan` dijalankan lewat
+        // permintaan Livewire, abort() di sini menghasilkan respons HTTP 429
+        // yang sesungguhnya.
+        // Batas ini TIDAK dipasang pada GET /checkout: membuka halaman checkout
+        // berkali-kali adalah hal biasa (tombol kembali, muat ulang), sedangkan
+        // yang dibatasi PRD adalah pembuatan pesanannya.
         if (RateLimiter::tooManyAttempts($kunci.'|'.session()->getId(), config('iksan.rate_limits.checkout')[0])) {
-            $this->galat = 'Terlalu banyak percobaan checkout. Coba lagi beberapa menit lagi.';
-
-            return;
+            abort(429, 'Terlalu banyak percobaan checkout. Coba lagi beberapa menit lagi.');
         }
 
         $this->validate();
 
         RateLimiter::hit($kunci.'|'.session()->getId(), config('iksan.rate_limits.checkout')[1] * 60);
+
+        // Pesanan dibuat sekali saja (checklist F7-07).
+        //
+        // Tanpa penanda ini, satu klik ganda atau satu percobaan ulang setelah
+        // jaringan tersendat menghasilkan dua pesanan dan dua tahanan stok
+        // untuk barang yang sama. Penandanya disimpan di sesi, jadi berlaku
+        // per pengunjung; yang menjaganya dari penyerobotan adalah kunci
+        // keranjang yang dipakai di sini.
+        $kunciPesan = 'checkout:terkirim:'.session()->getId();
+
+        if (session()->has($kunciPesan)) {
+            $nomor = (string) session()->get($kunciPesan);
+
+            $sudah = \App\Models\Order::query()->where('order_number', $nomor)->first();
+
+            if ($sudah !== null) {
+                $this->redirect(route('front.order.success', $sudah), navigate: true);
+
+                return;
+            }
+        }
 
         try {
             $order = $pesanan->buatDariKeranjang(
@@ -134,6 +183,8 @@ class Checkout extends Component
             return;
         }
 
+        session()->put($kunciPesan, $order->order_number);
+
         $this->dispatch('keranjang-berubah');
         $this->redirect(route('front.order.success', $order), navigate: true);
     }
@@ -145,14 +196,44 @@ class Checkout extends Component
 
         $mode = $toko->teks('payment_mode', 'manual');
 
+        // Daftar kurir dari pengaturan, bukan dari kode (PRD Bagian 8 langkah 3
+        // menyebut daftar statis; "statis" berarti tidak dihitung dari berat
+        // atau tujuan, bukan berarti tidak dapat diubah tanpa menyentuh kode).
+        $kurir = $toko->larikTeks('shipping_couriers', ['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia']);
+
+        if ($this->kurir !== '' && ! in_array($this->kurir, $kurir, true)) {
+            $kurir[] = $this->kurir;
+        }
+
         return view('livewire.front.checkout', [
             'ringkasan' => $keranjang->ringkasan(),
             'modePembayaran' => $mode,
+            // Hanya metode yang memang aktif. Menampilkan pilihan PayPal saat
+            // mode manual berarti menawarkan pembayaran yang tidak tersedia.
+            'daftarMetode' => match ($mode) {
+                'paypal' => ['paypal'],
+                'both' => ['paypal', 'manual'],
+                default => ['manual'],
+            },
             // Diberi nama berbeda dari properti $kurir. Livewire menyuntikkan
             // properti publik ke dalam view, dan nama yang sama membuat properti
             // (string) menimpa variabel ini (daftar), sehingga @foreach atasnya
             // gagal dan halaman checkout tidak dapat dirender sama sekali.
-            'daftarKurir' => ['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia'],
-        ])->title(__('site.checkout.title').' · '.$toko->teks('site_name'));
+            'daftarKurir' => $kurir,
+        ])
+            ->title(__('site.checkout.title').' · '.$toko->teks('site_name'))
+            ->layoutData([
+                'kanonikal' => route('front.checkout'),
+                'metaOg' => [
+                    'tipe' => 'website',
+                    'judul' => __('site.checkout.title'),
+                    'deskripsi' => $toko->teks('site_description', __('site.brand.tagline')),
+                    'gambar' => null,
+                ],
+                // Halaman checkout tidak boleh diindeks: isinya bergantung pada
+                // keranjang pengunjung, dan yang terindeks hanya akan berupa
+                // halaman kosong atau keranjang orang lain.
+                'tanpaIndeks' => true,
+            ]);
     }
 }

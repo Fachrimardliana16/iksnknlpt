@@ -2,8 +2,10 @@
     /** @var \App\Support\Pengaturan $toko */
     /** @var \App\Models\Order $order */
 
-    // Lebar kertas 80 mm. Ini ukuran kertas resi yang paling umum dipakai
-    // kurir di Indonesia, dan dicetak dari printer termal maupun printer biasa.
+    // Kertas label 100x150 mm — ukuran label pengiriman yang dicetak kurir,
+    // juga pas untuk printer label desktop. Dinyatakan di @page: dompdf
+    // memakainya sebagai ukuran lembar PDF (checklist F8-07), peramban
+    // memakainya saat mencetak dari pratinjau.
     $tujuan = $order->alamat();
 @endphp
 <!DOCTYPE html>
@@ -17,7 +19,7 @@
          Ukuran kertas dinyatakan langsung supaya peramban tidak menyisipkan
          margin bawaan yang membuat label meleset dari kertas. --}}
     <style>
-        @page { size: 80mm auto; margin: 3mm; }
+        @page { size: 100mm 150mm; margin: 4mm; }
 
         * { box-sizing: border-box; }
 
@@ -59,6 +61,8 @@
     </style>
 </head>
 <body>
+
+@include('cetak._salinan')
 
 <div class="tanpa-cetak" style="margin-bottom:8px">
     <button type="button" data-aksi="cetak"

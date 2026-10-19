@@ -26,7 +26,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware([SetLocale::class, BlokirIp::class])->group(function (): void {
     Route::get('/', Beranda::class)->name('front.home');
 
-    Route::get('/produk', ProdukDaftar::class)->name('front.products.index');
+    Route::get('/produk', ProdukDaftar::class)
+        ->middleware('laju:search,q')
+        ->name('front.products.index');
     Route::get('/produk/{product:slug}', DetailProduk::class)->name('front.products.show');
 
     /*
@@ -45,7 +47,7 @@ Route::middleware([SetLocale::class, BlokirIp::class])->group(function (): void 
     Route::get('/checkout', Checkout::class)->name('front.checkout');
 
     Route::get('/pesanan/sukses/{order:ulid}', PesananSukses::class)->name('front.order.success');
-    Route::get('/lacak', LacakPesanan::class)->name('front.order.track');
+    Route::get('/lacak', LacakPesanan::class)->middleware('laju:track_order')->name('front.order.track');
 
     Route::get('/halaman/{slug}', HalamanStatis::class)->name('front.page');
 

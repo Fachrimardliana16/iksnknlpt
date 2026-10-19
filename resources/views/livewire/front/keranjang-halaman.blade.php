@@ -4,6 +4,13 @@
         <span class="part-no">01 / {{ __('site.cart.title') }}</span>
         <h1 class="mt-3 text-3xl font-semibold sm:text-4xl">{{ __('site.cart.title') }}</h1>
 
+        @if ($pesanStok)
+            <div class="plate mt-5 flex items-start gap-2 border-l-2 border-warn p-3 text-sm text-warn" role="status">
+                <x-ikon name="alert" :size="16" class="mt-0.5 flex-none" />
+                <span>{{ $pesanStok }}</span>
+            </div>
+        @endif
+
         @if ($pesanKupon)
             <div class="plate mt-5 p-3 text-sm {{ $nadaKupon === 'danger' ? 'text-danger' : ($nadaKupon === 'warn' ? 'text-warn' : 'text-ok') }}">
                 {{ $pesanKupon }}
@@ -61,7 +68,7 @@
                                     <p class="mt-1 text-xs text-danger">{{ __('site.product.out_of_stock') }}</p>
                                 @elseif ($item->melebihiStok())
                                     <p class="mt-1 text-xs text-warn">
-                                        {{ __('site.cart.stock_reduced', ['count' => $maks]) }}
+                                        {{ __('site.cart.stock_reduced', ['name' => $item->product?->judul(), 'count' => $maks]) }}
                                     </p>
                                 @endif
 
@@ -156,11 +163,34 @@
                     <label class="label" for="kupon">{{ __('site.cart.coupon') }}</label>
                     <div class="flex gap-2">
                         <input id="kupon" type="text" class="field uppercase" wire:model="kodeKupon"
-                               placeholder="IKSAN10">
+                               autocomplete="off" placeholder="IKSAN10">
                         <button type="button" class="btn btn-outline flex-none" wire:click="terapkanKupon">
                             {{ __('site.cart.apply_coupon') }}
                         </button>
                     </div>
+
+                    {{-- Kupon yang sedang menempel diberi jalan keluar sendiri.
+                         Tanpa ini, kupon yang tidak lagi diinginkan hanya dapat
+                         dilepas dengan mengosongkan kolom lalu menekan "Pakai"
+                         — dan pengguna yang mengosongkan kolom lalu langsung
+                         menekan checkout tetap membawa kuponnya. --}}
+                    @if ($ringkasan['kupon'])
+                        <div class="mt-2 flex items-center justify-between gap-2 text-xs">
+                            <span class="text-ok">{{ $ringkasan['kupon']->code }}</span>
+                            <button type="button" class="text-muted underline hover:text-danger" wire:click="lepasKupon">
+                                {{ __('site.cart.coupon_remove') }}
+                            </button>
+                        </div>
+                    @endif
+
+                    <div class="measure-line my-4"></div>
+
+                    {{-- Catatan pembeli (checklist F7-03). Disimpan saat
+                         meninggalkan kolom, dan diteruskan ke checkout. --}}
+                    <label class="label" for="catatan">{{ __('site.cart.note') }}</label>
+                    <textarea id="catatan" rows="2" class="field mt-1"
+                              wire:model.blur="catatan" maxlength="500"
+                              placeholder="{{ __('site.cart.note_hint') }}"></textarea>
 
                     <button type="button" class="btn btn-primary mt-6 w-full" wire:click="lanjutCheckout">
                         {{ __('site.cart.checkout') }}

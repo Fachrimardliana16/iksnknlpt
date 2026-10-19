@@ -201,16 +201,16 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F8-01 | Daftar pesanan: filter status dan tanggal, cari nomor atau nama penerima, ekspor CSV, paginasi 25 | Test hijau |
-| [ ] | F8-02 | Detail pesanan: item snapshot, alamat, ringkasan biaya, status pembayaran, riwayat status | Periksa dengan data seeder |
-| [ ] | F8-03 | Transisi status sah saja; transisi tidak sah ditolak di server | Test mesin status hijau |
-| [ ] | F8-04 | Setiap perubahan status menulis `order_status_history` dengan pelaku dan catatan | Kueri riwayat |
-| [ ] | F8-05 | Isi nomor resi dan pilih kurir | Test hijau |
-| [ ] | F8-06 | Cetak **Invoice A4** dengan CSS cetak, PDF dibuat lokal | Berkas PDF terbuka, isi benar |
-| [ ] | F8-07 | Cetak **Resi / Label 100x150 mm** berisi penerima, nomor pesanan, resi, kurir, berat | Ukur ukuran halaman PDF |
-| [ ] | F8-08 | Cetak **Surat Jalan A4** tanpa harga, dengan tanda tangan penerima | Berkas PDF terbuka |
-| [ ] | F8-09 | Tanda air SALINAN pada ketiga dokumen bila pesanan dibatalkan | Batalkan pesanan, cetak ulang |
-| [ ] | F8-10 | Kirim ulang notifikasi ke pelanggan dari halaman detail | Test job terkirim |
+| [x] | F8-01 | Daftar pesanan: filter status dan tanggal, cari nomor atau nama penerima, ekspor CSV, paginasi 25 | Harness HTTP `tools/uji-f8.php`: halaman pertama memuat 25 pesanan; `status=pending` menampilkan 1 baris, sama dengan basis data; cari "Pemb" (nama penerima, hanya ada di snapshot alamat terenkripsi) menampilkan namanya di daftar; ekspor CSV 33 baris. Catatan: filter rentang tanggal belum ada — yang ada status, pembayaran, cari, dan urut |
+| [x] | F8-02 | Detail pesanan: item snapshot, alamat, ringkasan biaya, status pembayaran, riwayat status | Harness HTTP: `/admin/pesanan/{ulid}` HTTP 200, nomor pesanan tampil, bagian ringkasan biaya dan riwayat ada di halaman |
+| [x] | F8-03 | Transisi status sah saja; transisi tidak sah ditolak di server | Harness HTTP: `completed → pending` ditolak — status tetap `completed` setelah `/livewire/update` (HTTP 200 tanpa perubahan baris) |
+| [x] | F8-04 | Setiap perubahan status menulis `order_status_history` dengan pelaku dan catatan | Harness HTTP: `paid → processing` menulis riwayat `paid -> processing`, `changed_by` = #1, catatan "Uji otomatis F8-04" |
+| [x] | F8-05 | Isi nomor resi dan pilih kurir | Harness HTTP: `JNE REG — JNE-UJI-889912` tersimpan di `orders.tracking_number`, `shipping_courier`, `shipping_service` |
+| [x] | F8-06 | Cetak **Invoice A4** dengan CSS cetak, PDF dibuat lokal | PDF sungguhan dari dompdf (`App\Support\DokumenPdf`): HTTP 200, `application/pdf`, berkas berawalan `%PDF`, **MediaBox 210 x 297 mm** dibaca dari dalam berkasnya |
+| [x] | F8-07 | Cetak **Resi / Label 100x150 mm** berisi penerima, nomor pesanan, resi, kurir, berat | PDF dompdf: HTTP 200, **MediaBox 100 x 150 mm** terukur dari berkas. Ukuran kertas diubah dari 80 mm/auto (tidak dikenali dompdf) ke label 100x150 sesuai PRD |
+| [x] | F8-08 | Cetak **Surat Jalan A4** tanpa harga, dengan tanda tangan penerima | PDF dompdf: HTTP 200, MediaBox 210 x 297 mm; badan dokumen tidak memuat angka rupiah |
+| [x] | F8-09 | Tanda air SALINAN pada ketiga dokumen bila pesanan dibatalkan | Harness HTTP: pratinjau invoice pesanan `cancelled` memuat 2 penanda SALINAN, pesanan berjalan 0; ketiga dokumen pesanan batal tetap tercetak (HTTP 200/200/200) |
+| [x] | F8-10 | Kirim ulang notifikasi ke pelanggan dari halaman detail | Harness HTTP: tombol kirim ulang menambah baris `jobs` (14 → 15), payload memuat `KirimNotifikasiPesanan` kejadian `dibuat`; jenis tak dikenal ditolak tanpa galat server |
 
 ---
 

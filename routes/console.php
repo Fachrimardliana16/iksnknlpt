@@ -89,6 +89,19 @@ Schedule::command('iksan:pangkas-data-lama')
     ->withoutOverlapping();
 
 /*
+| Pembatalan pesanan kedaluwarsa (checklist F7-12).
+|
+| Setiap sepuluh menit, bukan sekali sehari: batas waktunya 24 jam sejak pesanan
+| dibuat, jadi yang menentukan bukan jam dinding melainkan jarak sejak pesanan
+| terakhir kali dibuat. Menjalankannya lebih sering juga berarti tahanan stok
+| kembali lebih cepat, dan itulah yang menentukan berapa lama barang yang
+| sebenarnya tersedia tampak habis.
+*/
+Schedule::command('iksan:batalkan-kedaluwarsa')
+    ->everyTenMinutes()
+    ->withoutOverlapping();
+
+/*
 | Pemrosesan antrean gambar produk.
 |
 | Dijalankan setiap menit dan berhenti setelah antrean kosong. Ini pengganti

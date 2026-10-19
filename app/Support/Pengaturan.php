@@ -29,8 +29,24 @@ class Pengaturan
     }
 
     /**
-     * Hanya nilai is_public yang dimuat, karena hanya itu yang dipakai sisi
-     * depan. Kredensial pembayaran tidak pernah masuk cache ini.
+     * Seluruh nilai pengaturan, dimuat satu kali lalu diingat.
+     *
+     * Yang dimuat adalah SELURUH baris yang tidak terenkripsi, bukan hanya yang
+     * ditandai is_public.
+     *
+     * Sebelumnya hanya baris is_public yang dimuat. Akibatnya nilai yang dipakai
+     * di dalam perhitungan pesanan tetapi tidak pernah dirender — tarif ongkir,
+     * persen pajak, mode pembayaran, ambang stok, prefiks nomor pesanan —
+     * selalu jatuh ke nilai bawaan nol. Ongkos kirim tidak pernah terhitung,
+     * pajak tidak pernah terhitung, dan pilihan metode pembayaran di halaman
+     * checkout selalu menunjuk transfer manual walaupun toko disetel ke PayPal.
+     * Keenamnya ditemukan oleh test F7, bukan oleh mata, karena nilainya nol dan
+     * nol tidak terlihat salah di halaman.
+     *
+     * Yang benar-benar harus dijaga dari sisi depan adalah kredensial: kunci
+     * PayPal, rekening transfer, dan apa pun yang ditandai is_encrypted. Baris
+     * terenkripsi tetap tidak pernah masuk ke sini, dan cara itu juga lebih
+     * kokoh: yang dibocorkan adalah rahasia, bukan bilangan.
      *
      * @return array<string, mixed>
      */
@@ -43,7 +59,7 @@ class Pengaturan
         try {
             self::$memori = $this->cache->rememberForever(self::KUNCI_CACHE, function (): array {
                 return Setting::query()
-                    ->publik()
+                    ->where('is_encrypted', false)
                     ->pluck('value', 'key')
                     ->all();
             });
@@ -63,6 +79,18 @@ class Pengaturan
         return filled($nilai) ? $nilai : $bawaan;
     }
 
+    /**
+     * Nilai khusus sisi depan.
+     *
+     * @return array<string, string|null>
+     */
+    public function publik(): array
+    {
+        $kunci = Setting::query()->publik()->pluck('key')->all();
+
+        return array_intersect_key($this->semua(), array_flip($kunci));
+    }
+
     public function teks(string $kunci, string $bawaan = ''): string
     {
         return (string) $this->ambil($kunci, $bawaan);
@@ -80,6 +108,40 @@ class Pengaturan
         $nilai = $this->ambil($kunci);
 
         return $nilai === null || $nilai === '' ? $bawaan : (float) $nilai;
+    }
+
+    /**
+     * Daftar teks yang disimpan sebagai JSON pada satu baris pengaturan.
+     *
+     * Dipakai untuk nilai yang panjangnya berubah (daftar kurir): disimpan di
+     * pengaturan supaya dapat diubah admin tanpa menyentuh kode, sementara
+     * bentuknya tetap sederhana dan tidak perlu tabel sendiri.
+     *
+     * @param  array<int, string>  $bawaan
+     * @return array<int, string>
+     */
+    public function larikTeks(string $kunci, array $bawaan = []): array
+    {
+        $nilai = $this->ambil($kunci);
+
+        if (! is_string($nilai) || trim($nilai) === '') {
+            return $bawaan;
+        }
+
+        $larik = json_decode($nilai, true);
+
+        if (! is_array($larik)) {
+            // Nilai yang disimpan sebagai daftar berpemisah baris tetap diterima,
+            // supaya kolom teks sederhana pun dapat dipakai admin.
+            $larik = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $nilai) ?: []));
+        }
+
+        $bersih = array_values(array_filter(
+            array_map(fn ($satu) => trim((string) $satu), $larik),
+            fn (string $satu) => $satu !== '',
+        ));
+
+        return $bersih === [] ? $bawaan : $bersih;
     }
 
     /**

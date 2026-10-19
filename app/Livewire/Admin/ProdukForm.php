@@ -71,6 +71,18 @@ class ProdukForm extends Component
     public bool $is_published = false;
 
     public bool $slugDisentuh = false;
+    // ── Tab 1b: spesifikasi teknis ──────────────────────────────────
+    /**
+     * Baris spesifikasi teknis (checklist F6-04).
+     *
+     * Urutannya adalah urutan tampil di halaman produk, jadi larik biasa —
+     * bukan larik berkunci. Sama seperti varian, penyimpanannya ikut dalam
+     * transaksi tab informasi dasar supaya tidak ada produk dengan sebagian
+     * spesifikasi tersimpan.
+     *
+     * @var array<int, array<string, string>>
+     */
+    public array $spesifikasi = [];
 
     // ── Tab 2: varian ───────────────────────────────────────────────
     /**
@@ -135,6 +147,7 @@ class ProdukForm extends Component
         $this->is_featured = (bool) $produk->is_featured;
         $this->is_published = (bool) $produk->is_published;
         $this->slugDisentuh = true;
+        $this->spesifikasi = $this->spesifikasiDari($produk->spesifikasi_json);
 
         $this->varian = $produk->variants->map(fn (ProductVariant $v) => [
             'id' => $v->id,
@@ -203,6 +216,92 @@ class ProdukForm extends Component
         $this->slugDisentuh = true;
     }
 
+    // ── Spesifikasi teknis (tab informasi dasar, checklist F6-04) ────
+
+    /** @return array<int, array<string, string>> */
+    private function spesifikasiDari(?string $json): array
+    {
+        $mentah = json_decode((string) $json, true);
+
+        if (! is_array($mentah)) {
+            return [];
+        }
+
+        $baris = [];
+
+        foreach ($mentah as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $baris[] = [
+                'label_id' => (string) ($item['label_id'] ?? ''),
+                'nilai_id' => (string) ($item['nilai_id'] ?? ''),
+                'label_en' => (string) ($item['label_en'] ?? ''),
+                'nilai_en' => (string) ($item['nilai_en'] ?? ''),
+            ];
+        }
+
+        return $baris;
+    }
+
+    public function tambahSpesifikasi(): void
+    {
+        $this->spesifikasi[] = ['label_id' => '', 'nilai_id' => '', 'label_en' => '', 'nilai_en' => ''];
+        $this->pesanTab = null;
+    }
+
+    public function hapusSpesifikasi(int $indeks): void
+    {
+        unset($this->spesifikasi[$indeks]);
+        $this->spesifikasi = array_values($this->spesifikasi);
+        $this->pesanTab = null;
+    }
+
+    public function geserSpesifikasi(int $indeks, string $arah): void
+    {
+        $tujuan = $arah === 'naik' ? $indeks - 1 : $indeks + 1;
+
+        if ($tujuan < 0 || $tujuan >= count($this->spesifikasi)) {
+            return;
+        }
+
+        [$this->spesifikasi[$indeks], $this->spesifikasi[$tujuan]] = [$this->spesifikasi[$tujuan], $this->spesifikasi[$indeks]];
+        $this->pesanTab = null;
+    }
+
+    /**
+     * Membersihkan baris spesifikasi sebelum disimpan.
+     *
+     * Baris tanpa label dibuang, bukan disimpan sebagai baris kosong: baris
+     * seperti itu hanya menghasilkan garis tanpa keterangan di halaman produk.
+     * Label tanpa isi dibiarkan tersimpan — itu baris yang baru setengah
+     * diisi, dan pembaca halaman publik melewatkannya sendiri.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function spesifikasiBersih(): array
+    {
+        $baris = [];
+
+        foreach ($this->spesifikasi as $item) {
+            $labelId = trim((string) ($item['label_id'] ?? ''));
+
+            if ($labelId === '') {
+                continue;
+            }
+
+            $baris[] = [
+                'label_id' => $labelId,
+                'nilai_id' => trim((string) ($item['nilai_id'] ?? '')),
+                'label_en' => trim((string) ($item['label_en'] ?? '')),
+                'nilai_en' => trim((string) ($item['nilai_en'] ?? '')),
+            ];
+        }
+
+        return $baris;
+    }
+
     public function aturTab(string $tab): void
     {
         if (in_array($tab, ['info', 'varian', 'media'], true)) {
@@ -236,6 +335,11 @@ class ProdukForm extends Component
             'weight_gram' => ['required', 'integer', 'min:1', 'max:300000'],
             'is_featured' => ['boolean'],
             'is_published' => ['boolean'],
+            'spesifikasi' => ['array', 'max:12'],
+            'spesifikasi.*.label_id' => ['nullable', 'string', 'max:60'],
+            'spesifikasi.*.nilai_id' => ['nullable', 'string', 'max:180'],
+            'spesifikasi.*.label_en' => ['nullable', 'string', 'max:60'],
+            'spesifikasi.*.nilai_en' => ['nullable', 'string', 'max:180'],
         ], [
             'category_id.required' => 'Pilih kategori produk.',
             'category_id.exists' => 'Kategori yang dipilih tidak ada.',
@@ -251,7 +355,11 @@ class ProdukForm extends Component
             'weight_gram.required' => 'Berat wajib diisi karena dipakai menghitung ongkir.',
         ]);
 
-        DB::transaction(function () use ($bersih): void {
+        // Dibersihkan sebelum transaksi: baris tanpa label tidak ikut disimpan,
+        // dan hasil bersihnya dipakai baik untuk produk baru maupun yang diubah.
+        $spesifikasi = $this->spesifikasiBersih();
+
+        DB::transaction(function () use ($bersih, $spesifikasi): void {
             $data = [
                 'category_id' => $bersih['category_id'],
                 'sku' => $bersih['sku'],
@@ -266,6 +374,10 @@ class ProdukForm extends Component
                 'weight_gram' => (int) $bersih['weight_gram'],
                 'is_featured' => $bersih['is_featured'],
                 'is_published' => $bersih['is_published'],
+                // Spesifikasi disimpan sebagai satu kolom JSON (checklist F6-04).
+                // Kolom kosong ditulis sebagai null, bukan "[]", supaya produk
+                // tanpa spesifikasi tidak pernah membuat tabel kosong.
+                'spesifikasi_json' => ($spesifikasi === [] ? null : json_encode($spesifikasi, JSON_UNESCAPED_UNICODE)),
             ];
 
             if ($this->produkId === null) {

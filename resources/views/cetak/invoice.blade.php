@@ -89,6 +89,8 @@
 </head>
 <body>
 
+@include('cetak._salinan')
+
 <div class="tanpa-cetak" style="margin-bottom:12px">
     <button type="button" data-aksi="cetak" style="padding:7px 14px;font:inherit;cursor:pointer">Cetak</button>
     <span class="kecil">atau tekan Ctrl+P</span>

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\StatusPesanan;
+use App\Jobs\KirimNotifikasiPesanan;
 use App\Models\Order;
 use App\Services\StatusPesananService;
 use Illuminate\Contracts\View\View;
@@ -39,6 +40,9 @@ class PesananDetail extends Component
     public string $nomorResi = '';
 
     public string $catatanAdmin = '';
+
+    /** Kejadian notifikasi yang akan dikirim ulang, dipilih admin. */
+    public string $kejadianKirimUlang = 'dibuat';
 
     public function mount(string $ulid): void
     {
@@ -169,6 +173,44 @@ class PesananDetail extends Component
 
         $this->alasanTolak = '';
         $this->redirectRoute('admin.orders.show', ['ulid' => $this->ulid], navigate: true);
+    }
+
+    /**
+     * Kirim ulang notifikasi pesanan (checklist F8-10).
+     *
+     * Dipakai ketika pembeli mengaku tidak menerima pesannya — surel masuk ke
+     * folder sampah, atau nomor WhatsApp-nya salah ketika pesanan dibuat.
+     * Yang dikirim adalah job yang sama dengan yang berjalan otomatis saat
+     * status berubah, bukan pesan baru yang ditulis terpisah: pesan yang
+     * berbeda dari aslinya hanya membingungkan pembeli.
+     */
+    public function kirimUlangNotifikasi(): void
+    {
+        $sah = [
+            KirimNotifikasiPesanan::KEJADIAN_DIBUAT,
+            KirimNotifikasiPesanan::KEJADIAN_DIBAYAR,
+            KirimNotifikasiPesanan::KEJADIAN_DIKIRIM,
+        ];
+
+        if (! in_array($this->kejadianKirimUlang, $sah, true)) {
+            session()->flash('galat-admin', 'Jenis notifikasi tidak dikenal.');
+
+            return;
+        }
+
+        $order = $this->cari($this->ulid);
+
+        // Pembeli tanpa surel dan tanpa telepon tidak dapat dikirimi apa pun.
+        // Lebih baik dikatakan terang-terangan daripada menampilkan "terkirim".
+        if ($order->emailPenerima() === null && $order->teleponPenerima() === null) {
+            session()->flash('galat-admin', 'Pesanan ini tidak menyimpan surel maupun nomor telepon pembeli.');
+
+            return;
+        }
+
+        KirimNotifikasiPesanan::dispatch($order->id, $this->kejadianKirimUlang);
+
+        session()->flash('pesan-admin', 'Notifikasi "'.$this->kejadianKirimUlang.'" untuk '.$order->order_number.' dimasukkan ke antrean pengiriman.');
     }
 
     public function render(): View

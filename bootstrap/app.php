@@ -66,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'security.headers' => SecurityHeaders::class,
             'admin' => \App\Http\Middleware\PastikanAdmin::class,
             'blokir.ip' => BlokirIp::class,
+            'laju' => \App\Http\Middleware\BatasiLaju::class,
         ]);
 
         // Bahasa dari cookie. Dipasang pada grup web supaya berlaku di front

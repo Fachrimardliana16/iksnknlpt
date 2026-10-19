@@ -84,7 +84,9 @@
 
                         <div class="sm:col-span-2">
                             <label class="label" for="catatan">{{ __('site.checkout.note') }}</label>
-                            <textarea id="catatan" class="field" wire:model="catatan" rows="2"></textarea>
+                            <textarea id="catatan" class="field" wire:model="catatan" rows="2"
+                                      maxlength="500" placeholder="{{ __('site.cart.note_hint') }}"></textarea>
+                            @error('catatan') <p class="field-error">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </section>
@@ -93,30 +95,43 @@
                     <p class="part-no">04 / {{ __('site.checkout.payment_method') }}</p>
 
                     <div class="mt-4 space-y-3">
-                        @if (in_array($modePembayaran, ['manual', 'both'], true))
-                            <label class="flex cursor-pointer items-start gap-3">
-                                <input type="radio" name="metode" value="manual" wire:model="metode"
-                                       class="mt-1 h-4 w-4 accent-[var(--c-accent)]">
-                                <span>
-                                    <span class="font-semibold">{{ __('site.orders.payment_manual') ?? 'Transfer Manual' }}</span>
-                                    <span class="mt-0.5 block text-sm text-muted">
-                                        Transfer ke rekening toko, lalu unggah bukti. Pesanan diproses setelah diverifikasi.
+                        @foreach ($daftarMetode as $satuMetode)
+                            @if ($satuMetode === 'manual')
+                                <label class="flex cursor-pointer items-start gap-3">
+                                    <input type="radio" name="metode" value="manual" wire:model="metode"
+                                           class="mt-1 h-4 w-4 accent-[var(--c-accent)]">
+                                    <span>
+                                        <span class="font-semibold">{{ __('site.checkout.payment_manual_label') }}</span>
+                                        <span class="mt-0.5 block text-sm text-muted">
+                                            {{ __('site.checkout.payment_manual_hint') }}
+                                        </span>
                                     </span>
-                                </span>
-                            </label>
-                        @endif
+                                </label>
+                            @endif
 
-                        @if (in_array($modePembayaran, ['paypal', 'both'], true))
-                            <label class="flex cursor-pointer items-start gap-3">
-                                <input type="radio" name="metode" value="paypal" wire:model="metode"
-                                       class="mt-1 h-4 w-4 accent-[var(--c-accent)]">
-                                <span>
-                                    <span class="font-semibold">PayPal</span>
-                                    <span class="mt-0.5 block text-sm text-muted">
-                                        Anda dialihkan ke PayPal untuk menyelesaikan pembayaran.
+                            @if ($satuMetode === 'paypal')
+                                <label class="flex cursor-pointer items-start gap-3">
+                                    <input type="radio" name="metode" value="paypal" wire:model="metode"
+                                           class="mt-1 h-4 w-4 accent-[var(--c-accent)]">
+                                    <span>
+                                        <span class="font-semibold">PayPal</span>
+                                        <span class="mt-0.5 block text-sm text-muted">
+                                            {{ __('site.checkout.payment_paypal_hint') }}
+                                        </span>
                                     </span>
-                                </span>
-                            </label>
+                                </label>
+                            @endif
+                        @endforeach
+
+                        {{-- Mode pembayaran hanya manual atau hanya PayPal: tidak ada
+                             yang perlu dipilih, jadi pilihannya dijelaskan, bukan
+                             ditampilkan sebagai satu tombol radio yang sudah aktif. --}}
+                        @if (count($daftarMetode) === 1)
+                            <p class="text-xs text-dim">
+                                {{ $daftarMetode[0] === 'manual'
+                                    ? __('site.checkout.payment_only_manual')
+                                    : __('site.checkout.payment_only_paypal') }}
+                            </p>
                         @endif
                     </div>
 

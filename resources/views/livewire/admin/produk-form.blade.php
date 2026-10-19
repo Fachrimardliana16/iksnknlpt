@@ -203,6 +203,78 @@
                         </div>
                     </div>
 
+                    {{-- Spesifikasi teknis (checklist F6-04). Urutannya adalah
+                         urutan tampil di halaman produk, jadi ada tombol naik dan
+                         turun. Baris tanpa nama dibuang saat disimpan. --}}
+                    <div class="plate space-y-4 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="font-display text-lg font-semibold">{{ __('site.product.specification') }}</h2>
+                            <button type="button" wire:click="tambahSpesifikasi" class="btn btn-outline !min-h-[36px] text-xs">
+                                <x-ikon name="plus" :size="14" />
+                                {{ __('site.product.spec_add') }}
+                            </button>
+                        </div>
+                        <p class="text-xs text-dim">{{ __('site.product.spec_hint') }}</p>
+
+                        @if ($spesifikasi === [])
+                            <p class="text-sm text-muted">{{ __('site.product.spec_empty') }}</p>
+                        @else
+                            <div class="space-y-3">
+                                @foreach ($spesifikasi as $i => $baris)
+                                    <div class="rounded-[var(--r-btn)] border border-line-soft p-3" wire:key="spesifikasi-{{ $i }}">
+                                        <div class="flex flex-wrap items-end gap-2">
+                                            <div class="min-w-0 flex-1">
+                                                <label class="part-no" for="spec-label-{{ $i }}">{{ __('site.product.spec_label') }}</label>
+                                                <input id="spec-label-{{ $i }}" type="text" wire:model="spesifikasi.{{ $i }}.label_id"
+                                                       class="field mt-1 py-2" placeholder="Material">
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <label class="part-no" for="spec-nilai-{{ $i }}">{{ __('site.product.spec_value') }}</label>
+                                                <input id="spec-nilai-{{ $i }}" type="text" wire:model="spesifikasi.{{ $i }}.nilai_id"
+                                                       class="field mt-1 py-2" placeholder="Stainless 304">
+                                            </div>
+
+                                            <div class="flex flex-none items-center gap-1">
+                                                <button type="button" wire:click="geserSpesifikasi({{ $i }}, 'naik')"
+                                                        class="btn-icon !h-8 !w-8" title="Naikkan" {{ $i === 0 ? 'disabled' : '' }}>
+                                                    <x-ikon name="arrow-up" :size="13" />
+                                                    <span class="visually-hidden">Naikkan</span>
+                                                </button>
+                                                <button type="button" wire:click="geserSpesifikasi({{ $i }}, 'turun')"
+                                                        class="btn-icon !h-8 !w-8" title="Turunkan" {{ $loop->last ? 'disabled' : '' }}>
+                                                    <x-ikon name="arrow-right" :size="13" class="rotate-90" />
+                                                    <span class="visually-hidden">Turunkan</span>
+                                                </button>
+                                                <button type="button" wire:click="hapusSpesifikasi({{ $i }})"
+                                                        class="btn-icon !h-8 !w-8 hover:text-danger" title="{{ __('site.product.spec_remove') }}">
+                                                    <x-ikon name="trash" :size="13" />
+                                                    <span class="visually-hidden">{{ __('site.product.spec_remove') }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <details class="mt-2">
+                                            <summary class="cursor-pointer text-xs text-dim">{{ __('site.product.spec_lang') }}</summary>
+                                            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                                <input type="text" wire:model="spesifikasi.{{ $i }}.label_en"
+                                                       class="field py-2 text-xs" placeholder="Material (EN)"
+                                                       aria-label="{{ __('site.product.spec_label') }} EN">
+                                                <input type="text" wire:model="spesifikasi.{{ $i }}.nilai_en"
+                                                       class="field py-2 text-xs" placeholder="Stainless 304 (EN)"
+                                                       aria-label="{{ __('site.product.spec_value') }} EN">
+                                            </div>
+                                        </details>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @error('spesifikasi') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+
+                </div>
+
+                <div class="space-y-5">
                     <div class="plate space-y-3 p-4">
                         <h2 class="font-display text-lg font-semibold">Tampilan</h2>
 

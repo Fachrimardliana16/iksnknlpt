@@ -12,7 +12,7 @@ class Cart extends Model
 {
     use HasFactory, PunyaUlid;
 
-    protected $fillable = ['user_id', 'session_id', 'coupon_id', 'expires_at'];
+    protected $fillable = ['user_id', 'session_id', 'coupon_id', 'note', 'expires_at'];
 
     protected function casts(): array
     {

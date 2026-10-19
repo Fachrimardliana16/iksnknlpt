@@ -126,6 +126,35 @@
                 <a href="{{ route('front.page', 'syarat-ketentuan') }}" class="hover:text-white">{{ __('site.footer.terms') }}</a>
             </div>
         </div>
+
+        {{--
+            Ruang bawah di halaman detail produk, ponsel dan tablet.
+
+            Halaman itu punya dua lapisan melayang: bar aksi lengket (69 px, duduk
+            60 px di atas dasar layar) dan bar navigasi bawah (60 px terbawah).
+            Keduanya keluar dari aliran dokumen, jadi seluruh isi yang berada di
+            dasar dokumen tertutup — dan pada gulir maksimum, yang berada di dasar
+            dokumen adalah baris terakhir footer ini sendiri.
+
+            Terukur pada 375x667 px, digulir sampai dasar (3003 px), sebelum ruang
+            ini ada: baris "Syarat dan Ketentuan" berakhir di 627 px sementara
+            puncak bar lengket di 538 px — 89 px isinya memang tidak terlihat.
+
+            Dua hal yang menentukan letaknya, dan keduanya pernah salah:
+
+            1. Ruang ini harus berada SETELAH isi terakhir. Ditaruh sebelum baris
+               terbawah footer, ia justru mendorong baris itu keluar layar; ditaruh
+               di dalam <main>, ia hanya menggeser footer tanpa mengubah apa pun,
+               karena footer tetap menjadi elemen terakhir dokumen.
+            2. Tingginya harus melebihi seluruh blok melayang (129 px), bukan hanya
+               bar lengketnya (69 px).
+
+            Disimpan di dalam footer, bukan setelahnya, supaya tidak muncul celah
+            berwarna latar halaman di bawah footer.
+        --}}
+        @if (request()->routeIs('front.products.show'))
+            <div class="h-[136px] lg:hidden" aria-hidden="true"></div>
+        @endif
     </div>
 </footer>
 

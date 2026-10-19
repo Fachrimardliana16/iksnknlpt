@@ -58,11 +58,15 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('pesanan', PesananDaftar::class)->name('orders.index');
         Route::get('pesanan/{ulid}', PesananDetail::class)->name('orders.show');
 
-        // Dokumen cetak. Dibuka di tab baru, jadi tidak memakai tata letak
-        // panel: saat mencetak, navigasi hanya memakan kertas.
+        // Dokumen cetak. PDF sungguhan dari sisi server (dompdf), bukan HTML
+        // yang baru menjadi PDF lewat dialog cetak peramban — ukuran lembarnya
+        // karena itu dapat diperiksa, dan hasilnya sama di peramban mana pun.
         Route::get('pesanan/{ulid}/resi', [DokumenPesanan::class, 'resi'])->name('orders.receipt');
         Route::get('pesanan/{ulid}/invoice', [DokumenPesanan::class, 'invoice'])->name('orders.invoice');
         Route::get('pesanan/{ulid}/surat-jalan', [DokumenPesanan::class, 'suratJalan'])->name('orders.delivery');
+
+        // Pratinjau HTML di peramban, untuk melihat isi sebelum mencetak.
+        Route::get('pesanan/{ulid}/pratinjau/{jenis}', [DokumenPesanan::class, 'pratinjau'])->name('orders.preview');
 
         Route::get('ekspor/pesanan', [DokumenPesanan::class, 'eksporCsv'])->name('exports.orders');
 

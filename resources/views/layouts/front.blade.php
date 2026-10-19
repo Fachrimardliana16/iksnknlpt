@@ -5,8 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $judul ?? '' }}{{ isset($judul) ? ' · ' : '' }}{{ $toko->teks('site_name', __('site.brand.fallback_name')) }}</title>
+    {{--
+        Judul halaman.
+
+        Dibaca dari $title, bukan $judul. Livewire menyerahkan judul lewat
+        View::title(), dan makro itu menyimpannya sebagai parameter bernama
+        "title" pada layout. Selama nama yang dibaca di sini berbeda, seluruh
+        tag <title> situs jatuh ke nama toko saja — judul halaman detail produk
+        tidak pernah muncul di tab peramban maupun di hasil pencarian.
+    --}}
+    <title>{{ isset($title) && filled($title) ? $title : $toko->teks('site_name', __('site.brand.fallback_name')) }}</title>
     <meta name="description" content="{{ $deskripsi ?? $toko->teks('site_description', __('site.brand.tagline')) }}">
+
+    @isset($tanpaIndeks)
+        <meta name="robots" content="noindex, nofollow">
+    @endisset
+
+    @isset($kanonikal)
+        <link rel="canonical" href="{{ $kanonikal }}">
+        <meta property="og:url" content="{{ $kanonikal }}">
+    @endisset
+
+    @isset($metaOg)
+        <meta property="og:type" content="{{ $metaOg['tipe'] ?? 'website' }}">
+        <meta property="og:title" content="{{ $metaOg['judul'] }}">
+        <meta property="og:description" content="{{ $metaOg['deskripsi'] }}">
+        <meta property="og:site_name" content="{{ $toko->teks('site_name', __('site.brand.fallback_name')) }}">
+        <meta name="twitter:card" content="summary_large_image">
+        @if (filled($metaOg['gambar'] ?? null))
+            <meta property="og:image" content="{{ $metaOg['gambar'] }}">
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+            <meta property="og:image:alt" content="{{ $metaOg['alt'] ?? $metaOg['judul'] }}">
+        @endif
+    @endisset
     @if (filled($toko->teks('site_favicon')))
         <link rel="icon" href="{{ \App\Models\ProductMedia::urlMedia($toko->teks('site_favicon')) }}">
     @endif
@@ -49,6 +81,13 @@
     @include('partials.front.footer')
     @include('partials.front.bottom-nav')
     @include('partials.front.whatsapp')
+
+    @if (filled($kepala ?? null))
+        {{-- Sudah berupa HTML yang dirender view lain (misalnya blok JSON-LD),
+             jadi dicetak apa adanya. Isinya dibangun dari json_encode sehingga
+             tanda kurung sudut di dalam data sudah dilolosikan lebih dulu. --}}
+        {!! $kepala !!}
+    @endif
 
 </body>
 </html>

@@ -6,6 +6,7 @@ use App\Enums\StatusPembayaran;
 use App\Enums\StatusPesanan;
 use App\Models\Order;
 use App\Services\StatusPesananService;
+use App\Support\BlindIndex;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -78,33 +79,78 @@ class PesananDaftar extends Component
 
     public function render(): View
     {
-        $pesanan = Order::query()
-            ->with(['user', 'items', 'payments'])
-            ->when($this->status !== 'semua', fn ($q) => $q->where('status', $this->status))
-            ->when($this->bayar !== 'semua', fn ($q) => $q->where('payment_status', $this->bayar))
-            ->when(filled($this->cari), function ($q): void {
-                $kata = trim($this->cari);
+        $kata = trim($this->cari);
 
-                // Nomor pesanan dapat dicari langsung. Email pelanggan
-                // terenkripsi di kolom tamu, jadi pencariannya lewat indeks buta;
-                // untuk pelanggan berakun, dicari lewat relasi namanya.
-                $q->where(function ($w) use ($kata): void {
+        /*
+        | Penyaringan.
+        |
+        | Nomor pesanan dan email tamu dapat dicek di SQL: nomor berindeks,
+        | email tamu berindeks buta. Nama penerima tidak — namanya berada di
+        | dalam snapshot alamat yang terenkripsi, sehingga tidak ada polanya di
+        | basis data. Menyaringnya berarti membaca lebih dulu, mendekripsi di
+        | PHP, lalu mencocokkan; itulah yang terjadi di blok kedua.
+        */
+        $saringan = fn ($q) => $q
+            ->when($this->status !== 'semua', fn ($x) => $x->where('status', $this->status))
+            ->when($this->bayar !== 'semua', fn ($x) => $x->where('payment_status', $this->bayar))
+            ->when($kata !== '', function ($x) use ($kata): void {
+                $x->where(function ($w) use ($kata): void {
                     $w->where('order_number', 'like', '%'.$kata.'%')
-                        ->orWhere('guest_email_bidx', \App\Support\BlindIndex::buat($kata, 'guest_email_bidx'))
+                        ->orWhere('guest_email_bidx', BlindIndex::buat($kata, 'guest_email_bidx'))
                         ->orWhereHas('user', fn ($u) => $u->where('name', 'like', '%'.$kata.'%'));
                 });
-            })
-            ->when($this->urut === 'terbaru', fn ($q) => $q->orderByDesc('created_at'))
-            ->when($this->urut === 'terlama', fn ($q) => $q->orderBy('created_at'))
-            ->when($this->urut === 'terbesar', fn ($q) => $q->orderByDesc('grand_total'))
-            ->when($this->urut === 'kedaluwarsa', fn ($q) => $q->where('status', StatusPesanan::Pending->value)->orderBy('expires_at'))
-            ->paginate(20);
+            });
+
+        $urutkan = fn ($q) => $q
+            ->when($this->urut === 'terbaru', fn ($x) => $x->orderByDesc('created_at'))
+            ->when($this->urut === 'terlama', fn ($x) => $x->orderBy('created_at'))
+            ->when($this->urut === 'terbesar', fn ($x) => $x->orderByDesc('grand_total'))
+            ->when($this->urut === 'kedaluwarsa', fn ($x) => $x->where('status', StatusPesanan::Pending->value)->orderBy('expires_at'));
+
+        // Nama penerima cocok, tetapi tidak lolos saringan kolom. Baris-baris
+        // itu diambil terpisah dan ditempel di depan hasil halaman pertama —
+        // tanpa ini, mencari "Budi" yang hanya tertulis di alamat kirim tidak
+        // menemukan apa pun, dan admin menyimpulkan pesanannya tidak ada.
+        $cocokNama = collect();
+
+        if ($kata !== '') {
+            $lain = $saringan(Order::query()->with(['user', 'items', 'payments']))
+                ->when($this->urut === 'terbaru', fn ($x) => $x->orderByDesc('created_at'))
+                ->when($this->urut === 'terlama', fn ($x) => $x->orderBy('created_at'))
+                ->when($this->urut === 'terbesar', fn ($x) => $x->orderByDesc('grand_total'))
+                ->when($this->urut === 'kedaluwarsa', fn ($x) => $x->orderBy('expires_at'))
+                ->limit(300)
+                ->get();
+
+            $cocokNama = $lain
+                ->filter(fn (Order $o): bool => mb_stripos($o->namaPenerima(), $kata) !== false)
+                ->values();
+        }
+
+        $dariKolom = $saringan(Order::query()->with(['user', 'items', 'payments']));
+        $dariKolom = $urutkan($dariKolom);
+
+        $idCocokNama = $cocokNama->pluck('id')->all();
+
+        if ($idCocokNama !== []) {
+            $dariKolom->whereNotIn('id', $idCocokNama);
+        }
+
+        $halaman = $dariKolom->paginate(25);
+
+        // Hasil nama ditempel di halaman pertama, di atas hasil kolom.
+        if ($idCocokNama !== [] && $halaman->currentPage() === 1) {
+            $halaman->setCollection(
+                $cocokNama->concat($halaman->getCollection())->take($halaman->perPage())
+            );
+        }
 
         return view('livewire.admin.pesanan-daftar', [
             'judul' => 'Pesanan',
             'bagian' => 'Penjualan',
-            'pesanan' => $pesanan,
+            'pesanan' => $halaman,
             'ringkas' => $this->ringkasan(),
+            'cocokNama' => $cocokNama->count(),
         ])->layout('layouts.admin', ['judul' => 'Pesanan', 'bagian' => 'Penjualan']);
     }
 

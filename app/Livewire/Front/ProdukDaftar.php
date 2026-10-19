@@ -49,7 +49,12 @@ class ProdukDaftar extends Component
         // Pencarian menyentuh beberapa tabel dengan LIKE berawalan wildcard,
         // yang tidak dapat memakai indeks. Tanpa batas, satu skrip dapat
         // menahan seluruh kapasitas basis data dengan kata kunci acak.
-        if ($properti === 'kata' && $this->kata !== '') {
+        //
+        // Kata yang panjangnya kurang dari dua huruf dibiarkan lewat tanpa
+        // dihitung: mengetik "knalpot" berarti satu permintaan per huruf, dan
+        // menghitung semuanya membuat pengguna sungguhan kehabisan jatah
+        // hanya karena mengetik dengan tenang.
+        if ($properti === 'kata' && mb_strlen(trim($this->kata)) >= 2) {
             $kunci = 'cari:'.$this->alamatPencari();
             $batas = (array) config('iksan.rate_limits.search', [30, 1]);
 
@@ -134,6 +139,26 @@ class ProdukDaftar extends Component
             'daftar' => $daftar,
             'kategoriAktif' => $kategori,
             'semuaKategori' => \App\Models\Category::query()->aktif()->terurut()->get(),
-        ])->title(__('site.catalog.title').' · '.$toko->teks('site_name'));
+            // Berapa saringan yang sedang menyala. Ditampilkan pada tombol
+            // "Filter" di ponsel: tanpa angka itu, panel yang tertutup membuat
+            // pembeli tidak tahu daftarnya sedang tersaring, dan hasil yang
+            // sedikit terlihat seperti katalog yang memang kosong.
+            'jumlahFilterAktif' => collect([
+                $this->kategoriSlug,
+                $this->kata,
+                $this->hargaMin,
+                $this->hargaMaks,
+            ])->filter(fn ($nilai) => filled($nilai))->count(),
+        ])
+            ->title(__('site.catalog.title').' · '.$toko->teks('site_name'))
+            ->layoutData([
+                'kanonikal' => url()->current(),
+                'metaOg' => [
+                    'tipe' => 'website',
+                    'judul' => ($kategori !== null ? $kategori->nama().' · ' : '').__('site.catalog.title'),
+                    'deskripsi' => $toko->teks('site_description', __('site.brand.tagline')),
+                    'gambar' => null,
+                ],
+            ]);
     }
 }

@@ -24,6 +24,7 @@ class Product extends Model
         'excerpt_en',
         'description_id',
         'description_en',
+        'spesifikasi_json',
         'base_price',
         'weight_gram',
         'is_featured',
@@ -212,6 +213,50 @@ class Product extends Model
         return $this->primaryMedia
             ?? $this->media->firstWhere('type', 'image')
             ?? $this->media->first();
+    }
+
+    /**
+     * Spesifikasi teknis terurut (checklist F6-04).
+     *
+     * Disimpan sebagai JSON di satu kolom. Yang dikembalikan hanya baris yang
+     * punya label: baris setengah terisi yang lolos dari panel admin tidak
+     * boleh muncul sebagai garis kosong di halaman pembeli.
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function spesifikasi(?string $locale = null): array
+    {
+        $locale ??= app()->getLocale();
+
+        $mentah = json_decode((string) $this->spesifikasi_json, true);
+
+        if (! is_array($mentah)) {
+            return [];
+        }
+
+        $baris = [];
+
+        foreach ($mentah as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $label = trim((string) ($locale === 'en'
+                ? ($item['label_en'] ?? '') ?: ($item['label_id'] ?? '')
+                : ($item['label_id'] ?? '')));
+
+            $nilai = trim((string) ($locale === 'en'
+                ? ($item['nilai_en'] ?? '') ?: ($item['nilai_id'] ?? '')
+                : ($item['nilai_id'] ?? '')));
+
+            if ($label === '' || $nilai === '') {
+                continue;
+            }
+
+            $baris[] = ['label' => $label, 'nilai' => $nilai];
+        }
+
+        return $baris;
     }
 
     public function getRouteKeyName(): string

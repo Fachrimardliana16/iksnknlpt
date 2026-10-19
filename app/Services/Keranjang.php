@@ -168,6 +168,26 @@ class Keranjang
         $this->segarkan();
     }
 
+    /**
+     * Catatan pembeli untuk pesanannya (checklist F7-03).
+     *
+     * Disimpan di keranjang, bukan di sesi: keranjang tamu bertahan melewati
+     * penutupan peramban, dan catatan yang ditulis di halaman keranjang
+     * seharusnya ikut bertahan sama lama.
+     */
+    public function simpanCatatan(?string $catatan): void
+    {
+        $bersih = trim((string) $catatan);
+
+        $this->ambilAtauBuat()->update(['note' => $bersih === '' ? null : mb_substr($bersih, 0, 500)]);
+        $this->segarkan();
+    }
+
+    public function catatan(): string
+    {
+        return (string) ($this->ambil()?->note ?? '');
+    }
+
     public function kupon(): ?Coupon
     {
         $coupon = $this->ambil()?->coupon;

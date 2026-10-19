@@ -93,7 +93,7 @@
                                  pembaca layar hanya membacakan "tombol". --}}
                             <button type="button" class="btn-icon !border !border-line"
                                     aria-label="{{ __('site.product.decrease_qty') }}"
-                                    wire:click="$set('jumlah', {{ max(1, $jumlah - 1) }})">
+                                    wire:click="turunkanJumlah">
                                 <x-ikon name="minus" :size="16" />
                             </button>
                             <input id="jumlah" type="number" min="1" max="{{ max(1, $tersedia) }}"
@@ -101,7 +101,7 @@
                                    wire:model.live="jumlah">
                             <button type="button" class="btn-icon !border !border-line"
                                     aria-label="{{ __('site.product.increase_qty') }}"
-                                    wire:click="$set('jumlah', {{ min(max(1, $tersedia), $jumlah + 1) }})">
+                                    wire:click="naikkanJumlah">
                                 <x-ikon name="plus" :size="16" />
                             </button>
                         </div>
@@ -117,6 +117,7 @@
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row">
                     <button type="button" class="btn btn-primary flex-1" wire:click="tambah"
                             @disabled($tersedia < 1)>
+                        <x-ikon name="cart" :size="18" />
                         {{ __('site.product.add_to_cart') }}
                     </button>
                     <button type="button" class="btn btn-outline flex-1" wire:click="tambah(true)"
@@ -124,6 +125,17 @@
                         {{ __('site.product.buy_now') }}
                     </button>
                 </div>
+
+                {{-- Bagikan ke WhatsApp (checklist F6-05). Tombolnya hanya muncul
+                     bila nomor WhatsApp terisi di pengaturan; tanpa nomor, tautan
+                     wa.me mengarah ke halaman galat WhatsApp. --}}
+                @if ($tautanWhatsApp)
+                    <a href="{{ $tautanWhatsApp }}" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-ghost mt-3 w-full">
+                        <x-ikon name="whatsapp" :size="18" />
+                        {{ __('site.product.share_whatsapp') }}
+                    </a>
+                @endif
 
                 <div class="measure-line my-6"></div>
 
@@ -136,6 +148,26 @@
                     </div>
                 </div>
 
+                {{-- Spesifikasi teknis terurut (checklist F6-04). Hanya baris yang
+                     punya label dan isi yang ditampilkan; baris setengah terisi
+                     yang lolos dari panel admin tidak menghasilkan garis kosong
+                     di halaman pembeli. --}}
+                @if ($spesifikasi !== [])
+                    <div class="measure-line my-6"></div>
+
+                    <div>
+                        <p class="label">{{ __('site.product.specification') }}</p>
+                        <dl class="mt-3 divide-y divide-[var(--c-line-soft)] border-y border-line-soft">
+                            @foreach ($spesifikasi as $baris)
+                                <div class="grid grid-cols-[minmax(0,9rem)_1fr] gap-3 py-2.5">
+                                    <dt class="text-sm text-muted">{{ $baris['label'] }}</dt>
+                                    <dd class="tech text-sm">{{ $baris['nilai'] }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </div>
+                @endif
+
                 <div class="measure-line my-6"></div>
 
                 <dl class="grid grid-cols-2 gap-4 text-sm">
@@ -144,11 +176,11 @@
                         <dd class="tech mt-1">{{ $product->sku }}</dd>
                     </div>
                     <div>
-                        <dt class="part-no">Berat</dt>
+                        <dt class="part-no">{{ __('site.product.weight') }}</dt>
                         <dd class="tech mt-1">{{ number_format(($variant?->berat() ?? $product->weight_gram) / 1000, 2, ',', '.') }} kg</dd>
                     </div>
                     <div>
-                        <dt class="part-no">Varian</dt>
+                        <dt class="part-no">{{ __('site.product.variant_col') }}</dt>
                         <dd class="tech mt-1">{{ $variant?->nama() ?? '-' }}</dd>
                     </div>
                     <div>
@@ -160,16 +192,38 @@
         </div>
 
         {{-- Bar aksi lengket. Hanya di bawah 1024px, tempat keranjang paling
-             mungkin terlewat karena tombol ikut tergulir keluar layar. --}}
+             mungkin terlewat karena tombol ikut tergulir keluar layar.
+
+             Isinya harga, pengatur jumlah, dan label tombol yang menyebut apa
+             yang akan ditambahkan. Label statis "Tambah ke Keranjang" menyembunyikan
+             dua hal yang mahal: jumlah yang sudah diubah, dan varian yang
+             sedang dipilih. --}}
         <div class="fixed inset-x-0 z-30 border-t border-line-soft bg-surface p-3 lg:hidden"
              style="bottom: calc(60px + env(safe-area-inset-bottom, 0px))">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
                 <div class="min-w-0 flex-1">
                     <p class="tech truncate text-lg font-medium">{{ rupiah($harga) }}</p>
-                    <p class="truncate text-xs text-muted">{{ $product->judul() }}</p>
+                    <p class="truncate text-xs text-muted">
+                        {{ $varian?->nama() ?? $product->judul() }}
+                        @if ($tersedia > 0) · {{ __('site.product.in_stock', ['count' => $tersedia]) }} @endif
+                    </p>
                 </div>
-                <button type="button" class="btn btn-primary flex-none" wire:click="tambah"
+
+                <div class="flex flex-none items-center">
+                    <button type="button" class="btn-icon !h-10 !w-10 !border !border-line"
+                            aria-label="{{ __('site.product.decrease_qty') }}" wire:click="turunkanJumlah">
+                        <x-ikon name="minus" :size="14" />
+                    </button>
+                    <span class="tech w-9 text-center text-sm" aria-live="polite">{{ $jumlah }}</span>
+                    <button type="button" class="btn-icon !h-10 !w-10 !border !border-line"
+                            aria-label="{{ __('site.product.increase_qty') }}" wire:click="naikkanJumlah">
+                        <x-ikon name="plus" :size="14" />
+                    </button>
+                </div>
+
+                <button type="button" class="btn btn-primary flex-none !min-h-[44px]" wire:click="tambah"
                         @disabled($tersedia < 1)>
+                    <x-ikon name="cart" :size="16" />
                     {{ __('site.product.add_to_cart') }}
                 </button>
             </div>

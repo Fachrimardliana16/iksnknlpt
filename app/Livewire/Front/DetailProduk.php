@@ -7,9 +7,19 @@ use App\Models\ProductVariant;
 use App\Services\Keranjang;
 use App\Support\Pengaturan;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
+/**
+ * Halaman detail produk (checklist F6-03 sampai F6-08).
+ *
+ * Halaman ini punya satu pekerjaan yang harus benar: memberi tahu pembeli
+ * harga dan stok untuk varian yang sedang dipilih, lalu mengirim pilihannya ke
+ * keranjang. Karena itu harga, stok, dan label tombol dihitung dari varian
+ * aktif — bukan dari harga dasar produk — dan semuanya dihitung di server.
+ */
+#[Layout('layouts.front')]
 class DetailProduk extends Component
 {
     public Product $product;
@@ -39,13 +49,48 @@ class DetailProduk extends Component
 
         // Dihitung sekali per tampilan, bukan per render. Penulisan per render
         // akan menghasilkan ribuan UPDATE per hari untuk satu produk populer.
+        //
+        // Kenaikan langsung pada kolom (increment) dipilih, bukan membaca nilai
+        // lalu menulisnya kembali: dua permintaan yang tiba bersamaan dengan
+        // cara baca-lalu-tulis menghasilkan satu kenaikan yang hilang.
         $this->product->increment('view_count');
     }
 
     public function pilihVarian(int $id): void
     {
+        // Hanya varian milik produk ini yang diterima. Tanpa pemeriksaan,
+        // id dari produk lain dapat dikirim ke server dan harga yang tampil
+        // menjadi milik produk yang tidak sedang dibuka.
+        $varian = $this->product->variants->firstWhere('id', $id);
+
+        if ($varian === null) {
+            return;
+        }
+
         $this->variantId = $id;
         $this->jumlah = 1;
+        $this->pesan = null;
+    }
+
+    /** Tombol − pada pemilih jumlah. Batasnya dijaga di server. */
+    public function turunkanJumlah(): void
+    {
+        $this->jumlah = max(1, $this->jumlah - 1);
+        $this->pesan = null;
+    }
+
+    /**
+     * Tombol + pada pemilih jumlah.
+     *
+     * Batas atasnya stok yang dapat dijual. Sebelumnya batas ini hanya ada di
+     * atribut max pada input, sehingga mengetik angka lebih besar tetap lolos;
+     * checkout yang menolaknya, setelah pembeli mengisi seluruh data kirim.
+     */
+    public function naikkanJumlah(): void
+    {
+        $batas = max(1, $this->tersediaUntukDijual());
+
+        $this->jumlah = min($batas, $this->jumlah + 1);
         $this->pesan = null;
     }
 
@@ -88,6 +133,33 @@ class DetailProduk extends Component
         //
     }
 
+    /**
+     * Tautan WhatsApp dengan pesan yang sudah menyebut produk dan variannya.
+     *
+     * Nama varian ikut disebut karena harga dan ketersediaan berbeda per
+     * varian; tanpa itu penjual harus bertanya ulang varian mana yang dimaksud.
+     */
+    public function tautanWhatsApp(): ?string
+    {
+        $nomor = preg_replace('/\D/', '', (string) Pengaturan::instance()?->teks('whatsapp_number'));
+
+        if ($nomor === '') {
+            return null;
+        }
+
+        $varian = $this->varian();
+
+        $pesan = sprintf(
+            'Halo %s, saya mau tanya %s (%s)%s. Stoknya masih ada?',
+            Pengaturan::instance()->teks('site_name'),
+            $this->product->judul(),
+            $this->product->sku,
+            $varian === null ? '' : ' varian '.$varian->nama(),
+        );
+
+        return 'https://wa.me/'.$nomor.'?text='.rawurlencode($pesan);
+    }
+
     private function varian(): ?ProductVariant
     {
         if ($this->variantId === null) {
@@ -98,10 +170,18 @@ class DetailProduk extends Component
             ->firstWhere('id', $this->variantId);
     }
 
+    private function tersediaUntukDijual(): int
+    {
+        return $this->varian()?->stokTersedia() ?? 0;
+    }
+
     public function render(): View
     {
         $toko = Pengaturan::instance();
         $varian = $this->varian();
+        $tersedia = $this->tersediaUntukDijual();
+        $harga = $varian?->hargaAkhir() ?? $this->product->hargaMulai();
+        $spesifikasi = $this->product->spesifikasi();
 
         $terkait = Product::query()
             ->terbit()
@@ -111,11 +191,57 @@ class DetailProduk extends Component
             ->take(4)
             ->get();
 
+        $judul = $this->product->judul();
+        $mediaUtama = $this->product->gambarUtama();
+        $gambarOg = $mediaUtama?->url('og');
+
+        $deskripsiMeta = trim(strip_tags(
+            $this->product->ringkasan()
+                ?: mb_substr($this->product->deskripsi(), 0, 160)
+        ));
+
         return view('livewire.front.detail-produk', [
             'varian' => $varian,
             'terkait' => $terkait,
-            'tersedia' => $varian?->stokTersedia() ?? 0,
-            'harga' => $varian?->hargaAkhir() ?? $this->product->hargaMulai(),
-        ])->title($this->product->judul().' · '.$toko->teks('site_name'));
+            'tersedia' => $tersedia,
+            'harga' => $harga,
+            'spesifikasi' => $spesifikasi,
+            'tautanWhatsApp' => $this->tautanWhatsApp(),
+        ])
+            ->title($judul.' · '.$toko->teks('site_name'))
+            ->layoutData([
+                'kanonikal' => route('front.products.show', $this->product->slug),
+                'metaOg' => [
+                    'tipe' => 'product',
+                    'judul' => $judul,
+                    'deskripsi' => $deskripsiMeta !== '' ? $deskripsiMeta : $toko->teks('site_tagline'),
+                    'gambar' => filled($gambarOg) ? url($gambarOg) : null,
+                    'alt' => $mediaUtama?->alt() ?? $judul,
+                ],
+                // Data terstruktur diletakkan di dalam <body> dan diteruskan
+                // lewat layoutData, bukan lewat @push/@stack.
+                //
+                // Livewire merender komponen halaman lebih dulu, baru
+                // menyuntikkan hasilnya ke layout. Isi @push dari komponen
+                // karena itu tidak pernah sampai ke @stack milik layout, dan
+                // seluruh blok JSON-LD hilang tanpa galat apa pun.
+                'kepala' => view('partials.front.data-terstruktur', [
+                    'produk' => $this->product,
+                    'sku' => $this->product->variants
+                        ->where('is_active', true)
+                        ->map(fn (ProductVariant $v) => [
+                            'sku' => $v->sku_variant,
+                            'nama' => $v->nama(),
+                            'harga' => number_format($v->hargaAkhir(), 2, '.', ''),
+                            'stok' => $v->stokTersedia(),
+                        ])
+                        ->values()
+                        ->all(),
+                    'deskripsi' => $deskripsiMeta,
+                    'gambar' => filled($gambarOg) ? url($gambarOg) : null,
+                    'kategori' => $this->product->category?->nama(),
+                    'toko' => $toko->teks('site_name'),
+                ])->render(),
+            ]);
     }
 }

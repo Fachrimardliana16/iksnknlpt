@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Surat Jalan {{ $order->order_number }}</title>
     <style>
-        @page { size: A5 landscape; margin: 10mm; }
+        @page { size: A4; margin: 10mm; }
 
         * { box-sizing: border-box; }
 
@@ -85,6 +85,8 @@
     </style>
 </head>
 <body>
+
+@include('cetak._salinan')
 
 <div class="tanpa-cetak" style="margin-bottom:10px">
     <button type="button" data-aksi="cetak" style="padding:7px 14px;font:inherit;cursor:pointer">Cetak</button>

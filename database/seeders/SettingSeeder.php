@@ -66,6 +66,8 @@ class SettingSeeder extends Seeder
             ]), $G(GrupPengaturan::Pembayaran), 'json', 'Rekening transfer manual', true, false],
             ['tax_percent', '0', $G(GrupPengaturan::Pembayaran), 'number', 'Pajak (%)', false, false],
             ['shipping_flat_rate', '0', $G(GrupPengaturan::Pembayaran), 'number', 'Ongkir datar', false, false],
+            ['shipping_couriers', json_encode(['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia']), $G(GrupPengaturan::Pembayaran), 'json', 'Daftar kurir', false, true],
+            ['shipping_courier_default', 'JNE', $G(GrupPengaturan::Pembayaran), 'text', 'Kurir bawaan', false, true],
 
             // ── Tab 5: Lanjutan ───────────────────────────────────────
             ['maintenance_mode', '0', $G(GrupPengaturan::Lanjutan), 'boolean', 'Mode pemeliharaan', false, true],

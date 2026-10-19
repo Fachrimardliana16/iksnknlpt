@@ -36,6 +36,24 @@
                 <x-ikon name="box" :size="17" />
                 Surat jalan
             </a>
+
+            {{-- Kirim ulang notifikasi (checklist F8-10). Ditaruh di sebelah
+                 cetak karena keduanya dipakai untuk hal yang sama: pembeli
+                 mengaku belum menerima apa pun. --}}
+            <div class="flex items-center gap-2">
+                <select wire:model="kejadianKirimUlang" class="field py-1.5 text-sm" aria-label="Jenis notifikasi">
+                    <option value="dibuat">Pesanan diterima</option>
+                    <option value="dibayar">Pembayaran diterima</option>
+                    <option value="dikirim">Pesanan dikirim</option>
+                </select>
+                <button type="button" class="btn btn-outline"
+                        wire:click="kirimUlangNotifikasi"
+                        wire:loading.attr="disabled" wire:target="kirimUlangNotifikasi">
+                    <x-ikon name="mail" :size="17" />
+                    <span wire:loading.remove wire:target="kirimUlangNotifikasi">Kirim ulang</span>
+                    <span wire:loading wire:target="kirimUlangNotifikasi">Mengirim…</span>
+                </button>
+            </div>
         </div>
     </div>
 
