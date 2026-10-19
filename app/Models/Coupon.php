@@ -32,7 +32,7 @@ class Coupon extends Model
             'type' => TipeKupon::class,
             'value' => 'decimal:2',
             'min_spend' => 'decimal:2',
-            'max_discount' => 'decimal:2',
+            'max_discount' => \App\Casts\BatasAtauTangga::class,
             'quota' => 'integer',
             'used_count' => 'integer',
             'starts_at' => 'datetime',
@@ -95,12 +95,39 @@ class Coupon extends Model
 
     public function hitungPotongan(float $subtotal, float $ongkir = 0.0): float
     {
+        // Kupon bertingkat (Fase 2: P2-06) memakai tangga sendiri: potongan
+        // mengikuti besar belanja, bukan satu nilai tetap. Diperiksa lebih
+        // dulu supaya nilai di kolom `value` tidak ikut dipakai.
+        $bertingkat = \App\Support\KuponLanjutan::potonganBertingkat($this, $subtotal);
+
+        if ($bertingkat !== null) {
+            return $bertingkat;
+        }
+
         return $this->type->hitung(
             $subtotal,
             (float) $this->value,
-            $this->max_discount === null ? null : (float) $this->max_discount,
+            $this->max_discountBiasa(),
             $ongkir,
         );
+    }
+
+    /**
+     * Batas potongan biasa, atau null bila kolomnya berisi tangga bertingkat.
+     *
+     * Satu kolom dipakai dua cara: angka untuk batas potongan biasa, larik JSON
+     * untuk tangga (Fase 2: P2-06). Cast yang membaca keduanya adalah
+     * App\Casts\BatasAtauTangga.
+     */
+    public function max_discountBiasa(): ?float
+    {
+        $nilai = $this->max_discount;
+
+        if ($nilai === null || is_array($nilai)) {
+            return null;
+        }
+
+        return (float) $nilai;
     }
 
     public function potonganOngkir(float $subtotal, float $ongkir): float

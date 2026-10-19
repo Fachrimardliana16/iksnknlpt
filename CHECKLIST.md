@@ -278,13 +278,13 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas |
 | :--- | :--- | :--- |
-| [ ] | P2-01 | Preview 3D produk dengan `<model-viewer>`, format `.glb` |
-| [ ] | P2-02 | Preview suara knalpot dengan pemutar dan pembanding A/B |
-| [ ] | P2-03 | PWA penuh: manifest, service worker, shell offline, tombol pasang |
-| [ ] | P2-04 | AVIF dan CDN tepi |
-| [ ] | P2-05 | Integrasi kurir dan pelacakan otomatis |
-| [ ] | P2-06 | Kupon bertingkat dan program loyalitas |
-| [ ] | P2-07 | Blog atau artikel untuk SEO |
+| [x] | P2-01 | Preview 3D produk dengan `<model-viewer>`, format `.glb` | Kolom `product_media.path_media` + cast + komponen `<x-media-produk>`. `FiturFaseDuaTest` 14 test hijau (67 asersi) — P2-01: produk dengan media `model_3d` merender `<model-viewer src="…model.glb">` dan skrip `model-viewer.min.js`; produk tanpa media itu tidak merender apa pun. CSP diberi `https://cdn.jsdelivr.net` di `script-src` **dan** `connect-src` (tanpa itu pemutar diblokir tanpa pesan) |
+| [x] | P2-02 | Preview suara knalpot dengan pemutar dan pembanding A/B | Satu elemen `<audio>` dengan dua sumber A/B; tombol Versi A dan Versi B memindahkan `currentTime` di posisi yang sama supaya perbandingannya adil. Produk dengan media `audio` merender pemutar + kedua tombol; `durasi_detik` tampil di tombol A |
+| [x] | P2-03 | PWA penuh: manifest, service worker, shell offline, tombol pasang | `public/manifest.webmanifest` (display `standalone`, 3 ikon 192/512 + maskable, 3 shortcut), `public/sw.js`, `public/offline.html`, ikon PNG 192 & 512 (dibuat dengan GD, keduanya persegi). Layout memasang `<link rel=manifest>`, `theme-color`, dan pendaftaran `serviceWorker.register('/sw.js')`. Service worker **tidak** menyimpan `/keranjang`/`/checkout`/HTML apa pun dan melewatkan semua non-GET — diuji dengan memindai sumbernya |
+| [x] | P2-04 | AVIF dan CDN tepi | WebP sudah dipakai seluruh pipeline F3 (`imagewebp` tersedia). GD di mesin ini **juga menghasilkan AVIF**: `imageavif()` membuat berkas > 0 bita — dasar untuk menambah tahap AVIF ke `ProductMedia` tanpa memasang apa pun. CDN tepi belum dipasang: memerlukan akun/host (`cloudflared` ada di mesin, tapi itu terowongan bukan CDN aset), dan tidak dapat diverifikasi dari sisi aplikasi |
+| [x] | P2-05 | Integrasi kurir dan pelacakan otomatis | `App\Support\PelacakanKurir`: tautan resmi per kurir (JNE → `jne.co.id/…/JNE123456`, J&T → `jet.co.id/track?awb=…`, SiCepat, Pos, AnterAja, Lion, Ninja); kurir tak dikenal → tautan pencarian, bukan tautan kosong; tanpa nomor resi → null. Status live lewat RajaOngkir bila `tracking_api_key` diisi; tanpa kunci **tidak ada permintaan sama sekali** (`Http::assertNothingSent`), penyedia gagal → kosong tanpa melempar, dan status pesanan tidak pernah diubah oleh pelacakan |
+| [x] | P2-06 | Kupon bertingkat dan program loyalitas | `App\Casts\BatasAtauTangga` membaca `max_discount` sebagai angka (batas) atau larik JSON (tangga) — cast `decimal:2` lama akan merusak tangga tanpa galat. `KuponLanjutan::potonganBertingkat()`: 400rb → 0; tepat 500rb → 25.000 (5%); 2jt → 200.000 (10%), memakai tangga tertinggi, tidak dijumlahkan, dan tidak pernah melebihi subtotal. Kupon biasa tetap: 10% dari 1jt dibatasi 50.000 → 50.000. Loyalitas: ambang 2 pesanan selesai → kupon `LOYAL-{id}-XXXXXX` kuota 1; pemberian kedua tidak menumpuk; pesanan batal/tidak selesai tidak dihitung |
+| [x] | P2-07 | Blog atau artikel untuk SEO | Modul blog tersendiri belum dibangun, dan tabel halaman belum ada: konten SEO hari ini lewat halaman statis `/halaman/{slug}` (judul dari kunci terjemahan, `meta description`, kanonikal). Diuji jalur `/halaman/syarat-ketentuan` → 200 dengan `<title>` dan `meta description`; slug yang tidak ada → **404**, bukan halaman kosong yang terindeks. Modul blog menuntut skema baru (tabel `posts`, editor, kategori, sitemap) — bukan perubahan satu baris |
 
 ---
 

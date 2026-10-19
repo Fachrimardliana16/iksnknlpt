@@ -98,12 +98,17 @@ class SecurityHeaders
             "form-action 'self' {$paymentHosts}",
             "frame-ancestors 'self'",
             "object-src 'none'",
-            "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com",
+            // 'strict-dynamic' berlaku untuk skrip, tetapi modul yang dimuat
+            // <model-viewer> tetap memerlukan asalnya terdaftar — tanpa itu
+            // pemutar 3D (Fase 2: P2-01) tidak pernah muncul, tanpa pesan.
+            "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com https://cdn.jsdelivr.net",
             // Tailwind dan Livewire memasang gaya lewat atribut style, bukan tag.
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
-            "connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com",
+            // model-viewer mengambil .glb lewat fetch, jadi asalnya harus
+            // diizinkan di connect-src, bukan hanya di script-src.
+            "connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com https://cdn.jsdelivr.net",
             'frame-src '.$paymentHosts,
             "media-src 'self'",
             "worker-src 'self' blob:",

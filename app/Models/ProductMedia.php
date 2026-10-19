@@ -23,13 +23,16 @@ class ProductMedia extends Model
         'path_card',
         'path_full',
         'path_og',
+        'path_media',
         'width',
         'height',
         'byte_size',
+        'durasi_detik',
         'mime_detected',
         'content_hash',
         'alt_text_id',
         'alt_text_en',
+        'keterangan',
         'is_primary',
         'display_order',
     ];
@@ -78,6 +81,31 @@ class ProductMedia extends Model
         }
 
         return null;
+    }
+
+    /**
+     * URL berkas media 3D atau audio (Fase 2: P2-01, P2-02).
+     *
+     * Dipisahkan dari url() karena jalur berkasnya berbeda: gambar memakai
+     * turunan thumb/card/full/og, sedangkan .glb dan .mp3 disimpan apa adanya
+     * di path_media. Tanpa pemisahan ini, pemutar di halaman detail akan
+     * menerima jalur gambar dan gagal memuat dengan sunyi.
+     */
+    public function urlBerkas(): ?string
+    {
+        return filled($this->path_media) ? self::urlMedia($this->path_media) : null;
+    }
+
+    /** Media yang dapat diputar pembeli: model 3D atau contoh suara. */
+    public function dapatDiputar(): bool
+    {
+        // type di-cast ke enum TipeMedia, bukan string: membandingkannya
+        // langsung dengan 'model_3d' selalu false, dan pemutarnya tidak pernah
+        // dirender tanpa satu pun galat.
+        $nilai = $this->type instanceof \App\Enums\TipeMedia ? $this->type->value : (string) $this->type;
+
+        return in_array($nilai, ['model_3d', 'audio', 'video'], true)
+            && filled($this->path_media);
     }
 
     /**

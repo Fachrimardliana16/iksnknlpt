@@ -39,6 +39,26 @@
             <meta property="og:image:alt" content="{{ $metaOg['alt'] ?? $metaOg['judul'] }}">
         @endif
     @endisset
+    {{-- PWA (Fase 2: P2-03). Manifes memasang nama, ikon, dan tombol pasang;
+         service worker menyimpan aset statis dan halaman luring. Keduanya
+         diletakkan di <head> supaya peramban menemukannya sebelum aset lain
+         dimuat — manifes yang ditemukan terlambat tidak dianggap ada. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#111114">
+    <link rel="apple-touch-icon" href="/ikon-pwa-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{ $toko->teks('site_name', __('site.brand.fallback_name')) }}">
+
+    <script nonce="{{ csp_nonce() }}">
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {
+                    /* Pendaftaran gagal tidak boleh menghentikan halaman. */
+                });
+            });
+        }
+    </script>
+
     @if (filled($toko->teks('site_favicon')))
         <link rel="icon" href="{{ \App\Models\ProductMedia::urlMedia($toko->teks('site_favicon')) }}">
     @endif

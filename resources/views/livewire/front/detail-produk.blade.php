@@ -152,7 +152,9 @@
                      punya label dan isi yang ditampilkan; baris setengah terisi
                      yang lolos dari panel admin tidak menghasilkan garis kosong
                      di halaman pembeli. --}}
-                @if ($spesifikasi !== [])
+                <x-media-produk :media3d="$media3d" :audio="$audio" :judul="$product->judul()" />
+
+@if ($spesifikasi !== [])
                     <div class="measure-line my-6"></div>
 
                     <div>

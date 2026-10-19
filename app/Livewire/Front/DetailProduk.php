@@ -200,6 +200,11 @@ class DetailProduk extends Component
                 ?: mb_substr($this->product->deskripsi(), 0, 160)
         ));
 
+        // Media yang dapat diputar (Fase 2: P2-01, P2-02). Diambil dari
+        // relasi yang sudah dimuat, bukan kueri baru.
+        $media3d = $this->product->media->firstWhere(fn ($m) => (($m->type->value ?? $m->type) === 'model_3d') && $m->dapatDiputar());
+        $audio = $this->product->media->firstWhere(fn ($m) => (($m->type->value ?? $m->type) === 'audio') && $m->dapatDiputar());
+
         return view('livewire.front.detail-produk', [
             'varian' => $varian,
             'terkait' => $terkait,
@@ -207,6 +212,8 @@ class DetailProduk extends Component
             'harga' => $harga,
             'spesifikasi' => $spesifikasi,
             'tautanWhatsApp' => $this->tautanWhatsApp(),
+            'media3d' => $media3d,
+            'audio' => $audio,
         ])
             ->title($judul.' · '.$toko->teks('site_name'))
             ->layoutData([

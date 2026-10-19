@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tidak ada koneksi · Iksan Knalpot</title>
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            margin: 0; min-height: 100svh; display: grid; place-items: center;
+            background: #111114; color: #f4f4f5; padding: 24px;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+        .kotak { max-width: 420px; text-align: center; }
+        h1 { font-size: 20px; margin: 0 0 8px; }
+        p { color: #a1a1aa; font-size: 14px; line-height: 1.6; margin: 0 0 20px; }
+        a, button {
+            display: inline-block; padding: 10px 18px; border-radius: 8px;
+            background: #d9a441; color: #14140f; font-weight: 600;
+            text-decoration: none; border: 0; cursor: pointer; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="kotak">
+        <h1>Sedang tidak ada koneksi</h1>
+        <p>
+            Halaman ini diminta saat jaringan tidak tersedia. Halaman yang sudah
+            pernah dibuka dan gambar produk tetap dapat dilihat; pesanan dan
+            pembayaran memerlukan koneksi.
+        </p>
+        <button type="button" onclick="location.reload()">Coba lagi</button>
+    </div>
+</body>
+</html>

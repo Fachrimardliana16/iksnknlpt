@@ -1,0 +1,50 @@
+{
+    "name": "Iksan Knalpot",
+    "short_name": "Iksan Knalpot",
+    "description": "Knalpot racing dan sparepart — katalog, pesanan, dan pelacakan.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#111114",
+    "theme_color": "#111114",
+    "lang": "id",
+    "dir": "ltr",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/ikon-pwa-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ikon-pwa-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ikon-pwa-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Katalog",
+            "url": "/produk",
+            "description": "Lihat seluruh produk"
+        },
+        {
+            "name": "Keranjang",
+            "url": "/keranjang",
+            "description": "Lanjutkan pesanan"
+        },
+        {
+            "name": "Lacak pesanan",
+            "url": "/lacak",
+            "description": "Cek status kiriman"
+        }
+    ]
+}
