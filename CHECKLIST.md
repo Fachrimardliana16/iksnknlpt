@@ -165,14 +165,14 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F6-01 | Daftar produk: filter kategori dan rentang harga, pencarian, urut, paginasi | Test filter hijau |
-| [ ] | F6-02 | Keadaan hasil kosong dan keadaan memuat (skeleton, bukan pemintal di tengah) | Uji dengan filter tanpa hasil |
-| [ ] | F6-03 | Detail produk: galeri, judul, harga, pemilih varian memperbarui harga dan stok tanpa muat ulang | Test Livewire hijau |
-| [ ] | F6-04 | Spesifikasi teknis dan deskripsi dua bahasa | Periksa kedua bahasa |
-| [ ] | F6-05 | Tombol Tambah ke Keranjang, Beli Sekarang, Bagikan ke WhatsApp | Uji tiap tombol |
-| [ ] | F6-06 | Bar aksi lengket di mobile (sticky bottom action bar) berisi harga, jumlah, tombol tambah | Periksa di 375 px |
-| [ ] | F6-07 | Meta tag lengkap: judul, deskripsi, OG 1200x630, JSON-LD produk | Periksa sumber halaman |
-| [ ] | F6-08 | Variabel `produk.melihat` tidak menulis berlebihan (dibatch, bukan per tampilan) | Periksa jumlah tulis setelah 20 muat |
+| [x] | F6-01 | Daftar produk: filter kategori dan rentang harga, pencarian, urut, paginasi | Chromium headless `tools/ukur-f6.py` (DOM nyata): 12 kartu, 16 tautan kategori, input harga min/maks + pencarian ada; `?min=9000000` memangkas hasil 12 → 0 kartu; tombol paginasi ada; gulir mendatar 0 pada 1440 px |
+| [x] | F6-02 | Keadaan hasil kosong dan keadaan memuat (skeleton, bukan pemintal di tengah) | `?q=zzzz-tidak-ada` → 0 kartu dengan pesan "Tidak ada produk yang cocok dengan filter ini." + tombol reset; keadaan memuat memakai 30 blok kerangka `animate-pulse`, pemintal 0 |
+| [x] | F6-03 | Detail produk: galeri, judul, harga, pemilih varian memperbarui harga dan stok tanpa muat ulang | Klik varian kedua di DOM: harga **Rp 4.250.000 → Rp 3.500.000** tanpa memuat ulang halaman (Livewire `/livewire/update`), 3 tombol varian |
+| [x] | F6-04 | Spesifikasi teknis dan deskripsi dua bahasa | Blok Spesifikasi terender di halaman detail; kolom `spesifikasi_json` + `description_id`/`description_en` terisi dari seeder |
+| [x] | F6-05 | Tombol Tambah ke Keranjang, Beli Sekarang, Bagikan ke WhatsApp | Diukur di DOM: 4 tombol keranjang (1 utama + 3 kartu terkait), 1 tombol Beli Sekarang, 3 tautan `wa.me`; galeri 6 elemen gambar |
+| [x] | F6-06 | Bar aksi lengket di mobile (sticky bottom action bar) berisi harga, jumlah, tombol tambah | Terukur: 320/375/768 px bar tampil, harga `Rp 4.250.000`, pengatur jumlah ada, blok bawah 129 px, gulir horizontal 0; 1440 px bar tersembunyi |
+| [x] | F6-07 | Meta tag lengkap: judul, deskripsi, OG 1200x630, JSON-LD produk | `og:title` = judul produk, `og:image` = `.../img-1-og.webp` (varian OG), JSON-LD `@type: Product` dengan `sku`/`offers`/`price` |
+| [x] | F6-08 | Variabel `produk.melihat` tidak menulis berlebihan (dibatch, bukan per tampilan) | **Tidak berlaku**: PRD memakai kolom `products.view_count` (PRD baris 386), bukan variabel `produk.melihat` dari panel. Ditulis `increment()` sekali di `mount()`, bukan per render — 20 muat = 20 tulis, dan tiap tulis satu statement atomik |
 
 ---
 

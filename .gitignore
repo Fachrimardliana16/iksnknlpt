@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Profil Chromium dari harness pengukuran (tools/ukur-f6.py). Berisi cache dan
+# cookie sementara; ukurannya belasan MB per ukuran layar dan tidak perlu masuk
+# riwayat git.
+tools/out/profil-chrome/
