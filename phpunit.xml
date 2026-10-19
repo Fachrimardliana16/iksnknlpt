@@ -16,6 +16,13 @@
             <directory>app</directory>
         </include>
     </source>
+    <!--
+        expose_php adalah setelan php.ini dan tidak dapat diubah lewat <env>.
+        Di server, setel "expose_php = Off" di php.ini (atau jalankan artisan
+        serve dengan -d expose_php=0). Test HeaderPhpTest memeriksa nilai yang
+        benar-benar berlaku pada proses ini, supaya header X-Powered-By tidak
+        kembali tanpa ketahuan.
+    -->
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_KEY" value="base64:Fx8PzHZXrU4eKQbA8nJ2sV6yC0mDtLgRiW1oNuZkXcE="/>
