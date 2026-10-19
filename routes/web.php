@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BlokirIp;
 use App\Http\Middleware\SetLocale;
 use App\Livewire\Front\About;
 use App\Livewire\Front\Beranda;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 | parameter pada setiap rute, supaya URL tetap bersih.
 */
 
-Route::middleware(SetLocale::class)->group(function (): void {
+Route::middleware([SetLocale::class, BlokirIp::class])->group(function (): void {
     Route::get('/', Beranda::class)->name('front.home');
 
     Route::get('/produk', ProdukDaftar::class)->name('front.products.index');

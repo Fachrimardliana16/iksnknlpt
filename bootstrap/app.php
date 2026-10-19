@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\BlokirIp;
+use App\Http\Middleware\CatatKeamanan;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -47,11 +49,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             SecurityHeaders::class,
+            // Pencatatan dipasang di seluruh permintaan web, supaya
+            // penolakan di mana pun meninggalkan jejak. Pemeriksaan blokir
+            // TIDAK di sini: ia dipasang khusus pada rute publik di
+            // routes/web.php.
+            //
+            // Alasannya: panel admin memuat halaman untuk MEMBUKA blokir. Bila
+            // blokir diperiksa di grup web, pengguna panel yang sudah masuk
+            // ikut tertutup bersama halaman itu, dan kesalahan sandi berulang
+            // dari satu jaringan mengunci admin dari satu-satunya tempat untuk
+            // memperbaikinya.
+            CatatKeamanan::class,
         ]);
 
         $middleware->alias([
             'security.headers' => SecurityHeaders::class,
             'admin' => \App\Http\Middleware\PastikanAdmin::class,
+            'blokir.ip' => BlokirIp::class,
         ]);
 
         // Bahasa dari cookie. Dipasang pada grup web supaya berlaku di front

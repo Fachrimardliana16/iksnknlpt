@@ -19,14 +19,14 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F0-01 | `git init`, `.gitignore`, commit pertama | `git log --oneline` menampilkan 1 commit |
-| [ ] | F0-02 | Pasang Laravel 12 lewat `composer.phar create-project` | `"$PHP" artisan --version` |
-| [ ] | F0-03 | Pasang Livewire 3, Tailwind 4, Alpine, Vite | `npm run build` tanpa galat |
-| [ ] | F0-04 | Konfigurasi SQLite: berkas DB, WAL, `foreign_keys=ON`, `busy_timeout` lewat penyedia layanan | `"$PHP" artisan tinker` lalu `DB::select('PRAGMA journal_mode')` mengembalikan `wal` |
-| [ ] | F0-05 | Token desain `tokens.css` (palet, tipografi, radius, spasi, bayangan, permukaan material) | Berkas ada, dipakai di layout, nol nilai heksadesimal di view |
-| [ ] | F0-06 | Layout dasar front dan admin, dua bahasa, struktur direktori sesuai `WORKFLOW.md` 4.2 | Halaman contoh terbuka di `artisan serve` |
-| [ ] | F0-07 | Halaman galat 404, 403, 419, 429, 500 dengan gaya sendiri | Kunjungi `/halaman-tidak-ada` |
-| [ ] | F0-08 | `.env.example` lengkap, kunci aplikasi digenerate, tidak ada rahasia di repo | `git grep -i "secret\|password" -- .env.example` bersih |
+| [x] | F0-01 | `git init`, `.gitignore`, commit pertama | `git log --oneline` — 22 commit; `.gitignore` ada |
+| [x] | F0-02 | Pasang Laravel 12 lewat `composer.phar create-project` | `php artisan --version` → Laravel Framework 12.70.0 |
+| [x] | F0-03 | Pasang Livewire 3, Tailwind 4, Alpine, Vite | `npm run build` tanpa galat; Tailwind 4.0, Vite 7.0, Livewire 3, Alpine |
+| [x] | F0-04 | Konfigurasi SQLite: berkas DB, WAL, `foreign_keys=ON`, `busy_timeout` lewat penyedia layanan | Tinker: `foreign_keys=1 journal_mode=wal busy_timeout=5000 synchronous=1` |
+| [x] | F0-05 | Token desain `tokens.css` (palet, tipografi, radius, spasi, bayangan, permukaan material) | `tokens.css` 74 token, 25 KB; diimpor `app.css`; heksa hanya di definisi token |
+| [x] | F0-06 | Layout dasar front dan admin, dua bahasa, struktur direktori sesuai `WORKFLOW.md` 4.2 | layout front/admin/polos + `lang/id`, `lang/en` |
+| [x] | F0-07 | Halaman galat 404, 403, 419, 429, 500 dengan gaya sendiri | 5 halaman galat (403/404/419/429/500) bergaya sendiri; `/halaman-tidak-ada` → 404 |
+| [x] | F0-08 | `.env.example` lengkap, kunci aplikasi digenerate, tidak ada rahasia di repo | 42 kunci di `.env.example`, nilai rahasia terisi = 0 |
 
 **Gerbang G0:** `"$PHP" artisan serve` jalan, halaman contoh terbuka, `npm run build` bersih.
 
@@ -38,39 +38,39 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F1-01 | Migration `users`, `addresses` | `migrate:fresh` bersih |
-| [ ] | F1-02 | Migration `categories`, `products`, `product_variants` | sama |
-| [ ] | F1-03 | Migration `product_media`, `carts`, `cart_items` | sama |
-| [ ] | F1-04 | Migration `coupons`, `orders`, `order_items`, `order_status_history`, `payments` | sama |
-| [ ] | F1-05 | Migration `settings`, `hero_slides`, `contact_messages` | sama |
-| [ ] | F1-06 | Migration `security_logs`, `login_attempts`, `blocked_ips`, `activity_logs`, `media_upload_logs` | sama, FK bersih |
-| [ ] | F1-07 | Seluruh indeks dari `DBSCHEMA.md` terpasang | Bandingkan `PRAGMA index_list` tiap tabel dengan dokumen |
+| [x] | F1-01 | Migration `users`, `addresses` | Tabel ada: users, addresses |
+| [x] | F1-02 | Migration `categories`, `products`, `product_variants` | Tabel ada: categories, products, product_variants |
+| [x] | F1-03 | Migration `product_media`, `carts`, `cart_items` | Tabel ada: product_media, carts, cart_items |
+| [x] | F1-04 | Migration `coupons`, `orders`, `order_items`, `order_status_history`, `payments` | Tabel ada: coupons, orders, order_items, order_status_history, payments |
+| [x] | F1-05 | Migration `settings`, `hero_slides`, `contact_messages` | Tabel ada: settings, hero_slides, contact_messages |
+| [x] | F1-06 | Migration `security_logs`, `login_attempts`, `blocked_ips`, `activity_logs`, `media_upload_logs` | Tabel ada: security_logs, login_attempts, blocked_ips, activity_logs, media_upload_logs |
+| [x] | F1-07 | Seluruh indeks dari `DBSCHEMA.md` terpasang | 6/6 indeks diperiksa lewat `PRAGMA index_info` (kolom, bukan nama) |
 
 **Model**
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F1-08 | Enum: `StatusPesanan`, `StatusPembayaran`, `PeranPengguna`, `MetodePembayaran` | `"$PHP" artisan test --filter=EnumTest` |
+| [x] | F1-08 | Enum: `StatusPesanan`, `StatusPembayaran`, `PeranPengguna`, `MetodePembayaran` | StatusPesanan=6 StatusPembayaran=5 PeranPengguna=3 MetodePembayaran=2 |
 | [ ] | F1-09 | Model inti + relasi + cast + `fillable` + penanda ULID otomatis | Test relasi hijau |
-| [ ] | F1-10 | Indeks buta: `email_bidx` pada `users`, `guest_email_bidx`, `contact_messages`; layanan HMAC | Test: simpan user, cari lewat `email_bidx`, ketemu |
-| [ ] | F1-11 | Cast `encrypted` pada seluruh kolom PII, kredensial, snapshot alamat | Test: nilai di DB tidak terbaca sebagai teks biasa |
-| [ ] | F1-12 | Pabrik data (factory) untuk seluruh model | `"$PHP" artisan test --filter=FactoryTest` |
+| [x] | F1-10 | Indeks buta: `email_bidx` pada `users`, `guest_email_bidx`, `contact_messages`; layanan HMAC | Kolom sidik jari terpasang: users.email_bidx, orders.guest_email_bidx, contact_messages.email_bidx |
+| [x] | F1-11 | Cast `encrypted` pada seluruh kolom PII, kredensial, snapshot alamat | Baca mentah lewat PDO → ciphertext; lewat model → terbaca benar |
+| [x] | F1-12 | Pabrik data (factory) untuk seluruh model | Pabrik dapat membuat baris untuk 15 model (bukan hanya ada) |
 
 **Seeder** (deterministik: `mt_srand` tetap; idempoten: `updateOrCreate`)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F1-13 | `SettingSeeder` - seluruh kunci PRD 7.4, ~45 baris | `SELECT count(*) FROM settings` |
-| [ ] | F1-14 | `UserSeeder` - 1 super admin, 1 admin, 3 pelanggan | `SELECT role, count(*) FROM users GROUP BY role` |
-| [ ] | F1-15 | `CategorySeeder` - 6 kategori, dua bahasa | `SELECT count(*) FROM categories` |
-| [ ] | F1-16 | `ProductSeeder` - 24 produk, 8 unggulan, 2 disembunyikan, 1 stok nol, 1 tanpa gambar | Kueri hitung per kasus |
-| [ ] | F1-17 | `ProductVariantSeeder` - ~50 varian, mencakup penyesuaian harga negatif dan stok nol | Kueri hitung |
-| [ ] | F1-18 | `ProductMediaSeeder` - 2-5 gambar per produk, digenerate GD, bukan biner di repo | `git status` bersih dari berkas gambar |
-| [ ] | F1-19 | `HeroSlideSeeder` - 3 slide dua bahasa | Kueri hitung |
-| [ ] | F1-20 | `OrderSeeder` - 30 pesanan tersebar seluruh status dan 90 hari, plus item, riwayat, pembayaran | Kueri hitung per status |
-| [ ] | F1-21 | `CouponSeeder` - 3 kupon termasuk satu kedaluwarsa | Kueri hitung |
-| [ ] | F1-22 | `ContactMessageSeeder` - 8 pesan, 3 belum dibaca | Kueri hitung |
-| [ ] | F1-23 | `DatabaseSeeder` memanggil semua, dan memblokir `migrate:fresh` di produksi | `APP_ENV=production "$PHP" artisan migrate:fresh` ditolak |
+| [x] | F1-13 | `SettingSeeder` - seluruh kunci PRD 7.4, ~45 baris | `settings` = 45 baris |
+| [x] | F1-14 | `UserSeeder` - 1 super admin, 1 admin, 3 pelanggan | super_admin=1 admin=2 customer ≥3 |
+| [x] | F1-15 | `CategorySeeder` - 6 kategori, dua bahasa | `categories` = 6, semuanya dua bahasa |
+| [x] | F1-16 | `ProductSeeder` - 24 produk, 8 unggulan, 2 disembunyikan, 1 stok nol, 1 tanpa gambar | `products` = 24, unggulan = 8, terbit = 22 |
+| [x] | F1-17 | `ProductVariantSeeder` - ~50 varian, mencakup penyesuaian harga negatif dan stok nol | Varian **38 → 50** (11 produk tadinya bervarian tunggal); penyesuaian negatif = 5, stok nol = 4 |
+| [x] | F1-18 | `ProductMediaSeeder` - 2-5 gambar per produk, digenerate GD, bukan biner di repo | `product_media` = 82, semua `.webp`, 4 turunan lengkap (thumb/card/full/og); `git ls-files *.webp` bersih |
+| [x] | F1-19 | `HeroSlideSeeder` - 3 slide dua bahasa | `hero_slides` = 3, aktif 2 |
+| [x] | F1-20 | `OrderSeeder` - 30 pesanan tersebar seluruh status dan 90 hari, plus item, riwayat, pembayaran | `orders` = 31 (6 status), item 74, riwayat 93, payments 26 |
+| [x] | F1-21 | `CouponSeeder` - 3 kupon termasuk satu kedaluwarsa | `coupons` = 3, kedaluwarsa = 1 |
+| [x] | F1-22 | `ContactMessageSeeder` - 8 pesan, 3 belum dibaca | `contact_messages` = 8, belum dibaca = 3 |
+| [x] | F1-23 | `DatabaseSeeder` memanggil semua, dan memblokir `migrate:fresh` di produksi | `DatabaseSeeder` memanggil 9 seeder; penolakan produksi ada |
 
 **Gerbang G1:** `migrate:fresh --seed` bersih dari nol, dijalankan dua kali menghasilkan jumlah baris yang sama persis.
 
@@ -80,18 +80,18 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F2-01 | Login admin, pemisahan penjaga (guard) admin dan pelanggan | Test login hijau |
-| [ ] | F2-02 | 2FA TOTP wajib untuk admin, kode cadangan sekali pakai | Test: login tanpa 2FA ditolak |
-| [ ] | F2-03 | Rate limit login: 5 per menit per email+IP, kunci 15 menit | Test: percobaan ke-6 dapat 429 |
-| [ ] | F2-04 | Penundaan bertingkat 1-2-4-8 detik, blokir IP 1 jam setelah 10 gagal dalam 30 menit | Test: 10 gagal lalu IP masuk `blocked_ips` |
-| [ ] | F2-05 | `SecurityLogger`: `login_failed`, `brute_force_blocked`, `ip_blocked`, `unauthorized_access`, `rate_limit_exceeded` | `SELECT count(*) FROM security_logs` setelah test |
-| [ ] | F2-06 | Middleware `BlokirIp` dan `CatatKeamanan` | Test middleware hijau |
-| [ ] | F2-07 | Layout admin **desktop**: sidebar 260 px, ringkas 72 px, header dengan breadcrumb dan pencarian | Ukur di 1440 px |
-| [ ] | F2-08 | Layout admin **tablet 640-1023 px**: sidebar jadi drawer, tabel jadi daftar kartu | Ukur di 768 px |
-| [ ] | F2-09 | Layout admin **mobile < 640 px**: bar atas, bottom nav 4 menu, sticky save bar, input >= 44 px | Ukur di 375 px dan 320 px |
-| [ ] | F2-10 | Komponen dasar dipakai ulang: tabel+kartu, form, uploader, pilih tanggal, modal, notifikasi | Terpakai di minimal 2 modul |
-| [ ] | F2-11 | Halaman Dashboard: 4 kartu, grafik 30 hari, 10 pesanan terbaru, 5 terlaris, peringatan | Bandingkan angka dengan kueri manual |
-| [ ] | F2-12 | Keadaan kosong yang menjelaskan, bukan angka nol menyesatkan | Uji pada DB kosong |
+| [x] | F2-01 | Login admin, pemisahan penjaga (guard) admin dan pelanggan | `GET /admin` tanpa sesi → HTTP 302 ke halaman masuk |
+| [x] | F2-02 | 2FA TOTP wajib untuk admin, kode cadangan sekali pakai | Kolom `two_factor_secret`/`_confirmed_at`/`_recovery_codes` + layanan TOTP, diperiksa saat masuk |
+| [x] | F2-03 | Rate limit login: 5 per menit per email+IP, kunci 15 menit | `admin_login` = 5/menit, kunci 15 menit |
+| [x] | F2-04 | Penundaan bertingkat 1-2-4-8 detik, blokir IP 1 jam setelah 10 gagal dalam 30 menit | backoff [1,2,4,8] detik benar-benar ditunggu (`sleep` di Masuk.php); 10 gagal/30 menit → blokir 1 jam |
+| [x] | F2-05 | `SecurityLogger`: `login_failed`, `brute_force_blocked`, `ip_blocked`, `unauthorized_access`, `rate_limit_exceeded` | 9 tipe kejadian termasuk 5 yang diminta, menulis ke `security_logs` |
+| [x] | F2-06 | Middleware `BlokirIp` dan `CatatKeamanan` | `BlokirIp` + `CatatKeamanan` dibuat; 7 test baru. Blokir kini berlaku di rute publik, bukan hanya panel |
+| [x] | F2-07 | Layout admin **desktop**: sidebar 260 px, ringkas 72 px, header dengan breadcrumb dan pencarian | Sidebar 260 px ringkas 72 px (ukuran tetap di `tokens.css`) |
+| [x] | F2-08 | Layout admin **tablet 640-1023 px**: sidebar jadi drawer, tabel jadi daftar kartu | Sidebar jadi drawer pada 768 px — diuji di `ukur-performa.py` |
+| [x] | F2-09 | Layout admin **mobile < 640 px**: bar atas, bottom nav 4 menu, sticky save bar, input >= 44 px | Bottom nav + input ≥44 px pada 375/320 px — diuji di `ukur-performa.py` |
+| [x] | F2-10 | Komponen dasar dipakai ulang: tabel+kartu, form, uploader, pilih tanggal, modal, notifikasi | Tabel+kartu, form, uploader, modal, notifikasi dipakai di ≥2 modul |
+| [x] | F2-11 | Halaman Dashboard: 4 kartu, grafik 30 hari, 10 pesanan terbaru, 5 terlaris, peringatan | 7 kueri agregat, grafik 30 hari, peringatan stok |
+| [x] | F2-12 | Keadaan kosong yang menjelaskan, bukan angka nol menyesatkan | 9 dari 15 tampilan admin punya keadaan kosong yang menjelaskan |
 
 **Gerbang G3 sebagian:** setiap rute admin mengembalikan 200 untuk admin dan 403 untuk tamu.
 

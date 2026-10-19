@@ -19,32 +19,32 @@ class ProductSeeder extends Seeder
         ['Knalpot Full System NMAX V2 Titanium', 'Full System', 4250000, [['Titanium', 0, 12], ['Stainless', -750000, 8], ['Carbon', 850000, 5]]],
         ['Knalpot Full System PCX 160 Stainless', 'Full System', 3750000, [['Stainless', 0, 10], ['Titanium', 900000, 4]]],
         ['Knalpot Full System Aerox 155 Racing', 'Full System', 4650000, [['Carbon', 0, 6], ['Titanium', 350000, 0]]],
-        ['Knalpot Full System Vario 160', 'Full System', 3450000, [['Stainless', 0, 14]]],
+        ['Knalpot Full System Vario 160', 'Full System', 3450000, [['Stainless', 0, 14], ['Titanium', 780000, 6], ['Hitam Doff', -320000, 11]]],
 
         ['Slip-On Racing Vario 160', 'Slip-On', 1250000, [['Hitam Doff', 0, 22], ['Carbon', 275000, 9]]],
         ['Slip-On NMAX Standar Bunyi', 'Slip-On', 985000, [['Stainless', 0, 30], ['Hitam Doff', -50000, 18]]],
-        ['Slip-On Beat FI Street', 'Slip-On', 675000, [['Hitam Doff', 0, 41]]],
-        ['Slip-On Mio M3 Daily', 'Slip-On', 620000, [['Hitam Doff', 0, 25]]],
+        ['Slip-On Beat FI Street', 'Slip-On', 675000, [['Hitam Doff', 0, 41], ['Stainless', 165000, 13]]],
+        ['Slip-On Mio M3 Daily', 'Slip-On', 620000, [['Hitam Doff', 0, 25], ['Stainless', 140000, 17]]],
         ['Slip-On CB150R Sport', 'Slip-On', 1450000, [['Titanium', 0, 7], ['Carbon', 400000, 3]]],
 
-        ['Header Stainless Beat FI', 'Header', 450000, [['Standar', 0, 34]]],
+        ['Header Stainless Beat FI', 'Header', 450000, [['Standar', 0, 34], ['Besar', 110000, 9]]],
         ['Header Stainless Vario 125', 'Header', 495000, [['Standar', 0, 28], ['Besar', 125000, 12]]],
-        ['Header Racing Jupiter MX', 'Header', 585000, [['Standar', 0, 16]]],
+        ['Header Racing Jupiter MX', 'Header', 585000, [['Standar', 0, 16], ['Besar', 145000, 7]]],
 
         ['Muffler Carbon R15', 'Muffler', 1850000, [['Carbon', 0, 9], ['Titanium', 450000, 4]]],
-        ['Muffler Titanium CBR150R', 'Muffler', 2150000, [['Titanium', 0, 6]]],
-        ['Muffler Standar NMAX Original', 'Muffler', 780000, [['Standar', 0, 0]]],
+        ['Muffler Titanium CBR150R', 'Muffler', 2150000, [['Titanium', 0, 6], ['Carbon', -250000, 8]]],
+        ['Muffler Standar NMAX Original', 'Muffler', 780000, [['Standar', 0, 0], ['Replika', -95000, 0]]],
 
         ['Knalpot Racing Jupiter MX Drag', 'Racing', 2450000, [['Carbon', 0, 5], ['Titanium', 600000, 2]]],
-        ['Knalpot Racing Sonic 150R', 'Racing', 2250000, [['Stainless', 0, 4]]],
+        ['Knalpot Racing Sonic 150R', 'Racing', 2250000, [['Stainless', 0, 4], ['Titanium', 520000, 2]]],
         ['Knalpot Racing Satria F150', 'Racing', 2380000, [['Titanium', 0, 3], ['Carbon', 500000, 0]]],
-        ['Knalpot Racing Mio Drag 200cc', 'Racing', 1750000, [['Stainless', 0, 7]]],
+        ['Knalpot Racing Mio Drag 200cc', 'Racing', 1750000, [['Stainless', 0, 7], ['Carbon', 385000, 3]]],
 
-        ['Bracket Knalpot Universal', 'Aksesoris', 95000, [['Standar', 0, 120]]],
+        ['Bracket Knalpot Universal', 'Aksesoris', 95000, [['Standar', 0, 120], ['Besi Tebal', 35000, 64]]],
         ['Peredam Bunyi Baffle Universal', 'Aksesoris', 75000, [['Kecil', 0, 85], ['Besar', 15000, 60]]],
         ['Per Paku Knalpot Stainless', 'Aksesoris', 45000, [['Set 6', 0, 150], ['Set 12', 25000, 90]]],
         ['Selang Fleksibel Knalpot 40mm', 'Aksesoris', 65000, [['40mm', 0, 55], ['50mm', 18000, 40]]],
-        ['Sarung Tangan Bengkel Anti Panas', 'Aksesoris', 55000, [['Standar', 0, 70]]],
+        ['Sarung Tangan Bengkel Anti Panas', 'Aksesoris', 55000, [['Standar', 0, 70], ['Panjang', 22000, 38]]],
     ];
 
     /** Produk yang sengaja seluruh variannya nol, untuk menguji badge Habis. */

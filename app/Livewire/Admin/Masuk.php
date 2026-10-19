@@ -66,6 +66,22 @@ class Masuk extends Component
             return;
         }
 
+        // Percobaan yang gagal juga menaikkan penghitung per-email.
+        //
+        // Tanpa ini, satu alamat dengan banyak email dapat mencoba tanpa
+        // henti: batasnya dihitung per alamat, bukan per akun yang diserang.
+        $kunciEmail = 'admin-login-email:'.BlindIndex::buat(mb_strtolower(trim($this->email)), 'email_bidx');
+
+        if (RateLimiter::tooManyAttempts($kunciEmail, $batas[0])) {
+            $sisa = RateLimiter::availableIn($kunciEmail);
+
+            Keamanan::catat(TipeKejadianKeamanan::BatasLaju, request(), $this->email, ringkasan: 'Akun ini dibatasi '.$sisa.' detik');
+            $this->tungguDetik = $sisa;
+            $this->galat = 'Terlalu banyak percobaan untuk akun ini. Coba lagi setelah masa tunggu.';
+
+            return;
+        }
+
         if (Keamanan::ipDiblokir(request())) {
             $this->galat = 'Jaringan ini diblokir sementara.';
 
@@ -83,7 +99,11 @@ class Masuk extends Component
         $pesanSeragam = 'Email atau kata sandi tidak cocok.';
 
         if ($user === null || ! Hash::check($this->password, $user->password)) {
-            RateLimiter::hit($kunci, $batas[1] * 60);
+            // Masa kunci 15 menit, sesuai konfigurasi. Sebelumnya yang
+            // berlaku hanya 60 detik, sehingga batas 5 percobaan per menit
+            // dapat diulang terus-menerus tanpa henti.
+            RateLimiter::hit($kunci, (int) config('iksan.rate_limits.admin_login_lockout_minutes', 15) * 60);
+            RateLimiter::hit($kunciEmail, (int) config('iksan.rate_limits.admin_login_lockout_minutes', 15) * 60);
 
             $hasil = Keamanan::catatLoginGagal(request(), $this->email);
 
