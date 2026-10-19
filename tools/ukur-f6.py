@@ -41,6 +41,13 @@ CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 BATAS_SIAP_DETIK = 25
 BATAS_CSS_DETIK = 15
 
+SKRIP_GALAT = """
+(() => JSON.stringify({
+  galat: (window.__galat || []).length,
+  contoh: (window.__galat || []).slice(0, 5)
+}))()
+"""
+
 SKRIP_KATALOG = r"""
 (() => {
   const teks = (e) => (e ? (e.textContent || '').replace(/\s+/g, ' ').trim() : '');
@@ -192,6 +199,17 @@ class Peramban:
 
         self.kirim("Page.enable")
         self.kirim("Runtime.enable")
+        self.kirim("Log.enable")
+
+        # Penampung galat konsol dan pelanggaran CSP. Tanpa ini, CSP yang
+        # memblokir skrip hanya terlihat sebagai tombol yang diam, bukan galat.
+        self.kirim(
+            "Page.addScriptToEvaluateOnNewDocument",
+            source="window.__galat = [];"
+                   "window.addEventListener('error', e => window.__galat.push('error: ' + e.message));"
+                   "window.addEventListener('securitypolicyviolation', e =>"
+                   "  window.__galat.push('csp: ' + e.violatedDirective + ' ' + e.blockedURI));",
+        )
         self.kirim(
             "Emulation.setDeviceMetricsOverride",
             width=lebar,

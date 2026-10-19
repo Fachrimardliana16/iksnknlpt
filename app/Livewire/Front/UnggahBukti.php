@@ -93,7 +93,15 @@ class UnggahBukti extends Component
                 $this->addError($kolom, $daftar[0]);
             }
         } catch (Throwable $e) {
-            $this->galat = 'Bukti gagal diunggah: '.$e->getMessage();
+            // Pesan pengecualian TIDAK diteruskan ke pembeli: isinya dapat memuat
+            // jalur berkas server, nama tabel, atau kueri. Yang dicatat ke log,
+            // yang ditampilkan hanya pesan umum.
+            \Illuminate\Support\Facades\Log::warning('Bukti bayar gagal diunggah', [
+                'pesanan' => $this->ulid,
+                'sebab' => $e->getMessage(),
+            ]);
+
+            $this->galat = 'Bukti gagal diunggah. Coba lagi, atau hubungi kami lewat WhatsApp.';
         }
     }
 

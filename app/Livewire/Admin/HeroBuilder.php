@@ -373,7 +373,9 @@ class HeroBuilder extends Component
         } catch (ValidationException $e) {
             throw $e;
         } catch (Throwable $e) {
-            $this->galat = 'Slide gagal disimpan: '.$e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Slide hero gagal disimpan', ['sebab' => $e->getMessage()]);
+
+            $this->galat = 'Slide gagal disimpan. Periksa kembali isian dan berkas gambarnya.';
 
             return;
         }

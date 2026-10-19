@@ -118,7 +118,12 @@ class PengaturanSitus extends Component
                 auth()->id(),
                 'Gagal simpan pengaturan tab '.$this->tab,
             );
-            $this->galat = 'Pengaturan gagal disimpan: '.$e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Pengaturan gagal disimpan', [
+                'tab' => $this->tab,
+                'sebab' => $e->getMessage(),
+            ]);
+
+            $this->galat = 'Pengaturan gagal disimpan. Periksa kembali isian pada tab ini.';
 
             return;
         }
