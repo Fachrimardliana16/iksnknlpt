@@ -38,7 +38,7 @@ class TambahKeranjangCepat extends Component
 
     public function tambah(Keranjang $keranjang): void
     {
-        $varian = ProductVariant::query()->find($this->varianId);
+        $varian = ProductVariant::query()->with('product')->find($this->varianId);
 
         if ($varian === null || ! $varian->is_active) {
             $this->nada = 'danger';

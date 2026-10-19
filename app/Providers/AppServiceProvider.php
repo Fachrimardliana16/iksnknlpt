@@ -14,7 +14,15 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Keranjang sebagai singleton.
         //
+        // Tanpa ini, setiap app(Keranjang::class) membuat instance baru dengan
+        // cache kosong, dan setiap komponen Livewire yang menyentuhnya
+        // mengulang kueri keranjang — pada beranda tercatat 11 kali untuk satu
+        // permintaan. Kueri itu sama persis, jadi mengulanginya hanya membakar
+        // koneksi basis data. Pada muat pertama (keranjang belum ada) efeknya
+        // paling terasa: tiap panggilan mengulang pencarian "belum ada".
+        $this->app->singleton(\App\Services\Keranjang::class);
     }
 
     public function boot(): void

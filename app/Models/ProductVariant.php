@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use RuntimeException;
 
 class ProductVariant extends Model
 {
@@ -57,11 +58,32 @@ class ProductVariant extends Model
             : $this->variant_name_id;
     }
 
+    /**
+     * Harga jual: harga dasar produk ditambah penyesuaian varian.
+     *
+     * Memakai relasi product yang WAJIB sudah dimuat. Penjagaannya sengaja
+     * dibuat tegas, bukan diam-diam mengambil dari basis data: kalau relasinya
+     * belum termuat, yang terjadi adalah satu kueri per baris — pada sepuluh
+     * produk dengan variannya itu belasan kueri bernilai sama. Kesalahan
+     * seperti itu tidak terlihat pada data contoh yang kecil, jadi lebih baik
+     * ketahuan saat pengembangan.
+     *
+     * Relasi ini selalu terpasang otomatis lewat chaperone() ketika varian
+     * dimuat melalui produk, sehingga dalam pemakaian normal tidak perlu
+     * dimuat manual.
+     */
     public function hargaAkhir(): float
     {
-        $harga = (float) $this->product->base_price + (float) $this->price_adjustment;
+        if (! $this->relationLoaded('product')) {
+            throw new RuntimeException(sprintf(
+                'Relasi product belum dimuat pada varian #%s. Muat dengan '
+                ."with('variants.product') atau lewat relasi produk agar tidak "
+                .'menghasilkan kueri per baris.',
+                $this->id ?? '?',
+            ));
+        }
 
-        return max(0.0, $harga);
+        return max(0.0, (float) $this->product->base_price + (float) $this->price_adjustment);
     }
 
     /** Jumlah yang benar-benar dapat dijual. */

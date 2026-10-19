@@ -54,6 +54,7 @@ class PesananService
                 // dari keranjang tidak dipercaya.
                 /** @var ProductVariant|null $varian */
                 $varian = ProductVariant::query()
+                    ->with('product')
                     ->whereKey($item->product_variant_id)
                     ->lockForUpdate()
                     ->first();

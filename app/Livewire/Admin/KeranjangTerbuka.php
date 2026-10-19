@@ -83,7 +83,7 @@ class KeranjangTerbuka extends Component
     public function render(): View
     {
         $keranjang = Cart::query()
-            ->with(['user', 'items.product', 'items.variant', 'coupon'])
+            ->with(['user', 'items.product', 'items.variant.product', 'coupon'])
             ->when($this->umur === 'harian', fn ($q) => $q->where('updated_at', '>=', now()->subDay()))
             ->when($this->umur === 'tua', fn ($q) => $q->where('updated_at', '<', now()->subDay()))
             ->when(filled($this->cari), function ($q): void {

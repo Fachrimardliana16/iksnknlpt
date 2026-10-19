@@ -45,6 +45,14 @@ class StatusPesananService
         $hasil = DB::transaction(function () use ($order, $tujuan, $oleh, $catatan): Order {
             $asal = $order->status;
 
+            // Varian dimuat bersama produknya.
+            //
+            // Sejak hargaAkhir() mewajibkan relasi product terpasang, jalur
+            // apa pun yang menyentuh varian harus memuatnya. Dilakukan sekali
+            // di sini — bukan per baris di dalam perulangan — supaya tetap satu
+            // kueri meski pesanannya berisi banyak barang.
+            $order->load('items.variant.product');
+
             match ($tujuan) {
                 StatusPesanan::Completed => $this->selesaikanStok($order),
                 StatusPesanan::Cancelled => $this->lepaskanStok($order),

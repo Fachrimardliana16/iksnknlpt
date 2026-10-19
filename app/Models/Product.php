@@ -55,7 +55,15 @@ class Product extends Model
     /** @return HasMany<ProductVariant, $this> */
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class);
+        // chaperone() memasang balik relasi product pada setiap varian yang
+        // dimuat lewat produk ini.
+        //
+        // Tanpa itu, $variant->product pada hasil eager loading tetap dianggap
+        // belum dimuat dan $variant->hargaAkhir() memicu satu kueri per varian —
+        // tercatat 14 kueri untuk satu halaman beranda, semuanya mengambil baris
+        // yang sama. chaperone() yang menutupnya, bukan pemanggilan with() di
+        // setiap tempat, supaya tidak ada tempat yang terlupa.
+        return $this->hasMany(ProductVariant::class)->chaperone();
     }
 
     /** @return HasMany<ProductMedia, $this> */
@@ -67,7 +75,10 @@ class Product extends Model
     /** @return HasOne<ProductMedia, $this> */
     public function primaryMedia(): HasOne
     {
-        return $this->hasOne(ProductMedia::class)->where('is_primary', true);
+        // chaperone() sama alasannya dengan variants(): tanpa itu, gambarUtama()
+        // memicu satu kueri per produk meski relasi media sudah dimuat —
+        // tercatat 8 kueri pada satu halaman beranda.
+        return $this->hasOne(ProductMedia::class)->where('is_primary', true)->chaperone();
     }
 
     // ── Cakupan ─────────────────────────────────────────────────────
@@ -165,8 +176,28 @@ class Product extends Model
             ->sum(fn (ProductVariant $v) => $v->stokTersedia());
     }
 
+    /**
+     * Gambar utama kartu produk.
+     *
+     * Memakai koleksi media yang sudah dimuat bila tersedia.
+     *
+     * Relasi primaryMedia sengaja TIDAK diakses lebih dulu: ia relasi terpisah,
+     * sehingga memuatnya butuh kueri sendiri per produk — tercatat 8 kueri pada
+     * beranda dan 12 pada daftar produk, semuanya mengambil baris media yang
+     * sudah ada di memori. Koleksi media hampir selalu ikut dimuat bersama
+     * produk, jadi mencari di dalamnya selalu lebih murah.
+     *
+     * primaryMedia hanya dipakai sebagai jalan terakhir, ketika media belum
+     * dimuat sama sekali.
+     */
     public function gambarUtama(): ?ProductMedia
     {
+        if ($this->relationLoaded('media')) {
+            return $this->media->firstWhere('is_primary', true)
+                ?? $this->media->firstWhere('type', 'image')
+                ?? $this->media->first();
+        }
+
         return $this->primaryMedia
             ?? $this->media->firstWhere('type', 'image')
             ?? $this->media->first();
