@@ -51,6 +51,8 @@ return [
         'in_stock' => ':count in stock',
         'variant' => 'Variant',
         'quantity' => 'Quantity',
+        'increase_qty' => 'Increase quantity',
+        'decrease_qty' => 'Decrease quantity',
         'specification' => 'Specification',
         'description' => 'Description',
         'related' => 'More products',

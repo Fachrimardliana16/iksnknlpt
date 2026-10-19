@@ -265,7 +265,7 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 | [x] | F11-06 | Kompresi Brotli/Gzip, `Cache-Control` panjang untuk aset bercap hash | `public/.htaccess`: brotli/gzip, `max-age=31536000, immutable`, `nosniff` |
 | [x] | F11-07 | Ukur TTFB, LCP, CLS, INP pada 4G ponsel dan desktop; catat angka nyata | 4G: TTFB 336-1640 ms, LCP 960-4340 ms, CLS 0. Desktop: LCP 364-1272 ms |
 | [ ] | F11-08 | Uji di 320, 375, 768, 1024, 1440 px untuk seluruh halaman, front dan admin | Tidak ada scroll horizontal, tidak ada layout rusak |
-| [ ] | F11-09 | Uji aksesibilitas: kontras, fokus terlihat, label form, navigasi papan tuts | Periksa dengan alat pemeriksa |
+| [x] | F11-09 | Uji aksesibilitas: kontras, fokus terlihat, label form, navigasi papan tuts | axe-core WCAG 2.1 A+AA: 28 simpul bermasalah turun ke **0** di 7 halaman; kontras token diperbaiki (#5f5f66 / #9a9aa2), tombol −/+ diberi `aria-label` |
 | [ ] | F11-10 | Centang seluruh kriteria penerimaan `PRD.md` Bagian 15 dengan bukti | Setiap butir punya keluaran perintah atau tangkapan ukuran |
 | [x] | F11-11 | `migrate:fresh --seed` dari nol, lalu seluruh alur belanja dijalankan ulang | 15 test AlurBelanjaTest; di peramban sampai pesanan IK-20261019-GZVSMY |
 | [x] | F11-12 | Perbarui `README.md` berisi cara pasang, cara seed, dan akun demo | `README.md` ditulis ulang: pasang, seed, akun demo, catatan exFAT/antrean/build |

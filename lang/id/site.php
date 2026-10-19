@@ -51,6 +51,8 @@ return [
         'in_stock' => 'Stok :count',
         'variant' => 'Varian',
         'quantity' => 'Jumlah',
+        'increase_qty' => 'Tambah jumlah',
+        'decrease_qty' => 'Kurangi jumlah',
         'specification' => 'Spesifikasi',
         'description' => 'Deskripsi',
         'related' => 'Produk lain',

@@ -89,13 +89,19 @@
                     <div>
                         <label class="label" for="jumlah">{{ __('site.product.quantity') }}</label>
                         <div class="flex items-center">
-                            <button type="button" class="btn-icon !border !border-line" wire:click="$set('jumlah', {{ max(1, $jumlah - 1) }})">
+                            {{-- aria-label wajib: isinya hanya gambar, sehingga tanpa ini
+                                 pembaca layar hanya membacakan "tombol". --}}
+                            <button type="button" class="btn-icon !border !border-line"
+                                    aria-label="{{ __('site.product.decrease_qty') }}"
+                                    wire:click="$set('jumlah', {{ max(1, $jumlah - 1) }})">
                                 <x-ikon name="minus" :size="16" />
                             </button>
                             <input id="jumlah" type="number" min="1" max="{{ max(1, $tersedia) }}"
                                    class="field !w-20 !min-h-[44px] text-center"
                                    wire:model.live="jumlah">
-                            <button type="button" class="btn-icon !border !border-line" wire:click="$set('jumlah', {{ min(max(1, $tersedia), $jumlah + 1) }})">
+                            <button type="button" class="btn-icon !border !border-line"
+                                    aria-label="{{ __('site.product.increase_qty') }}"
+                                    wire:click="$set('jumlah', {{ min(max(1, $tersedia), $jumlah + 1) }})">
                                 <x-ikon name="plus" :size="16" />
                             </button>
                         </div>

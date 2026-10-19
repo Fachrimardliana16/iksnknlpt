@@ -125,8 +125,11 @@
 
     /* Teks */
     --c-text: #17171a;
-    --c-text-muted: #6b6b70;
-    --c-text-dim: #8a8a90;
+    --c-text-muted: #5f5f66;
+    /* 11 px, jadi harus lulus ambang teks biasa. Nilai lama #8a8a90 hanya
+       3.43:1 di atas surface dan 2.90:1 di atas surface-sunken — gagal
+       di ketiga latar. #5f5f66: 6.33 surface, 5.35 sunken, 5.91 bg. */
+    --c-text-dim: #5f5f66;
 
     /* Garis */
     --c-line: #c4c4c0;
@@ -190,8 +193,10 @@
     --c-surface-sunken: #101012;
 
     --c-text: #ededeb;
-    --c-text-muted: #8a8a90;
-    --c-text-dim: #5c5c63;
+    --c-text-muted: #9a9aa2;
+    /* Nilai lama #5c5c63 hanya 2.70:1 di atas surface — jauh di bawah ambang.
+       #9a9aa2: 6.40 surface, 6.80 sunken, 7.04 bg. */
+    --c-text-dim: #9a9aa2;
 
     --c-line: #4a4a50;
     --c-line-soft: #26262a;

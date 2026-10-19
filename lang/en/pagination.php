@@ -7,13 +7,19 @@ return [
     | Pagination Language Lines
     |--------------------------------------------------------------------------
     |
-    | The following language lines are used by the paginator library to build
-    | the simple pagination links. You are free to change them to anything
-    | you want to customize your views to better match your application.
+    | Used by the pagination views in resources/views/vendor/livewire.
+    | HTML entities are deliberately not used here: the views print these
+    | through {{ }}, which escapes them, so an entity would show up as
+    | literal text. Arrows are drawn in the view itself.
     |
     */
 
-    'previous' => '&laquo; Previous',
-    'next' => 'Next &raquo;',
+    'previous' => 'Previous',
+    'next' => 'Next',
+
+    'navigation' => 'Page navigation',
+    'showing' => 'Showing :first–:last of :total',
+    'go_to' => 'Go to page :page',
+    'of' => 'of',
 
 ];
