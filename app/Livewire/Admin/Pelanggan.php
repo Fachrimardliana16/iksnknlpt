@@ -130,6 +130,9 @@ class Pelanggan extends Component
      */
     public function ubahPeran(int $id, string $peranBaru): void
     {
+        // Mengubah peran berarti mengubah siapa yang boleh masuk panel.
+        $this->authorize('kelolaAkun', \App\Models\User::class);
+
         $saya = auth()->user();
 
         if ($saya === null) {
@@ -184,6 +187,8 @@ class Pelanggan extends Component
 
     public function hapus(int $id): void
     {
+        $this->authorize('kelolaAkun', \App\Models\User::class);
+
         $saya = auth()->user();
         $pengguna = User::query()->withCount('orders')->findOrFail($id);
 

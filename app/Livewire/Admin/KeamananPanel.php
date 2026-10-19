@@ -86,6 +86,11 @@ class KeamananPanel extends Component
      */
     public function bukaBlokir(string $hash): void
     {
+        // Membuka blokir adalah kebalikan dari perlindungan brute force.
+        // Menyalahgunakannya berarti mematikan perlindungan itu, jadi
+        // tindakannya dibatasi pada super admin.
+        $this->authorize('bukaBlokir', \App\Models\User::class);
+
         if (! preg_match('/^[a-f0-9]{64}$/i', $hash)) {
             $this->galatUmum = 'Sidik jari alamat tidak sah.';
 

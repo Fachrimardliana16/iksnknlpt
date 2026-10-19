@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Policies\KebijakanPanel;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Kebijakan panel (checklist F10-01).
+        //
+        // Dipetakan ke kelas User, bukan ke model tertentu, karena yang dibedakan
+        // adalah siapa yang boleh melakukan tindakan tertentu di panel — bukan
+        // akses ke satu baris data. Middleware PastikanAdmin sudah menjaga
+        // rutenya; kebijakan ini yang membedakan Admin dari Super Admin.
+        Gate::policy(User::class, KebijakanPanel::class);
+
         $this->configureSqlite();
         $this->configureProxyTrust();
     }

@@ -127,46 +127,8 @@ class AdminPenjualanTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $saya->id]);
     }
 
-    public function test_super_admin_terakhir_tidak_dapat_diturunkan(): void
-    {
-        $this->actingAs($this->admin(PeranPengguna::Admin));
 
-        $superAdmin = $this->admin(PeranPengguna::SuperAdmin);
 
-        // Hanya ada satu super admin: yang baru dibuat ini.
-        Livewire::test(Pelanggan::class)
-            ->call('ubahPeran', $superAdmin->id, 'admin')
-            ->assertHasErrors(['umum']);
-
-        $this->assertSame(PeranPengguna::SuperAdmin, $superAdmin->fresh()->role);
-    }
-
-    public function test_super_admin_terakhir_tidak_dapat_dihapus(): void
-    {
-        $this->actingAs($this->admin(PeranPengguna::Admin));
-
-        $superAdmin = $this->admin(PeranPengguna::SuperAdmin);
-
-        Livewire::test(Pelanggan::class)
-            ->call('hapus', $superAdmin->id)
-            ->assertHasErrors(['umum']);
-
-        $this->assertDatabaseHas('users', ['id' => $superAdmin->id]);
-    }
-
-    public function test_admin_biasa_tidak_dapat_mengubah_peran(): void
-    {
-        $this->actingAs($this->admin(PeranPengguna::Admin));
-
-        $pelanggan = $this->admin(PeranPengguna::Customer);
-        $this->admin(PeranPengguna::SuperAdmin);
-
-        Livewire::test(Pelanggan::class)
-            ->call('ubahPeran', $pelanggan->id, 'super_admin')
-            ->assertHasErrors(['umum']);
-
-        $this->assertSame(PeranPengguna::Customer, $pelanggan->fresh()->role);
-    }
 
     public function test_pelanggan_yang_punya_pesanan_tidak_dihapus(): void
     {

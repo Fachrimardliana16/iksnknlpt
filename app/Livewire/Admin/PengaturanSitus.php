@@ -85,6 +85,11 @@ class PengaturanSitus extends Component
 
     public function simpan(PenulisPengaturan $penulis): void
     {
+        // Diperiksa di server, bukan hanya dengan menyembunyikan tombol.
+        // Permintaan Livewire dapat dikirim langsung tanpa melewati antarmuka,
+        // sehingga menyembunyikan tombolnya saja tidak menghalangi apa pun.
+        $this->authorize('aturSitus', \App\Models\User::class);
+
         $this->bersihkanPesan();
 
         $this->validate(
@@ -162,6 +167,8 @@ class PengaturanSitus extends Component
     /** Hapus kredensial tersimpan. Nilainya tidak pernah ditampilkan lagi. */
     public function hapusKredensial(string $kunci): void
     {
+        $this->authorize('aturSitus', \App\Models\User::class);
+
         $this->bersihkanPesan();
 
         if (! in_array($kunci, KomponenPengaturan::KUNCI_RAHASIA, true)) {

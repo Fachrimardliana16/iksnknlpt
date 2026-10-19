@@ -9,6 +9,8 @@ use App\Models\Coupon;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Keranjang.
@@ -85,6 +87,25 @@ class Keranjang
      */
     public function tambah(ProductVariant $variant, int $jumlah = 1): int
     {
+        // Batas 60 penambahan per menit per sesi (PRD 11.1).
+        //
+        // Dipasang di sini, bukan di setiap komponen Livewire, karena metode ini
+        // adalah satu-satunya pintu masuk penambahan keranjang. Menaruhnya di
+        // komponen berarti setiap jalur baru harus ingat menambahkannya sendiri.
+        //
+        // Tanpa batas ini, satu skrip dapat memenuhi keranjang dengan ratusan
+        // baris, dan setiap baris menahan koneksi ke basis data saat checkout.
+        $kunci = 'keranjang-tambah:'.session()->getId();
+        $batas = (array) config('iksan.rate_limits.cart_add', [60, 1]);
+
+        if (RateLimiter::tooManyAttempts($kunci, (int) ($batas[0] ?? 60))) {
+            throw ValidationException::withMessages([
+                'keranjang' => 'Terlalu banyak menambahkan barang. Tunggu sebentar, lalu coba lagi.',
+            ]);
+        }
+
+        RateLimiter::hit($kunci, (int) (($batas[1] ?? 1) * 60));
+
         $cart = $this->ambilAtauBuat();
 
         $baris = $cart->items()

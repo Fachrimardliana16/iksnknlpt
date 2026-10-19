@@ -7,6 +7,7 @@ use App\Support\CacheKatalog;
 use App\Models\Product;
 use App\Support\Pengaturan;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -42,6 +43,41 @@ class ProdukDaftar extends Component
         if ($properti !== 'perHalaman') {
             $this->resetPage();
         }
+
+        // Pencarian dibatasi 30 per menit per alamat (PRD 11.1).
+        //
+        // Pencarian menyentuh beberapa tabel dengan LIKE berawalan wildcard,
+        // yang tidak dapat memakai indeks. Tanpa batas, satu skrip dapat
+        // menahan seluruh kapasitas basis data dengan kata kunci acak.
+        if ($properti === 'kata' && $this->kata !== '') {
+            $kunci = 'cari:'.$this->alamatPencari();
+            $batas = (array) config('iksan.rate_limits.search', [30, 1]);
+
+            if (RateLimiter::tooManyAttempts($kunci, (int) ($batas[0] ?? 30))) {
+                $this->kata = '';
+
+                $this->addError(
+                    'kata',
+                    'Terlalu banyak pencarian. Tunggu '.ceil(RateLimiter::availableIn($kunci) / 60).' menit lagi.',
+                );
+
+                return;
+            }
+
+            RateLimiter::hit($kunci, (int) (($batas[1] ?? 1) * 60));
+        }
+    }
+
+    /**
+     * Kunci pembatas pencarian.
+     *
+     * Memakai sidik jari alamat, bukan alamat langsung, karena alamat tidak
+     * pernah disimpan dalam bentuk asli di proyek ini. Pembatas tetap bekerja:
+     * alamat yang sama selalu menghasilkan sidik jari yang sama.
+     */
+    private function alamatPencari(): string
+    {
+        return \App\Support\Keamanan::hashIp(request()->ip());
     }
 
     public function bersihkan(): void
