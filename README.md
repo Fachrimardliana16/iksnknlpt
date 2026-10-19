@@ -1,59 +1,179 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Iksan Knalpot
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Toko knalpot: katalog, keranjang, pemesanan, pembayaran transfer manual, dan
+panel admin. Laravel 12 + Livewire 3 + Tailwind 4.
 
-## About Laravel
+Spesifikasi lengkap ada di `PRD.md`, `DBSCHEMA.md`, dan `WORKFLOW.md`.
+Kemajuan per tugas ada di `CHECKLIST.md`.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Menjalankan dari nol
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Yang harus ada di mesin
 
-## Learning Laravel
+- PHP **8.2 atau lebih baru** dengan ekstensi: `pdo_sqlite`, `sqlite3`,
+  `mbstring`, `openssl`, `fileinfo`, `curl`, `zip`, `intl`, `gd`, `gmp`
+- Composer 2
+- Node.js 20 atau lebih baru
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+`fileinfo`, `gd`, dan `gmp` bukan pilihan: `fileinfo` dipakai memeriksa isi
+berkas unggahan (bukan sekadar namanya), `gd` membuat empat turunan WebP dari
+setiap gambar, dan `gmp` menghitung sidik jari pencarian pada kolom terenkripsi.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Periksa sekali jalan:
 
-## Laravel Sponsors
+```bash
+php -m | grep -E "pdo_sqlite|sqlite3|fileinfo|mbstring|openssl|curl|zip|intl|gd|gmp"
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 2. Pasang
 
-### Premium Partners
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --force
+php artisan db:seed --force
+npm install
+npm run build
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Atau seluruh langkah di atas sekaligus:
 
-## Contributing
+```bash
+composer setup
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Nyalakan
 
-## Code of Conduct
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Pekerja antrean harus jalan di jendela terpisah. Notifikasi pesanan
+(email dan WhatsApp) dikirim sebagai pekerjaan antrean — tanpa ini, pesanan
+tetap masuk tetapi pemberitahuannya tidak pernah terkirim:
 
-## Security Vulnerabilities
+```bash
+php artisan queue:work
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 4. Akun demo
 
-## License
+Dibuat oleh `db:seed`, semuanya bersandi `password`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Peran | Surel |
+| :--- | :--- |
+| Super Admin | `admin@iksanknalpot.test` |
+| Admin (staf) | `staff@iksanknalpot.test` |
+
+Panel admin: `/admin/login`
+
+**Ganti kedua sandi ini sebelum dipakai sungguhan.**
+
+Yang membedakan keduanya:
+
+- **Super Admin** — mengubah pengaturan situs (termasuk kredensial pembayaran),
+  membuka blokir alamat, dan mengubah peran akun.
+- **Admin** — seluruh pekerjaan harian: produk, kategori, pesanan, pelanggan,
+  kupon, pesan kontak, verifikasi pembayaran.
+
+Perbedaan ini ditegakkan di server, bukan sekadar menyembunyikan tombol.
+
+---
+
+## Pengaturan penting
+
+Nilai yang sering perlu diubah ada di `/admin/pengaturan`:
+
+- **Rekening tujuan transfer** dan nama pemiliknya
+- **Nama dan deskripsi situs**, logo, favicon
+- **Mode pembayaran** — `manual` (transfer + unggah bukti), `midtrans`,
+  atau `both`
+- **Ongkir tetap** dan **persen pajak**
+- **Nomor WhatsApp** tujuan notifikasi
+
+Kredensial (kunci Midtrans, sandi SMTP) disimpan **terenkripsi** dan tidak
+pernah ditampilkan kembali — hanya bisa ditimpa atau dihapus.
+
+---
+
+## Pembayaran transfer manual
+
+Alurnya:
+
+1. Pembeli checkout, pesanan masuk berstatus `pending` / `unpaid`.
+2. Pembeli membuka halaman pesanan dan mengunggah bukti transfer.
+   Berkas diperiksa **isinya**, bukan namanya. Batas 3 unggahan per jam.
+3. Bukti masuk ke disk privat, tidak dapat diakses lewat URL biasa.
+   Admin melihatnya lewat URL bertanda tangan berumur 15 menit, dan sesi admin
+   tetap wajib.
+4. Admin memverifikasi dari `/admin/pembayaran`.
+5. Status pesanan berubah menjadi `paid`.
+
+Verifikasi **tidak menyentuh stok**. Stok baru berkurang saat pesanan
+ditandai **Selesai**, dan tahanan stok dilepas bila pesanan dibatalkan.
+
+Ringkasnya:
+
+| Kejadian | Stok fisik | Stok tertahan |
+| :--- | :--- | :--- |
+| Pesanan dibuat | tetap | **bertambah** |
+| Dibayar / diproses / dikirim | tetap | tetap |
+| Selesai | **berkurang** | **berkurang** |
+| Batal | tetap | **dilepas** |
+
+---
+
+## Menjalankan test
+
+```bash
+php artisan test
+```
+
+Test anggaran kueri ikut berjalan di sini: setiap halaman dijaga tidak melebihi
+15 kueri, dan biaya kueri tidak boleh tumbuh mengikuti jumlah produk.
+
+---
+
+## Catatan pemasangan
+
+**Aset frontend harus dibangun setiap kali blade berubah.** Tailwind 4 hanya
+menghasilkan kelas yang benar-benar ada saat build:
+
+```bash
+npm run build
+```
+
+Tanpa langkah ini kelas baru hilang tanpa pesan galat — halaman tetap terbuka
+dengan kode 200, tetapi tampilannya rusak.
+
+**`.htaccess` di `public/` mengatur kompresi dan cache.** Server bawaan PHP
+tidak melakukannya. Pada Apache, penyimpanan aset setahun dan kompresi Brotli
+langsung aktif. Pada Nginx, aturan yang setara harus ditulis di konfigurasi
+situs:
+
+```nginx
+gzip on;
+gzip_types text/css application/javascript image/svg+xml font/woff2;
+
+location ~* \.(css|js|woff2|webp|svg|ico)$ {
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    add_header Access-Control-Allow-Origin "*";
+}
+
+location ~* \.(html|php)$ {
+    add_header Cache-Control "no-store, must-revalidate";
+}
+```
+
+**Penyimpanan berkas.** Aplikasi menyajikan berkas `storage/` sendiri
+(disk `public` memakai `'serve' => true`). Jangan menjalankan
+`php artisan storage:link` di sini — pada berkas sistem exFAT tautan simbolik
+tidak didukung, dan perintah itu menghasilkan `Invalid argument` sambil
+melaporkan seolah berhasil.
+
+**Antrean.** Notifikasi tidak terkirim tanpa `queue:work`. Untuk mencoba cepat
+tanpa pekerja, setel `QUEUE_CONNECTION=sync` di `.env`.

@@ -130,13 +130,24 @@ class Product extends Model
             : $this->title_id;
     }
 
+    /**
+     * Deskripsi produk dalam bahasa yang diminta.
+     *
+     * Selalu mengembalikan teks. Kolom terjemahan boleh kosong — produk yang
+     * baru dibuat draf belum punya deskripsi, dan deskripsi bahasa Inggris
+     * sering tidak diisi. Sebelumnya nilai kosong diteruskan apa adanya,
+     * sehingga deklarasi `string` ditabrak dan halaman detail produk gagal
+     * total (500) untuk setiap produk yang deskripsinya kosong.
+     */
     public function deskripsi(?string $locale = null): string
     {
         $locale ??= app()->getLocale();
 
-        return $locale === 'en' && filled($this->description_en)
-            ? $this->description_en
-            : $this->description_id;
+        $teks = $locale === 'en'
+            ? ($this->description_en ?: $this->description_id)
+            : ($this->description_id ?: $this->description_en);
+
+        return $teks ?? '';
     }
 
     public function ringkasan(?string $locale = null): ?string

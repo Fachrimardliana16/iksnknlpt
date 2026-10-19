@@ -76,7 +76,7 @@
                         <div>
                             <label class="label" for="kurir">{{ __('site.checkout.courier') }}</label>
                             <select id="kurir" class="field" wire:model="kurir">
-                                @foreach ($kurir as $k)
+                                @foreach ($daftarKurir as $k)
                                     <option value="{{ $k }}">{{ $k }}</option>
                                 @endforeach
                             </select>

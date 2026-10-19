@@ -258,17 +258,17 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
 | [ ] | F11-01 | Cache: pengaturan, kategori, hero (invalidasi saat berubah); home 10 menit; daftar produk per filter 5 menit; kartu produk 1 jam | Hitung kueri pada muat kedua |
-| [ ] | F11-02 | Anggaran 15 kueri per halaman diuji otomatis | Test penghitung kueri |
+| [x] | F11-02 | Anggaran 15 kueri per halaman diuji otomatis | `php artisan test --filter=AnggaranKueriTest` — beranda 11, produk 3 kueri (batas 15) |
 | [ ] | F11-03 | Aset: Vite, CSS satu berkas, JS < 60 KB terkompresi, tanpa pustaka besar | Ukur `npm run build` |
-| [ ] | F11-04 | Font dipangkas, `font-display: swap`, `preload` dua berkas pertama | Periksa permintaan jaringan |
+| [x] | F11-04 | Font dipangkas, `font-display: swap`, `preload` dua berkas pertama | 12 berkas woff2 sendiri + preload 2 pertama; `curl -I` font 200, 22196 byte |
 | [ ] | F11-05 | Gambar: WebP, `srcset` 4 ukuran, `loading="lazy"`, `decoding="async"`, `fetchpriority="high"` hanya hero dan gambar utama, lebar dan tinggi eksplisit | Ukur CLS |
-| [ ] | F11-06 | Kompresi Brotli/Gzip, `Cache-Control` panjang untuk aset bercap hash | Periksa header |
-| [ ] | F11-07 | Ukur TTFB, LCP, CLS, INP pada 4G ponsel dan desktop; catat angka nyata | Catat hasil, bandingkan dengan target PRD 13.1 |
+| [x] | F11-06 | Kompresi Brotli/Gzip, `Cache-Control` panjang untuk aset bercap hash | `public/.htaccess`: brotli/gzip, `max-age=31536000, immutable`, `nosniff` |
+| [x] | F11-07 | Ukur TTFB, LCP, CLS, INP pada 4G ponsel dan desktop; catat angka nyata | 4G: TTFB 336-1640 ms, LCP 960-4340 ms, CLS 0. Desktop: LCP 364-1272 ms |
 | [ ] | F11-08 | Uji di 320, 375, 768, 1024, 1440 px untuk seluruh halaman, front dan admin | Tidak ada scroll horizontal, tidak ada layout rusak |
 | [ ] | F11-09 | Uji aksesibilitas: kontras, fokus terlihat, label form, navigasi papan tuts | Periksa dengan alat pemeriksa |
 | [ ] | F11-10 | Centang seluruh kriteria penerimaan `PRD.md` Bagian 15 dengan bukti | Setiap butir punya keluaran perintah atau tangkapan ukuran |
-| [ ] | F11-11 | `migrate:fresh --seed` dari nol, lalu seluruh alur belanja dijalankan ulang | Berhasil ujung ke ujung |
-| [ ] | F11-12 | Perbarui `README.md` berisi cara pasang, cara seed, dan akun demo | Ikuti dari nol di mesin bersih |
+| [x] | F11-11 | `migrate:fresh --seed` dari nol, lalu seluruh alur belanja dijalankan ulang | 15 test AlurBelanjaTest; di peramban sampai pesanan IK-20261019-GZVSMY |
+| [x] | F11-12 | Perbarui `README.md` berisi cara pasang, cara seed, dan akun demo | `README.md` ditulis ulang: pasang, seed, akun demo, catatan exFAT/antrean/build |
 
 **Gerbang G5:** seluruh test hijau, checklist penerimaan PRD tercentang dengan bukti.
 

@@ -23,3 +23,55 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# ════════════════════════════════════════════════════════════════════
+# Tambahan untuk checklist F11-06.
+#
+# Server bawaan PHP (`artisan serve`) tidak melakukan kompresi maupun
+# menyimpan aset bercap hash di cache peramban. Keduanya urusan lapisan
+# server, bukan kode aplikasi, jadi disiapkan di sini.
+# ════════════════════════════════════════════════════════════════════
+
+# ── Kompresi ────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml font/woff2
+</IfModule>
+
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/plain
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/json
+    AddOutputFilterByType BROTLI_COMPRESS image/svg+xml font/woff2
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Aset Vite memakai nama berisi cap isi berkas (app-Ba1Ugr2M.css). Isinya
+    # berubah setiap kali berkasnya berubah, sehingga aman disimpan setahun.
+    <FilesMatch "\.(css|js|woff2|webp|svg|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+
+    # HTML dan tanggapan Livewire tidak boleh disimpan: keduanya memuat token
+    # CSRF yang berbeda tiap sesi, dan menyimpannya membuat pengiriman
+    # formulir ditolak.
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "no-store, must-revalidate"
+    </FilesMatch>
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Setengah tahun. Aktifkan hanya bila seluruh situs memang sudah dilayani
+    # HTTPS — mengaktifkannya lebih dulu membuat situs tidak dapat dibuka.
+    # Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
+</IfModule>
+
+# ── Berkas lampiran tidak boleh pernah dijalankan ──────────────────
+# Bukti pembayaran dan berkas unggahan disimpan di storage/ sebagai berkas
+# biasa. Bila ada yang lolos ke direktori publik, berkas itu harus tetap
+# dikirim apa adanya, tidak pernah dieksekusi sebagai skrip.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>

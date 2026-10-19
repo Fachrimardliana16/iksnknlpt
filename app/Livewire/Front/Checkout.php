@@ -148,7 +148,11 @@ class Checkout extends Component
         return view('livewire.front.checkout', [
             'ringkasan' => $keranjang->ringkasan(),
             'modePembayaran' => $mode,
-            'kurir' => ['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia'],
+            // Diberi nama berbeda dari properti $kurir. Livewire menyuntikkan
+            // properti publik ke dalam view, dan nama yang sama membuat properti
+            // (string) menimpa variabel ini (daftar), sehingga @foreach atasnya
+            // gagal dan halaman checkout tidak dapat dirender sama sekali.
+            'daftarKurir' => ['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia'],
         ])->title(__('site.checkout.title').' · '.$toko->teks('site_name'));
     }
 }

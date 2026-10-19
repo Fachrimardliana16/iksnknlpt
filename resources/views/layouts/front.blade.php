@@ -24,6 +24,13 @@
         })();
     </script>
 
+    {{-- Dua berkas font pertama dimuat lebih awal (checklist F11-04).
+         Yang dimuat lebih awal hanya bobot yang benar-benar dipakai untuk teks
+         utama di layar pertama; menyiapkan semua berkas justru menghabiskan
+         lebar pita dan menunda hal lain. --}}
+    <link rel="preload" href="{{ asset('fonts/barlow-400-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('fonts/barlow-600-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-bg text-ink antialiased">
