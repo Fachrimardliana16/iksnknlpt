@@ -66,6 +66,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('ekspor/pesanan', [DokumenPesanan::class, 'eksporCsv'])->name('exports.orders');
 
+
         // ── Katalog ──────────────────────────────────────────────────
         // Pesan kontak, pelanggan, dan kupon melengkapi pekerjaan penjualan:
         // pesan yang belum dibaca, akun pembeli, dan kode potongan yang dipakai
@@ -91,3 +92,16 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('hero', HeroBuilder::class)->name('hero.index');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Berkas bukti pembayaran
+|--------------------------------------------------------------------------
+| Sengaja di luar awalan /admin: ini bukan halaman panel, melainkan pengiriman
+| berkas. Perlindungannya dua lapis — tanda tangan URL berumur 15 menit
+| (checklist F10-09) dan pemeriksaan sesi admin di dalam controller. Berkasnya
+| berada di disk privat karena memuat nama pengirim dan nomor rekening.
+*/
+Route::get('bukti-bayar/{payment:ulid}', \App\Http\Controllers\Admin\BuktiPembayaran::class)
+    ->middleware(['signed', 'throttle:30,1'])
+    ->name('admin.payments.proof');

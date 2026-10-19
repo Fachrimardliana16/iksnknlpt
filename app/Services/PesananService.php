@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\MetodePembayaran;
+use App\Jobs\KirimNotifikasiPesanan;
 use App\Enums\StatusPembayaran;
 use App\Enums\StatusPesanan;
 use App\Models\Order;
@@ -43,7 +44,7 @@ class PesananService
             throw new RuntimeException('Keranjang kosong.');
         }
 
-        return DB::transaction(function () use ($keranjang, $items, $data, $metode, $user): Order {
+        $pesanan = DB::transaction(function () use ($keranjang, $items, $data, $metode, $user): Order {
             $subtotal = 0.0;
             $berat = 0;
             $baris = [];
@@ -163,6 +164,18 @@ class PesananService
 
             return $order->fresh(['items']);
         }, 3);
+
+        // Notifikasi dikirim SETELAH transaksi terselesaikan.
+        //
+        // Pekerjaan antrean yang dikirim di dalam transaksi dapat berjalan
+        // sebelum datanya benar-benar tersimpan, terutama pada antrean
+        // database yang diproses proses lain. Pada antrean sinkron, ia bahkan
+        // memblokir permintaan checkout sampai surel terkirim.
+        if (config('iksan.notifikasi.kirim_saat_dibuat', true)) {
+            KirimNotifikasiPesanan::dispatch($pesanan->id, KirimNotifikasiPesanan::KEJADIAN_DIBUAT);
+        }
+
+        return $pesanan;
     }
 
     /**

@@ -21,6 +21,9 @@ use RuntimeException;
 #[Layout('layouts.admin')]
 class PesananDetail extends Component
 {
+    /** Alasan penolakan bukti transfer, diisi admin sebelum menolak. */
+    public string $alasanTolak = '';
+
     public string $ulid = '';
 
     /** Status tujuan yang dipilih admin, belum diterapkan. */
@@ -111,6 +114,61 @@ class PesananDetail extends Component
         ]);
 
         session()->flash('pesan-admin', 'Data pengiriman disimpan.');
+    }
+
+    /**
+     * Memverifikasi bukti transfer dan menandai pesanan lunas.
+     *
+     * Perpindahan status diserahkan kepada PembayaranManual, yang meneruskannya
+     * ke StatusPesananService. Menulis kolom status di sini akan melewati
+     * pengelolaan stok: pesanan lunas masih menahan stok, dan melewati service
+     * membuat stok fisik berkurang dua kali atau tidak sama sekali.
+     */
+    public function verifikasiPembayaran(int $pembayaranId): void
+    {
+        $bayar = \App\Models\Payment::query()
+            ->where('order_id', $this->cari($this->ulid)->id)
+            ->findOrFail($pembayaranId);
+
+        try {
+            app(\App\Services\Pembayaran\PembayaranManual::class)
+                ->verifikasi($bayar, auth()->id());
+
+            session()->flash('pesan-admin', 'Pembayaran diverifikasi. Pesanan ditandai lunas.');
+        } catch (\Throwable $e) {
+            $this->addError('pembayaran', 'Gagal memverifikasi: '.$e->getMessage());
+
+            return;
+        }
+
+        $this->redirectRoute('admin.orders.show', ['ulid' => $this->ulid], navigate: true);
+    }
+
+    public function tolakPembayaran(int $pembayaranId): void
+    {
+        if (trim($this->alasanTolak) === '') {
+            $this->addError('alasanTolak', 'Alasan penolakan wajib diisi supaya pembeli tahu apa yang harus diperbaiki.');
+
+            return;
+        }
+
+        $bayar = \App\Models\Payment::query()
+            ->where('order_id', $this->cari($this->ulid)->id)
+            ->findOrFail($pembayaranId);
+
+        try {
+            app(\App\Services\Pembayaran\PembayaranManual::class)
+                ->tolak($bayar, $this->alasanTolak, auth()->id());
+
+            session()->flash('pesan-admin', 'Bukti ditolak. Pembeli dapat mengunggah ulang.');
+        } catch (\Throwable $e) {
+            $this->addError('pembayaran', 'Gagal menolak: '.$e->getMessage());
+
+            return;
+        }
+
+        $this->alasanTolak = '';
+        $this->redirectRoute('admin.orders.show', ['ulid' => $this->ulid], navigate: true);
     }
 
     public function render(): View

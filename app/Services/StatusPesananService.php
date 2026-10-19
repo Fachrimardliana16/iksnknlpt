@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\StatusPesanan;
+use App\Jobs\KirimNotifikasiPesanan;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
@@ -41,7 +42,7 @@ class StatusPesananService
             ));
         }
 
-        return DB::transaction(function () use ($order, $tujuan, $oleh, $catatan): Order {
+        $hasil = DB::transaction(function () use ($order, $tujuan, $oleh, $catatan): Order {
             $asal = $order->status;
 
             match ($tujuan) {
@@ -81,6 +82,15 @@ class StatusPesananService
 
             return $order->fresh(['items', 'statusHistory']);
         }, 3);
+
+        // Notifikasi hanya untuk kejadian yang berarti bagi pembeli. Dikirim
+        // setelah transaksi selesai: pekerjaan antrean di dalam transaksi dapat
+        // berjalan sebelum datanya tersimpan.
+        if ($tujuan === StatusPesanan::Shipped && config('iksan.notifikasi.kirim_saat_dikirim', true)) {
+            KirimNotifikasiPesanan::dispatch($hasil->id, KirimNotifikasiPesanan::KEJADIAN_DIKIRIM);
+        }
+
+        return $hasil;
     }
 
     /**

@@ -14,6 +14,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Notifikasi pesanan
+    |--------------------------------------------------------------------------
+    | Pengiriman lewat surel dan WhatsApp berjalan sebagai pekerjaan antrean.
+    | Sakelar di bawah berguna saat pengujian dan saat pengembangan, ketika
+    | mengirim pesan sungguhan ke pembeli tidak diinginkan.
+    */
+
+    'notifikasi' => [
+        'kirim_saat_dibuat' => (bool) env('IKK_NOTIF_DIBUAT', true),
+        'kirim_saat_dibayar' => (bool) env('IKK_NOTIF_DIBAYAR', true),
+        'kirim_saat_dikirim' => (bool) env('IKK_NOTIF_DIKIRIM', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Hero
     |--------------------------------------------------------------------------
     | Batas yang ditegakkan di server, bukan hanya di antarmuka (checklist

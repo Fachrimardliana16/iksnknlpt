@@ -304,10 +304,71 @@
                         @if ($bayar->provider_transaction_id)
                             <p class="tech truncate text-dim">{{ $bayar->provider_transaction_id }}</p>
                         @endif
+
+                        {{-- Bukti transfer: hanya mungkin diambil lewat URL
+                             bertanda tangan 15 menit. Berkasnya di disk privat
+                             karena memuat nama pengirim dan nomor rekening. --}}
+                        @if ($bayar->proof_path)
+                            <a href="{{ app(\App\Services\Pembayaran\PembayaranManual::class)->urlBukti($bayar) }}"
+                               target="_blank" rel="noopener"
+                               class="mt-1 inline-flex items-center gap-1 text-accent hover:underline">
+                                <x-ikon name="eye" :size="12" />
+                                Lihat bukti transfer
+                            </a>
+                        @endif
+
+                        @if ($bayar->payload_json['alasan_penolakan'] ?? null)
+                            <p class="mt-1 text-danger">
+                                Ditolak: {{ $bayar->payload_json['alasan_penolakan'] }}
+                            </p>
+                        @endif
+
+                        {{-- Tindakan hanya muncul untuk bukti yang masih menunggu. --}}
+                        {{-- provider ber-cast ke enum MetodePembayaran, sehingga
+                             perbandingan dengan string selalu salah dan tombol
+                             verifikasi tidak pernah muncul. --}}
+                        @if ($bayar->provider === \App\Enums\MetodePembayaran::Manual && ! $bayar->terverifikasi() && $bayar->provider_status !== 'ditolak')
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <button type="button" wire:click="verifikasiPembayaran({{ $bayar->id }})"
+                                        wire:confirm="Verifikasi pembayaran ini dan tandai pesanan lunas?"
+                                        class="btn btn-primary btn-sm">
+                                    <x-ikon name="check" :size="13" />
+                                    Verifikasi lunas
+                                </button>
+
+                                <button type="button" wire:click="tolakPembayaran({{ $bayar->id }})"
+                                        class="btn btn-outline btn-sm">
+                                    Tolak
+                                </button>
+                            </div>
+
+                            <div class="mt-2">
+                                <input type="text" wire:model="alasanTolak" class="field py-1.5 text-xs"
+                                       placeholder="Alasan penolakan (wajib bila menolak)"
+                                       aria-label="Alasan penolakan bukti">
+                                @error('alasanTolak') <p class="field-error">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
                     </div>
                 @empty
                     <p class="mt-2 text-sm text-muted">Belum ada catatan pembayaran.</p>
                 @endforelse
+
+                @error('pembayaran')
+                    <p class="field-error mt-2">{{ $message }}</p>
+                @enderror
+
+                {{-- Tautan untuk pembeli mengunggah bukti, ditampilkan supaya
+                     admin dapat mengirimkannya ulang bila pembeli kehilangan
+                     halaman pesanannya. --}}
+                @if ($order->payment_method?->value === 'manual' && $order->payment_status->value !== 'paid')
+                    <div class="mt-3 border-t border-line-soft pt-2">
+                        <p class="part-no">Tautan untuk pembeli</p>
+                        <p class="mt-1 break-all text-xs text-dim">
+                            {{ route('front.payment.upload', ['ulid' => $order->ulid]) }}
+                        </p>
+                    </div>
+                @endif
             </div>
 
             {{-- Catatan pembeli --}}

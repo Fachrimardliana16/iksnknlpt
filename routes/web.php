@@ -5,6 +5,7 @@ use App\Livewire\Front\About;
 use App\Livewire\Front\Beranda;
 use App\Livewire\Front\Checkout;
 use App\Livewire\Front\DetailProduk;
+use App\Livewire\Front\UnggahBukti;
 use App\Livewire\Front\HalamanStatis;
 use App\Livewire\Front\KeranjangHalaman;
 use App\Livewire\Front\Kontak;
@@ -26,6 +27,15 @@ Route::middleware(SetLocale::class)->group(function (): void {
 
     Route::get('/produk', ProdukDaftar::class)->name('front.products.index');
     Route::get('/produk/{product:slug}', DetailProduk::class)->name('front.products.show');
+
+    /*
+    | Halaman unggah bukti transfer.
+    |
+    | Dibuka tanpa akun karena checkout toko ini tidak mewajibkan akun. Yang
+    | menjaga aksesnya adalah ULID pesanan: 26 karakter acak yang tidak dapat
+    | ditebak, dan hanya diketahui pembeli dari halaman sukses pesanannya.
+    */
+    Route::get('/pesanan/{ulid}/bayar', UnggahBukti::class)->name('front.payment.upload');
 
     Route::get('/tentang', About::class)->name('front.about');
     Route::get('/kontak', Kontak::class)->name('front.contact');
