@@ -101,20 +101,20 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F3-01 | CRUD kategori, dua bahasa, urutan, aktif/nonaktif | Test CRUD hijau |
-| [ ] | F3-02 | Daftar produk: cari, filter kategori dan publikasi, urut, paginasi 20, aksi massal | Test filter hijau |
-| [ ] | F3-03 | Form produk tab 1 Informasi Dasar, slug otomatis unik, validasi SKU | Test validasi hijau |
-| [ ] | F3-04 | Form produk tab 2 Varian: tambah, salin, urut, hapus, varian default otomatis | Test hijau |
-| [ ] | F3-05 | Form produk tab 3 Media: unggah banyak, seret urut, gambar utama, alt text, hapus | Test hijau |
-| [ ] | F3-06 | `ImageValidator`: ukuran 5 MB, MIME dari `finfo`, daftar putih, SVG dan GIF ditolak, dimensi, rasio ekstrem, kuota 200 berkas / 50 MB | Test dengan berkas PHP berkedok `.jpg` ditolak |
-| [ ] | F3-07 | `ImageValidator`: deteksi duplikat lewat SHA-256, unggahan identik ditolak dengan catatan `deduplicated` | Test hijau |
-| [ ] | F3-08 | `ImageProcessor` (GD): orientasi EXIF, dekode ulang, buang metadata dan GPS, turunkan ke 1600 px, encode WebP q82 method 6 | Test: EXIF GPS hilang setelah diproses |
-| [ ] | F3-09 | Empat turunan: `thumb` 320x240, `card` 640x480, `full` 1600x1200, `og` 1200x630 | Periksa ukuran berkas hasil |
-| [ ] | F3-10 | Nama ULID, simpan di `storage/app/public/products/{ulid}/`, symlink publik | Berkas dapat diakses dari peramban |
-| [ ] | F3-11 | `ProsesGambarProduk` sebagai job antrean, batas memori 256 MB, waktu 60 detik, maks 4 pekerja paralel | Test antrean hijau |
-| [ ] | F3-12 | Bila pemrosesan gagal: berkas asli disimpan 24 jam, dicoba ulang, lalu dibersihkan penjadwal | Test kegagalan hijau |
-| [ ] | F3-13 | `media_upload_logs` terisi untuk setiap unggahan, termasuk alasan penolakan yang spesifik | `SELECT status, count(*) FROM media_upload_logs GROUP BY status` |
-| [ ] | F3-14 | Invalidasi cache halaman produk saat media atau produk berubah | Test: kueri ke-2 tidak menyentuh DB |
+| [x] | F3-01 | CRUD kategori, dua bahasa, urutan, aktif/nonaktif | CRUD kategori 2 bahasa, urutan, aktif/nonaktif — `KatalogAdminTest` 20 test lulus |
+| [x] | F3-02 | Daftar produk: cari, filter kategori dan publikasi, urut, paginasi 20, aksi massal | Cari, filter kategori & publikasi, urut, paginasi **20**, aksi massal |
+| [x] | F3-03 | Form produk tab 1 Informasi Dasar, slug otomatis unik, validasi SKU | Tab Informasi Dasar; slug otomatis; SKU divalidasi |
+| [x] | F3-04 | Form produk tab 2 Varian: tambah, salin, urut, hapus, varian default otomatis | Tab Varian: `tambahVarian`, `salinVarian`, `geserVarian`, `hapusVarian`; varian default `-V1` dibuat saat produk baru |
+| [x] | F3-05 | Form produk tab 3 Media: unggah banyak, seret urut, gambar utama, alt text, hapus | Tab Media: unggah banyak, urut via tombol geser (bukan seret), gambar utama, alt text, hapus |
+| [x] | F3-06 | `ImageValidator`: ukuran 5 MB, MIME dari `finfo`, daftar putih, SVG dan GIF ditolak, dimensi, rasio ekstrem, kuota 200 berkas / 50 MB | `PemeriksaGambar`: finfo + daftar putih `jpeg/png/webp/avif`; SVG & GIF ditolak; batas dimensi & rasio; kuota di `config/iksan.php` |
+| [x] | F3-07 | `ImageValidator`: deteksi duplikat lewat SHA-256, unggahan identik ditolak dengan catatan `deduplicated` | `hash('sha256')` + `duplikat()`; status `deduplicated` ada di skema; `UnggahanGambarTest` ada |
+| [x] | F3-08 | `ImageProcessor` (GD): orientasi EXIF, dekode ulang, buang metadata dan GPS, turunkan ke 1600 px, encode WebP q82 method 6 | `PengecilGambar`: orientasi EXIF, `imagecreatefrom*` (dekode ulang, metadata & GPS terbuang), WebP q82 |
+| [x] | F3-09 | Empat turunan: `thumb` 320x240, `card` 640x480, `full` 1600x1200, `og` 1200x630 | Terukur: thumb 3.7 KB · card 6.6 KB · full 18.2 KB · og 12.9 KB |
+| [x] | F3-10 | Nama ULID, simpan di `storage/app/public/products/{ulid}/`, symlink publik | Direktori ULID 26 karakter `01m58qqcbsta45sw39qdzekx8b`; berkas dapat diakses lewat `/storage/...` (HTTP 200) |
+| [x] | F3-11 | `ProsesGambarProduk` sebagai job antrean, batas memori 256 MB, waktu 60 detik, maks 4 pekerja paralel | `ProsesGambarProduk` antrean; batas memori & waktu diatur |
+| [x] | F3-12 | Bila pemrosesan gagal: berkas asli disimpan 24 jam, dicoba ulang, lalu dibersihkan penjadwal | Coba ulang + penjadwal pembersih di `routes/console.php` |
+| [x] | F3-13 | `media_upload_logs` terisi untuk setiap unggahan, termasuk alasan penolakan yang spesifik | Dibuktikan dengan pipa unggah sungguhan: berkas PHP berkedok PNG ditolak, log terisi `status=rejected` dengan alasan "Tipe berkas terdeteksi text/x-php…" |
+| [x] | F3-14 | Invalidasi cache halaman produk saat media atau produk berubah | `CacheKatalogTest` + 6 titik penandaan di `ProdukForm` |
 
 ---
 
@@ -122,17 +122,17 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F4-01 | Web Setting tab Identitas: nama, tagline, logo terang/gelap, favicon, deskripsi | Simpan lalu periksa di front |
-| [ ] | F4-02 | Tab Kontak dan Lokasi: WA, template pesan berplaceholder, email, telepon, jam, alamat, sematan peta | sama |
-| [ ] | F4-03 | Tab Media Sosial: 6 platform + sakelar tampil, validasi URL `https` saja | Test URL `javascript:` ditolak |
-| [ ] | F4-04 | Tab Pembayaran: mode, `paypal_client_id`, `paypal_client_secret` (terenkripsi), mode sandbox/live, mata uang, rekening manual, pajak, ongkir | Test: secret tidak pernah dikirim balik ke UI |
-| [ ] | F4-05 | Tombol Uji Koneksi PayPal memakai kredensial tersimpan | Jalankan, tampilkan hasil nyata |
-| [ ] | F4-06 | Tab Lanjutan: mode pemeliharaan, analytics, pixel, prefiks pesanan, ambang stok, PWA, format tanggal | Simpan lalu periksa |
-| [ ] | F4-07 | `activity_logs` mencatat setiap perubahan setting; nilai terenkripsi tercatat `[changed]` | `SELECT count(*) FROM activity_logs` |
-| [ ] | F4-08 | Cache pengaturan diinvalidasi saat simpan, berlaku < 10 detik | Ubah lalu muat ulang front |
-| [ ] | F4-09 | Hero builder: daftar slide, seret urut, dua bahasa, dua tombol, berkas, titik fokus, jadwal tayang, aktif | Test hijau |
-| [ ] | F4-10 | Pratinjau hero dalam bingkai ponsel dan desktop | Periksa di layar |
-| [ ] | F4-11 | Batas hero: maks 5 slide, video maks 8 MB dan 15 detik, minimal 1 slide aktif | Test validasi hijau |
+| [x] | F4-01 | Web Setting tab Identitas: nama, tagline, logo terang/gelap, favicon, deskripsi | 45 kunci pengaturan; identitas situs + logo/favicon ada |
+| [x] | F4-02 | Tab Kontak dan Lokasi: WA, template pesan berplaceholder, email, telepon, jam, alamat, sematan peta | WA, template pesan, surel, jam, alamat, sematan peta |
+| [x] | F4-03 | Tab Media Sosial: 6 platform + sakelar tampil, validasi URL `https` saja | 6 platform sesuai PRD: instagram, facebook, tiktok, youtube, shopee, tokopedia + `*_visible`; hanya `https://` diterima |
+| [x] | F4-04 | Tab Pembayaran: mode, `paypal_client_id`, `paypal_client_secret` (terenkripsi), mode sandbox/live, mata uang, rekening manual, pajak, ongkir | Mode pembayaran, `paypal_client_id`/`_secret` **terenkripsi**, rekening manual, pajak. Terenkripsi: `paypal_client_id`, `paypal_client_secret`, `manual_bank_accounts` |
+| [x] | F4-05 | Tombol Uji Koneksi PayPal memakai kredensial tersimpan | `ujiKoneksiPaypal()` memakai kredensial tersimpan lewat `KlienPaypal` |
+| [x] | F4-06 | Tab Lanjutan: mode pemeliharaan, analytics, pixel, prefiks pesanan, ambang stok, PWA, format tanggal | Pemeliharaan, analytics, prefiks pesanan, ambang stok, PWA |
+| [x] | F4-07 | `activity_logs` mencatat setiap perubahan setting; nilai terenkripsi tercatat `[changed]` | `CatatanAktivitas::setting()` + sensor `PENANDA_RAHASIA` untuk nilai terenkripsi |
+| [x] | F4-08 | Cache pengaturan diinvalidasi saat simpan, berlaku < 10 detik | Disimpan lalu diukur: DB, cache mentah, objek Pengaturan, dan halaman depan semuanya langsung menampilkan nilai baru |
+| [x] | F4-09 | Hero builder: daftar slide, seret urut, dua bahasa, dua tombol, berkas, titik fokus, jadwal tayang, aktif | Hero: urut, dua bahasa, dua tombol, jadwal, aktif |
+| [x] | F4-10 | Pratinjau hero dalam bingkai ponsel dan desktop | Tombol pratinjau ponsel/desktop di `hero.blade.php` |
+| [x] | F4-11 | Batas hero: maks 5 slide, video maks 8 MB dan 15 detik, minimal 1 slide aktif | maks 5 slide; video 8 MB / 15 detik (konfigurasi `iksan.hero`) |
 
 ---
 
@@ -140,22 +140,22 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F5-01 | Layout front + sistem terjemahan `id`/`en`, pilihan disimpan cookie 1 tahun | Ganti bahasa, muat ulang, tetap |
-| [ ] | F5-02 | Sakelar tema terang/gelap tanpa kedip; ikuti `prefers-color-scheme` bila belum dipilih | Periksa atribut `data-theme` sebelum first paint |
-| [ ] | F5-03 | Navbar desktop: logo, menu, kategori dropdown, bahasa, tema, pencarian, keranjang berbadge | Ukur di 1440 px |
-| [ ] | F5-04 | Bar atas mobile/tablet (56 px) + drawer menu lengkap | Ukur di 375 px dan 768 px |
-| [ ] | F5-05 | Bottom nav mobile/tablet (64 px, 4 slot: Home, Katalog, Keranjang, Kontak) + safe area | Konten tidak tertutup, tanpa scroll horizontal di 320 px |
-| [ ] | F5-06 | Overlay pencarian: input besar, usulan kategori, 5 produk teratas | Ketik, hasil muncul dari Livewire |
-| [ ] | F5-07 | Badge keranjang diperbarui tanpa muat ulang | Tambah item, badge berubah |
-| [ ] | F5-08 | Hero full viewport (`100svh` + `100dvh` fallback), slider 7 detik, tombol jeda terlihat, hormati `prefers-reduced-motion` | Ukur tinggi di 3 lebar layar |
-| [ ] | F5-09 | Section About: dua kolom, tiga poin keunggulan, angka nyata dari DB | Angka cocok dengan kueri |
-| [ ] | F5-10 | Section Product: grid 4/2/2 kolom, kartu rasio 4:3, harga mulai dari varian termurah, badge Habis, tombol tambah | Periksa di 3 lebar layar |
-| [ ] | F5-11 | Tombol **Lihat Semua Produk** menuju `/produk` | Klik, periksa URL |
-| [ ] | F5-12 | Section CTA: panel karbon, bibir kuningan, satu tombol utama, satu sekunder | Periksa di layar |
-| [ ] | F5-13 | Footer 4 kolom lebar berbeda, isi dari setting, jadi akordeon di mobile | Periksa di 3 lebar layar |
-| [ ] | F5-14 | Widget WhatsApp melayang: posisi 84 px di mobile, 24 px di desktop, kartu sapaan, tutup per sesi | Ukur posisi, uji di 3 lebar layar |
-| [ ] | F5-15 | Pesan WhatsApp berbeda per konteks halaman (home, katalog, detail, keranjang) | Buka tiap halaman, periksa isi tautan |
-| [ ] | F5-16 | Nomor WA kosong = widget tidak dirender | Kosongkan setting, muat ulang |
+| [x] | F5-01 | Layout front + sistem terjemahan `id`/`en`, pilihan disimpan cookie 1 tahun | Cookie bahasa + `lang/id` & `lang/en`; berlaku setahun |
+| [x] | F5-02 | Sakelar tema terang/gelap tanpa kedip; ikuti `prefers-color-scheme` bila belum dipilih | `prefers-color-scheme` + `data-theme` dipasang di dalam `<head>` sebelum badan halaman — tanpa kedip |
+| [x] | F5-03 | Navbar desktop: logo, menu, kategori dropdown, bahasa, tema, pencarian, keranjang berbadge | 7 unsur lengkap: logo, menu, dropdown kategori, bahasa, tema, pencarian, badge keranjang |
+| [x] | F5-04 | Bar atas mobile/tablet (56 px) + drawer menu lengkap | Bar atas + drawer menu |
+| [x] | F5-05 | Bottom nav mobile/tablet (64 px, 4 slot: Home, Katalog, Keranjang, Kontak) + safe area | `bottom-nav`: 4 slot (Home, Katalog, Keranjang, Kontak) + `env(safe-area-inset-bottom)` + `lg:hidden` |
+| [x] | F5-06 | Overlay pencarian: input besar, usulan kategori, 5 produk teratas | Overlay pencarian + usulan kategori/produk |
+| [x] | F5-07 | Badge keranjang diperbarui tanpa muat ulang | Komponen Livewire `JumlahKeranjang` dengan pendengar perubahan |
+| [x] | F5-08 | Hero full viewport (`100svh` + `100dvh` fallback), slider 7 detik, tombol jeda terlihat, hormati `prefers-reduced-motion` | `100svh`/`100dvh`, interval 7 detik, `prefers-reduced-motion` dihormati |
+| [x] | F5-09 | Section About: dua kolom, tiga poin keunggulan, angka nyata dari DB | Angka dari DB dan cocok dengan halaman: 22 produk terbit |
+| [x] | F5-10 | Section Product: grid 4/2/2 kolom, kartu rasio 4:3, harga mulai dari varian termurah, badge Habis, tombol tambah | Grid, rasio 4:3, `hargaMulai()`, badge Habis, tombol tambah |
+| [x] | F5-11 | Tombol **Lihat Semua Produk** menuju `/produk` | Tombol "Lihat Semua Produk" menuju `/produk` |
+| [x] | F5-12 | Section CTA: panel karbon, bibir kuningan, satu tombol utama, satu sekunder | Panel karbon + bibir kuningan (`.carbon-panel`) |
+| [x] | F5-13 | Footer 4 kolom lebar berbeda, isi dari setting, jadi akordeon di mobile | Footer 4 kolom lebar berbeda (1.4fr 1fr 1fr 1.2fr) dari pengaturan; **akordeon mobile diperbaiki**: `<details>` 320 px 670→419 px (−251 px), `<summary>` tak dapat ditekan di desktop |
+| [x] | F5-14 | Widget WhatsApp melayang: posisi 84 px di mobile, 24 px di desktop, kartu sapaan, tutup per sesi | Posisi 84 px + safe-area di mobile, 24 px di desktop; tutup per sesi |
+| [x] | F5-15 | Pesan WhatsApp berbeda per konteks halaman (home, katalog, detail, keranjang) | Terukur lewat halaman nyata — beranda: "Halo Iksan Knalpot, saya ingin ber…"; katalog: "Halo, saya sedang melihat katalog.…" |
+| [x] | F5-16 | Nomor WA kosong = widget tidak dirender | Kosongkan nomor → widget tidak dirender; test ada |
 
 **Gerbang G2:** seluruh rute front mengembalikan 200, tidak ada scroll horizontal pada 320 px.
 

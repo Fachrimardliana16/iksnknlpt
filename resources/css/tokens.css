@@ -739,3 +739,32 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* Footer sebagai akordeon di mobile (PRD 4.6).
+
+   Di desktop, ringkasan tidak boleh dapat ditekan sama sekali, sehingga
+   kolomnya tidak mungkin tertutup di sana. Blade selalu merender `open` dari
+   server; yang menutupnya hanya sentuhan pengunjung di layar kecil.
+
+   Catatan jujur: CSS tidak dapat MEMBUKA <details> yang sudah tertutup.
+   Kalau pengunjung menutupnya di ponsel lalu memperbesar jendela tanpa
+   memuat ulang halaman, kolomnya tetap tertutup sampai halaman dimuat ulang.
+   Yang dijaga di sini adalah keadaan normal, bukan keadaan itu.
+
+   `details > summary` bawaan punya penanda segitiga. Di desktop penanda itu
+   dibuang karena tidak ada gunanya pada blok yang tidak dapat ditutup. */
+.footer-akordeon > summary {
+    list-style: none;
+}
+
+.footer-akordeon > summary::-webkit-details-marker {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    /* Kolom footer tidak boleh tertutup di desktop. */
+    .footer-akordeon > summary {
+        pointer-events: none;
+    }
+}
+

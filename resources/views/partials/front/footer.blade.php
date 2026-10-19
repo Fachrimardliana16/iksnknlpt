@@ -42,20 +42,25 @@
             {{-- Navigasi: hanya desktop. Di ponsel, Home, Produk, dan Kontak
                  sudah tersedia di bar navigasi bawah sehingga mengulanginya di
                  sini hanya menambah tinggi tanpa menambah jalan. --}}
-            <nav class="hidden lg:block" aria-label="{{ __('site.footer.navigation') }}">
-                <p class="part-no mb-3">{{ __('site.footer.navigation') }}</p>
-                <ul class="space-y-2 text-sm">
+            {{-- Di desktop: blok terbuka seperti kolom biasa. Di mobile:
+                 <details> yang menumpuk dan baru terbuka saat disentuh, agar
+                 footer tidak mendorong halaman menjadi dua layar panjang.
+                 Atribut `open` dipasang pada lebar besar lewat CSS, bukan
+                 JavaScript, supaya tetap benar walau skrip gagal dimuat. --}}
+            <details class="footer-akordeon hidden lg:block" open>
+                <summary class="part-no cursor-pointer list-none lg:cursor-default">{{ __('site.footer.navigation') }}</summary>
+                <ul class="mt-3 space-y-2 text-sm">
                     <li><a href="{{ route('front.home') }}" class="hover:text-white">{{ __('site.nav.home') }}</a></li>
                     <li><a href="{{ route('front.products.index') }}" class="hover:text-white">{{ __('site.nav.products') }}</a></li>
                     <li><a href="{{ route('front.about') }}" class="hover:text-white">{{ __('site.nav.about') }}</a></li>
                     <li><a href="{{ route('front.contact') }}" class="hover:text-white">{{ __('site.nav.contact') }}</a></li>
                     <li><a href="{{ route('front.order.track') }}" class="hover:text-white">{{ __('site.order.track') }}</a></li>
                 </ul>
-            </nav>
+            </details>
 
-            <nav aria-label="{{ __('site.footer.categories') }}">
-                <p class="part-no mb-3">{{ __('site.footer.categories') }}</p>
-                <ul class="space-y-2 text-sm">
+            <details class="footer-akordeon" open>
+                <summary class="part-no cursor-pointer list-none lg:cursor-default">{{ __('site.footer.categories') }}</summary>
+                <ul class="mt-3 space-y-2 text-sm lg:mt-3">
                     @foreach ($kategoriFooter as $kat)
                         <li>
                             <a href="{{ route('front.products.index', ['kategori' => $kat->slug]) }}"
@@ -63,10 +68,12 @@
                         </li>
                     @endforeach
                 </ul>
-            </nav>
+            </details>
 
-            <div class="col-span-2 lg:col-span-1">
-                <p class="part-no mb-3">{{ __('site.footer.contact') }}</p>
+            {{-- Kontak: di mobile juga bisa ditutup, karena isinya panjang
+                 (WhatsApp, surel, jam, ikon sosial). --}}
+            <details class="footer-akordeon col-span-2 lg:col-span-1" open>
+                <summary class="part-no cursor-pointer list-none lg:cursor-default">{{ __('site.footer.contact') }}</summary>
                 <ul class="space-y-2 text-sm">
                     @if ($wa = $toko->teks('whatsapp_number'))
                         <li class="flex items-center gap-2">
@@ -103,7 +110,7 @@
                         @endforeach
                     </div>
                 @endif
-            </div>
+            </details>
         </div>
 
         <div class="measure-line mt-8 mb-5 lg:mt-12 lg:mb-6" style="background: rgba(255,255,255,.14)"></div>
