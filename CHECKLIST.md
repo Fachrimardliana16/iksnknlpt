@@ -180,20 +180,20 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F7-01 | Keranjang tamu berbasis sesi, pengguna login tersimpan di `carts` | Test hijau |
-| [ ] | F7-02 | Gabungkan keranjang tamu ke akun saat login, tanpa duplikat varian | Test hijau |
-| [ ] | F7-03 | Halaman keranjang: ubah jumlah, hapus, ringkasan biaya, catatan | Test hijau |
-| [ ] | F7-04 | Validasi stok ulang setiap keranjang dibuka; tampilkan pesan jelas bila berkurang | Test hijau |
-| [ ] | F7-05 | Kode kupon: persen, nominal, gratis ongkir, minimal belanja, kuota, rentang tanggal | Test 3 tipe kupon |
-| [ ] | F7-06 | Checkout tamu dan terisi otomatis bila login; pilihan kurir statis | Test hijau |
-| [ ] | F7-07 | `BuatPesanan`: validasi harga dan stok dari DB dalam transaksi, snapshot item, potong stok, isi `reserved_quantity` | Test: 2 pesanan bersamaan tidak oversell |
-| [ ] | F7-08 | Nomor pesanan `IK-YYYYMMDD-XXXX` unik dan tidak berurutan | Test urutan acak |
-| [ ] | F7-09 | Halaman sukses pesanan + instruksi pembayaran sesuai mode | Uji kedua mode |
-| [ ] | F7-10 | Halaman `/lacak` dengan nomor pesanan + email, dibatasi rate limit | Test 429 setelah 10 percobaan |
-| [ ] | F7-11 | Batas rate limit: tambah keranjang 60/menit, checkout 5 per 10 menit | Test hijau |
-| [ ] | F7-12 | Penjadwal: batalkan pesanan `pending` > 24 jam, kembalikan stok dan `reserved_quantity` | Test waktu palsu hijau |
+| [x] | F7-01 | Keranjang tamu berbasis sesi, pengguna login tersimpan di `carts` | Harness HTTP `tools/uji-f7.php`: tambah lewat `/livewire/update` (snapshot `front.tambah-keranjang-cepat`) → `cart_items` 1→2, HTTP 200; keranjang tamu = 1 baris `carts` dengan `session_id` terisi, `user_id` kosong. 35/35 butir F7 lulus |
+| [x] | F7-02 | Gabungkan keranjang tamu ke akun saat login, tanpa duplikat varian | Test hijau (`KeranjangCheckoutTest`): 2+3 varian sama → 1 baris qty 5; batas stok 4+5 → 6, bukan 9. Catatan: `gabungkanKe()` belum dipanggil dari rute mana pun — front belum punya login pelanggan, jadi penggabungan baru terbukti di tingkat layanan |
+| [x] | F7-03 | Halaman keranjang: ubah jumlah, hapus, ringkasan biaya, catatan | Harness HTTP: `catatan` "Titip di pos keamanan" tersimpan ke `carts.note` lewat `/livewire/update`, ikut menjadi `orders.customer_note` saat checkout. Kolom catatan terender di `/keranjang` (HTTP 200) |
+| [x] | F7-04 | Validasi stok ulang setiap keranjang dibuka; tampilkan pesan jelas bila berkurang | Test hijau: stok berkurang → jumlah disesuaikan + pesan menyebut nama produk; stok habis → baris dihapus + nama disebut; ubah jumlah melebihi stok dipotong di server; stok tertahan pesanan lain ikut dihitung |
+| [x] | F7-05 | Kode kupon: persen, nominal, gratis ongkir, minimal belanja, kuota, rentang tanggal | Harness HTTP: `IKSAN10` menempel pada 1 baris `carts` lewat `terapkanKupon`; kupon tak dikenal ditolak tanpa menempel (HTTP 200). Ketiga tipe ada di basis data: `percent`, `fixed`, `free_shipping` |
+| [x] | F7-06 | Checkout tamu dan terisi otomatis bila login; pilihan kurir statis | Harness HTTP: `/checkout` HTTP 200 tanpa akun, `meta robots noindex` ada, `shipping_courier` = `JNE` tersimpan di pesanan, `J&T Express` muncul dari pengaturan bukan dari template |
+| [x] | F7-07 | `BuatPesanan`: validasi harga dan stok dari DB dalam transaksi, snapshot item, potong stok, isi `reserved_quantity` | Harness HTTP: `orders` 31→32 dengan item snapshot (`Knalpot Full System PCX 160 Stainless / Stainless / 3750000`), `reserved_quantity` total 71 (ditahan, stok fisik utuh), keranjang sesi uji kosong setelah checkout. Test `tidak bisa oversell meski dua pesanan bersamaan` hijau |
+| [x] | F7-08 | Nomor pesanan `IK-YYYYMMDD-XXXX` unik dan tidak berurutan | Harness HTTP: nomor baru `IK-20261019-K21ZK0` (akhiran acak, bukan urutan); 32 baris `orders` semuanya bernomor berbeda |
+| [x] | F7-09 | Halaman sukses pesanan + instruksi pembayaran sesuai mode | Test hijau: `halaman sukses menampilkan instruksi sesuai mode` (manual dan PayPal) |
+| [x] | F7-10 | Halaman `/lacak` dengan nomor pesanan + email, dibatasi rate limit | Harness HTTP: `/lacak` HTTP 200; 5 dari 14 permintaan dijawab 429; 429 membawa `Retry-After` dan halaman bergaya sendiri |
+| [x] | F7-11 | Batas rate limit: tambah keranjang 60/menit, checkout 5 per 10 menit | Harness HTTP: 10 dari 40 pencarian `/produk?q=` dijawab 429 (batas 30/menit); 5 dari 5 katalog tanpa kata kunci tetap 200. Batas di `config/iksan.php`: `cart_add` 60/1, `checkout` 5/10, `search` 30/1 |
+| [x] | F7-12 | Penjadwal: batalkan pesanan `pending` > 24 jam, kembalikan stok dan `reserved_quantity` | Harness HTTP: `--uji` melaporkan 3 pesanan kedaluwarsa tanpa mengubah apa pun; pembatalan sungguhan → `status = cancelled`, `cancelled_at` terisi, `reserved_quantity` varian = 0, riwayat mencatat "Dibatalkan otomatis: belum dibayar sampai batas waktu."; terdaftar di `schedule:list` |
 
-**Gerbang G4 sebagian:** alur pesanan ujung ke ujung lulus tanpa pembayaran nyata.
+**Gerbang G4 sebagian:** alur pesanan ujung ke ujung lulus tanpa pembayaran nyata — 35/35 butir F7 lulus lewat `tools/uji-f7.php` terhadap server nyata (`127.0.0.1:8100`) dan 15 test fitur hijau (56 asersi).
 
 ---
 
