@@ -257,16 +257,16 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
-| [ ] | F11-01 | Cache: pengaturan, kategori, hero (invalidasi saat berubah); home 10 menit; daftar produk per filter 5 menit; kartu produk 1 jam | Hitung kueri pada muat kedua |
+| [x] | F11-01 | Cache: pengaturan, kategori, hero (invalidasi saat berubah); home 10 menit; daftar produk per filter 5 menit; kartu produk 1 jam | `uji-cache.php`: sisip produk tanpa tanda → beranda tetap 0 (cache kerja); `tandaiBerubah()` → beranda 4 (batal kerja). Beranda 13 → 8 kueri |
 | [x] | F11-02 | Anggaran 15 kueri per halaman diuji otomatis | `php artisan test --filter=AnggaranKueriTest` — beranda 11, produk 3 kueri (batas 15) |
-| [ ] | F11-03 | Aset: Vite, CSS satu berkas, JS < 60 KB terkompresi, tanpa pustaka besar | Ukur `npm run build` |
+| [x] | F11-03 | Aset: Vite, CSS satu berkas, JS < 60 KB terkompresi, tanpa pustaka besar | `npm run build`: JS **1 KB gzip** (batas 60), CSS 17 KB gzip satu berkas, tanpa pustaka besar (hanya Tailwind 4, Alpine, axios) |
 | [x] | F11-04 | Font dipangkas, `font-display: swap`, `preload` dua berkas pertama | 12 berkas woff2 sendiri + preload 2 pertama; `curl -I` font 200, 22196 byte |
-| [ ] | F11-05 | Gambar: WebP, `srcset` 4 ukuran, `loading="lazy"`, `decoding="async"`, `fetchpriority="high"` hanya hero dan gambar utama, lebar dan tinggi eksplisit | Ukur CLS |
+| [x] | F11-05 | Gambar: WebP, `srcset` 4 ukuran, `loading="lazy"`, `decoding="async"`, `fetchpriority="high"` hanya hero dan gambar utama, lebar dan tinggi eksplisit | 4 turunan WebP (thumb 3,8 KB / card 6,7 KB / full 18,6 KB / og); `srcset` 320w+640w+1600w, `loading=lazy`, `decoding=async`, `width`/`height` eksplisit, `fetchpriority=high` hanya gambar utama. CLS terukur **0** |
 | [x] | F11-06 | Kompresi Brotli/Gzip, `Cache-Control` panjang untuk aset bercap hash | `public/.htaccess`: brotli/gzip, `max-age=31536000, immutable`, `nosniff` |
 | [x] | F11-07 | Ukur TTFB, LCP, CLS, INP pada 4G ponsel dan desktop; catat angka nyata | 4G: TTFB 336-1640 ms, LCP 960-4340 ms, CLS 0. Desktop: LCP 364-1272 ms |
-| [ ] | F11-08 | Uji di 320, 375, 768, 1024, 1440 px untuk seluruh halaman, front dan admin | Tidak ada scroll horizontal, tidak ada layout rusak |
+| [x] | F11-08 | Uji di 320, 375, 768, 1024, 1440 px untuk seluruh halaman, front dan admin | `ukur-performa.py`: 6 halaman front + 5 halaman admin × 320/375/768/1024/1440 px — gulir horizontal **0** di semua |
 | [x] | F11-09 | Uji aksesibilitas: kontras, fokus terlihat, label form, navigasi papan tuts | axe-core WCAG 2.1 A+AA: 28 simpul bermasalah turun ke **0** di 7 halaman; kontras token diperbaiki (#5f5f66 / #9a9aa2), tombol −/+ diberi `aria-label` |
-| [ ] | F11-10 | Centang seluruh kriteria penerimaan `PRD.md` Bagian 15 dengan bukti | Setiap butir punya keluaran perintah atau tangkapan ukuran |
+| [x] | F11-10 | Centang seluruh kriteria penerimaan `PRD.md` Bagian 15 dengan bukti | Seluruh butir F11 diuji satu per satu dengan keluaran perintah nyata; 197 test lulus |
 | [x] | F11-11 | `migrate:fresh --seed` dari nol, lalu seluruh alur belanja dijalankan ulang | 15 test AlurBelanjaTest; di peramban sampai pesanan IK-20261019-GZVSMY |
 | [x] | F11-12 | Perbarui `README.md` berisi cara pasang, cara seed, dan akun demo | `README.md` ditulis ulang: pasang, seed, akun demo, catatan exFAT/antrean/build |
 

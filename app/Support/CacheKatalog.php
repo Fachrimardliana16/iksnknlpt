@@ -29,14 +29,33 @@ class CacheKatalog
     /** Nomor versi saat ini, dipakai sebagai bagian dari setiap kunci cache. */
     public static function versi(): int
     {
+        // Diingat selama satu permintaan.
+        //
+        // Setiap kunci cache memanggil metode ini, dan penyimpan cache bawaan
+        // adalah basis data — jadi tanpa mengingatnya, satu halaman yang
+        // memakai tiga kunci membayar tiga kueri hanya untuk membaca satu
+        // angka yang tidak berubah di tengah permintaan.
+        if (self::$versiPermintaan !== null) {
+            return self::$versiPermintaan;
+        }
+
         try {
-            return (int) Cache::get(self::KUNCI_VERSI, 1);
+            return self::$versiPermintaan = (int) Cache::get(self::KUNCI_VERSI, 1);
         } catch (Throwable) {
             // Cache yang tidak dapat dibaca tidak boleh menjatuhkan halaman.
             // Versi 0 berarti seluruh kunci dianggap tidak cocok, sehingga
             // halaman dirender ulang dari basis data.
-            return 0;
+            return self::$versiPermintaan = 0;
         }
+    }
+
+    /** Versi yang sudah dibaca pada permintaan ini. */
+    private static ?int $versiPermintaan = null;
+
+    /** Melupakan versi yang diingat. Dipakai oleh test antar-permintaan. */
+    public static function lupakanVersi(): void
+    {
+        self::$versiPermintaan = null;
     }
 
     /**
@@ -50,7 +69,19 @@ class CacheKatalog
     public static function tandaiBerubah(?string $sebab = null): void
     {
         try {
-            Cache::forever(self::KUNCI_VERSI, self::versi() + 1);
+            $baru = self::versi() + 1;
+
+            Cache::forever(self::KUNCI_VERSI, $baru);
+
+            // Memo di memori ikut diperbarui, bukan hanya nilai di cache.
+            //
+            // Tanpa ini, proses yang sama tetap memakai versi lama setelah
+            // menandai perubahan — benar selama setiap permintaan dijalankan
+            // proses baru, tetapi SALAH di bawah pekerja yang tetap hidup
+            // antar-permintaan (Octane, RoadRunner). Akibatnya produk yang
+            // baru disimpan tidak muncul, atau produk yang sudah ditarik masih
+            // tampil.
+            self::$versiPermintaan = $baru;
         } catch (Throwable) {
             // Gagal menandai berarti halaman mungkin masih menampilkan data
             // lama sampai cache-nya kedaluwarsa sendiri. Itu lebih baik
