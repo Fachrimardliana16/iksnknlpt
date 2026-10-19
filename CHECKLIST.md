@@ -51,7 +51,7 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 | Status | ID | Tugas | Bukti |
 | :--- | :--- | :--- | :--- |
 | [x] | F1-08 | Enum: `StatusPesanan`, `StatusPembayaran`, `PeranPengguna`, `MetodePembayaran` | StatusPesanan=6 StatusPembayaran=5 PeranPengguna=3 MetodePembayaran=2 |
-| [ ] | F1-09 | Model inti + relasi + cast + `fillable` + penanda ULID otomatis | Test relasi hijau |
+| [x] | F1-09 | Model inti + relasi + cast + `fillable` + penanda ULID otomatis | `ModelIntiTest` 6 test hijau (43 asersi): model dibaca dari `app/Models` dan setiap tabel berkolom `ulid` wajib memakai trait `PunyaUlid` (18 model); ULID terisi otomatis, 26 karakter, kunci rute = `ulid`; relasi Product↔Variant dua arah; cast boolean/decimal/datetime benar; kolom di luar `fillable` (`id`, `view_count`, `remember_token`) tidak terisi massal; ULID unik di tingkat basis data (insert ganda → `QueryException`) |
 | [x] | F1-10 | Indeks buta: `email_bidx` pada `users`, `guest_email_bidx`, `contact_messages`; layanan HMAC | Kolom sidik jari terpasang: users.email_bidx, orders.guest_email_bidx, contact_messages.email_bidx |
 | [x] | F1-11 | Cast `encrypted` pada seluruh kolom PII, kredensial, snapshot alamat | Baca mentah lewat PDO → ciphertext; lewat model → terbaca benar |
 | [x] | F1-12 | Pabrik data (factory) untuk seluruh model | Pabrik dapat membuat baris untuk 15 model (bukan hanya ada) |
