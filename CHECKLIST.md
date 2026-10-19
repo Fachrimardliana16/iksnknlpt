@@ -222,7 +222,7 @@ Rujukan: `PRD.md` (kebutuhan), `DBSCHEMA.md` (skema), `WORKFLOW.md` (cara kerja)
 | [ ] | F9-02 | Tangani kembalian dari PayPal, perbarui `payments` dan `orders` | Test hijau |
 | [ ] | F9-03 | Webhook PayPal dengan verifikasi tanda tangan; tanda tangan tidak sah ditolak | Test tanda tangan palsu ditolak |
 | [ ] | F9-04 | Webhook ganda tidak tercatat dua kali (indeks unik penyedia + ID transaksi) | Kirim webhook dua kali, periksa 1 baris |
-| [ ] | F9-05 | Alur manual: halaman rekening, unggah bukti transfer (3 per jam per pesanan), verifikasi admin | Test hijau |
+| [x] | F9-05 | Alur manual: halaman rekening, unggah bukti transfer (3 per jam per pesanan), verifikasi admin | `PembayaranManualTest` 5 test hijau (18 asersi): bukti tersimpan di disk **privat** (0 berkas di disk publik), baris `payments` terbentuk dengan provider `manual`, unggahan ke-4/jam ditolak (`ValidationException` "3 kali"), pesanan lunas menolak bukti baru, verifikasi admin → `payment_status=paid`, `status=paid`, `paid_at` terisi + riwayat status; penolakan → `provider_status=ditolak`, alasan tersimpan, pesanan kembali `unpaid` |
 | [ ] | F9-06 | Notifikasi email: pesanan dibuat, pembayaran diterima, barang dikirim | Periksa kotak surat uji |
 | [ ] | F9-07 | Notifikasi WhatsApp otomatis pada tiga kejadian yang sama | Uji kirim, periksa log |
 | [ ] | F9-08 | Semua notifikasi berjalan sebagai job antrean, tidak memblokir permintaan | Test antrean hijau |
