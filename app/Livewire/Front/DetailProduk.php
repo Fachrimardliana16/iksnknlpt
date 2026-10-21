@@ -248,7 +248,52 @@ class DetailProduk extends Component
                     'gambar' => filled($gambarOg) ? url($gambarOg) : null,
                     'kategori' => $this->product->category?->nama(),
                     'toko' => $toko->teks('site_name'),
-                ])->render(),
+                ])->render()
+                    // Data terstruktur tingkat situs (toko + breadcrumb), dan
+                    // ringkasan yang boleh dikutip mesin jawaban. Digabung di
+                    // sini supaya tetap satu tempat: partial di atas mengurus
+                    // produk, kelas DataTerstruktur mengurus identitas toko.
+                    .view('partials.front.data-terstruktur-situs', [
+                        'produk' => $this->product,
+                    ])->render(),
+
+                'ringkasanAi' => $this->ringkasanAi($harga, $tersedia),
             ]);
+    }
+
+    /**
+     * Satu paragraf ringkasan untuk mesin jawaban (GEO).
+     *
+     * Ditulis sebagai kalimat lengkap yang menjawab "apa ini, berapa harganya,
+     * bisa dikirim ke mana" — bentuk yang langsung dapat dikutip. Mesin jawaban
+     * mengutip kalimat, bukan tabel: ringkasan yang disusun sendiri oleh mereka
+     * dari menu navigasi sering salah menyebut harga atau ketersediaan.
+     */
+    private function ringkasanAi(string $harga, int $tersedia): string
+    {
+        $nama = $this->product->judul();
+        $kategori = $this->product->category?->nama();
+        $toko = app(\App\Support\Pengaturan::class)->teks('site_name', 'Iksan Knalpot');
+
+        $bagian = ["{$nama}".($kategori ? " adalah produk {$kategori}" : '')." dari {$toko}."];
+
+        if ($harga !== '') {
+            // $harga berupa angka berformat ("1250000.00"), bukan teks rupiah.
+            // Menyisipkannya apa adanya menghasilkan "Harganya 1250000" —
+            // terbaca sebagai nomor telepon oleh pembaca maupun mesin jawaban.
+            $bagian[] = 'Harganya mulai '.rupiah((float) $harga).'.';
+        }
+
+        $bagian[] = $tersedia > 0
+            ? "Tersedia {$tersedia} varian yang dapat dibeli, dikirim ke seluruh Indonesia."
+            : 'Saat ini sedang tidak tersedia.';
+
+        $deskripsi = trim(strip_tags($this->product->deskripsi()));
+
+        if ($deskripsi !== '') {
+            $bagian[] = \Illuminate\Support\Str::limit($deskripsi, 220);
+        }
+
+        return implode(' ', $bagian);
     }
 }

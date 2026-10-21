@@ -3,6 +3,7 @@
 namespace App\Livewire\Front;
 
 use App\Models\Category;
+use App\Models\Faq;
 use App\Models\HeroSlide;
 use App\Models\Order;
 use App\Models\Product;
@@ -50,6 +51,11 @@ class Beranda extends Component
             'slides' => HeroSlide::query()->tayang()->get(),
 
             'kategori' => Category::query()->aktif()->terurut()->take(6)->get(),
+
+            // FAQ yang tampil di beranda (bawah CTA). Ikut cache yang sama
+            // supaya beranda tetap satu entri cache = satu kueri; angkanya
+            // kecil dan isinya jarang berubah.
+            'faq' => Faq::query()->beranda()->get(),
         ]);
 
         return view('livewire.front.beranda', [
@@ -57,8 +63,28 @@ class Beranda extends Component
             'unggulan' => $isi['unggulan'],
             'batasKatalog' => $this->batasKatalogPonsel(),
             'kategori' => $isi['kategori'],
+            'faq' => $isi['faq'],
             'angka' => $this->angkaNyata(),
-        ])->title($toko->teks('site_name').' · '.$toko->teks('site_tagline'));
+        ])
+            // Slide hero pertama di-preload di <head>: gambar terbesar di
+            // beranda tidak perlu menunggu CSS dan skrip selesai diurai.
+            ->layoutData([
+                'heroPertama' => $isi['slides']->first()
+                    ? \App\Models\ProductMedia::urlMedia($isi['slides']->first()->media_path)
+                    : null,
+
+                // Ringkasan satu paragraf yang boleh dikutip apa adanya.
+                'ringkasanAi' => $this->ringkasanAi(),
+
+                // FAQ + identitas toko dalam SATU blok JSON-LD.
+                //
+                // Dulu identitas toko dipasang juga lewat 'kepala', sehingga
+                // beranda memuat dua blok yang keduanya menyatakan Store —
+                // data terstruktur ganda membingungkan mesin pencari dan
+                // membuang kesempatan memakai blok kedua untuk FAQ.
+                'faq' => $this->faq(),
+            ])
+            ->title($toko->teks('site_name').' · '.$toko->teks('site_tagline'));
     }
 
     /**
@@ -89,4 +115,86 @@ class Beranda extends Component
             'kategori' => Category::query()->aktif()->count(),
         ];
     }
+    /**
+     * Ringkasan untuk mesin jawaban (GEO).
+     *
+     * Disusun dari fakta yang benar-benar ada di pengaturan: nama, kota, jam
+     * buka, dan cara pemesanan. Mesin jawaban mengutip kalimat lengkap; tanpa
+     * ringkasan eksplisit mereka menyusun sendiri dari menu, dan hasilnya
+     * sering salah sebut layanan atau jam.
+     */
+    private function ringkasanAi(): string
+    {
+        $p = app(\App\Support\Pengaturan::class);
+        $nama = $p->teks('site_name', 'Iksan Knalpot');
+        $deskripsi = $p->teks('site_description', '');
+        $jam = $p->teks('operational_hours', '');
+        $alamat = $p->teks('address_full', '');
+
+        $bagian = [];
+
+        $bagian[] = $nama.($deskripsi !== '' ? ' adalah '.lcfirst($deskripsi).'.' : '.');
+
+        if ($alamat !== '') {
+            $bagian[] = 'Berlokasi di '.$alamat.'.';
+        }
+
+        if ($jam !== '') {
+            $bagian[] = 'Buka '.$jam.'.';
+        }
+
+        $bagian[] = 'Melayani pembelian knalpot custom dan racing dengan pengiriman ke seluruh Indonesia, '
+            .'dapat dipesan langsung lewat situs atau WhatsApp tanpa membuat akun.';
+
+        return implode(' ', $bagian);
+    }
+
+    /**
+     * FAQ dari pertanyaan yang benar-benar ditanyakan pembeli.
+     *
+     * Dijawab dari pengaturan, bukan dikarang: jawaban yang tidak cocok dengan
+     * keadaan toko akan dikutip mesin jawaban sebagai fakta, dan itu lebih
+     * merugikan daripada tidak punya FAQ.
+     *
+     * @return array<string, string>
+     */
+    private function faq(): array
+    {
+        $p = app(\App\Support\Pengaturan::class);
+
+        $daftar = [];
+
+        $daftar['Apakah bisa pesan tanpa membuat akun?'] =
+            'Bisa. Keranjang di situs ini berbasis sesi, jadi pembeli dapat memesan langsung tanpa mendaftar akun.';
+
+        $kurir = $p->teks('shipping_couriers', '');
+
+        if ($kurir !== '') {
+            $bersih = trim(str_replace(['[', ']', '"'], '', $kurir));
+            $daftar['Kurir apa yang tersedia?'] = 'Pengiriman memakai '.$bersih.' ke seluruh Indonesia.';
+        }
+
+        $transfer = $p->teks('payment_mode', '');
+
+        if ($transfer === 'manual') {
+            $daftar['Bagaimana cara membayarnya?'] =
+                'Pembayaran dilakukan dengan transfer bank, lalu bukti transfer diunggah lewat halaman pesanan.';
+        }
+
+        $jam = $p->teks('operational_hours', '');
+
+        if ($jam !== '') {
+            $daftar['Kapan toko buka?'] = 'Toko buka '.$jam.'.';
+        }
+
+        $wa = $p->teks('whatsapp_number', '');
+
+        if ($wa !== '') {
+            $daftar['Bagaimana cara bertanya sebelum membeli?'] =
+                'Hubungi WhatsApp di nomor '.$wa.' untuk konsultasi ukuran dan jenis knalpot.';
+        }
+
+        return $daftar;
+    }
+
 }

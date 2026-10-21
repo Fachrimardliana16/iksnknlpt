@@ -38,16 +38,47 @@ class PesananDaftar extends Component
     #[Url(as: 'urut', history: true)]
     public string $urut = 'terbaru';
 
+    /**
+     * Saringan yang datang dari URL dibersihkan saat masuk.
+     *
+     * Tanpa ini, nilai pada atribut #[Url] masuk apa adanya dari query string:
+     * atribut itu mengisi properti langsung, tidak lewat mount(). Lihat
+     * komentar pada saring() untuk akibat yang terlihat oleh admin.
+     */
+    public function mount(): void
+    {
+        $this->status = self::saring($this->status, StatusPesanan::values());
+        $this->bayar = self::saring($this->bayar, StatusPembayaran::values());
+    }
+
     public function aturStatus(string $status): void
     {
-        $this->status = in_array($status, ['semua', ...StatusPesanan::values()], true) ? $status : 'semua';
+        $this->status = self::saring($status, StatusPesanan::values());
         $this->resetPage();
     }
 
     public function aturBayar(string $bayar): void
     {
-        $this->bayar = in_array($bayar, ['semua', ...StatusPembayaran::values()], true) ? $bayar : 'semua';
+        $this->bayar = self::saring($bayar, StatusPembayaran::values());
         $this->resetPage();
+    }
+
+    /**
+     * Nilai yang boleh dipakai saringan, dari daftar yang dikenal.
+     *
+     * Dipakai di DUA tempat, dan itu alasannya: atribut #[Url] mengisi properti
+     * langsung dari query string TANPA melalui mount(), sedangkan tombol di
+     * halaman memanggil aturStatus()/aturBayar(). Bila penyaringan hanya ada di
+     * method, seorang yang membuka /admin/pesanan?status=ngawur mendapat daftar
+     * kosong dengan alasan yang tidak tertulis — bukan "saringan tidak dikenal",
+     * melainkan "tidak ada pesanan pada saringan ini", yang mudah dibaca
+     * sebagai pesanan yang hilang.
+     *
+     * @param  array<int, string>  $dikenal
+     */
+    private static function saring(string $nilai, array $dikenal): string
+    {
+        return in_array($nilai, ['semua', ...$dikenal], true) ? $nilai : 'semua';
     }
 
     public function updatedCari(): void

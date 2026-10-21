@@ -27,6 +27,10 @@ return [
     ],
 
     'home' => [
+        'faq_title' => 'Frequently asked questions',
+        'faq_subtitle' => 'What buyers ask most often before ordering.',
+        'faq_all' => 'All FAQs',
+
         'about_part' => 'About',
         'products_part' => 'Catalog',
         'about_title' => 'Pipe measured before it is cut',
@@ -121,6 +125,11 @@ return [
     ],
 
     'checkout' => [
+        'country' => 'Destination country',
+        'currency' => 'Currency',
+        'shipping_intl_quote' => 'international shipping is quoted manually after the order arrives',
+        'intl_note' => 'International delivery needs the address in Latin characters and shipping is quoted manually by our team.',
+
         'title' => 'Checkout',
         'guest_note' => 'No account needed to place an order.',
         'contact' => 'Contact Details',
@@ -208,4 +217,9 @@ return [
         'back_home' => 'Back to home',
     ],
 
+    'faq' => [
+        'title' => 'Frequently asked questions',
+        'meta' => 'Answers about payment, shipping, and our products.',
+        'empty' => 'No questions have been published yet.',
+    ],
 ];

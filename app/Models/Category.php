@@ -57,6 +57,24 @@ class Category extends Model
             : $this->name_id;
     }
 
+    /**
+     * Deskripsi kategori sesuai bahasa aktif.
+     *
+     * Mengembalikan string kosong bila tidak diisi — pemanggil yang memutuskan
+     * apa yang ditampilkan. Mengembalikan null di sini akan memaksa setiap
+     * pemanggil menangani dua nilai kosong yang berbeda.
+     */
+    public function deskripsi(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        $teks = $locale === 'en' && filled($this->description_en)
+            ? $this->description_en
+            : $this->description_id;
+
+        return trim((string) $teks);
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';

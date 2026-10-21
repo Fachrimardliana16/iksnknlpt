@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true">
     <testsuites>
         <testsuite name="Unit">
@@ -30,7 +30,17 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!--
+            Basis data test memakai BERKAS SEMENTARA, bukan ":memory:".
+
+            Alasannya bukan selera: PRAGMA journal_mode=WAL tidak berlaku untuk
+            ":memory:", dan menjalankannya membuat Laravel membuang koneksi lalu
+            membukanya ulang tanpa ":memory:" — memakai jalur dari konfigurasi,
+            yaitu database/database.sqlite. Migrasi test karena itu berjalan di
+            berkas KERJA dan menghapus isinya. Berkas sementara membuat WAL sah,
+            dan tidak ada berkas kerja yang tersentuh.
+        -->
+        <env name="DB_DATABASE" value="database/testing.sqlite"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

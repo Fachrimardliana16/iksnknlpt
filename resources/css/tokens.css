@@ -728,6 +728,104 @@
     padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* ── Tinggi bilah tetap ─────────────────────────────────────────────
+ *
+ * Header adalah `sticky`, jadi ia MENGAMBIL ruang di dalam alirannya dan
+ * hero yang mengisinya sedari awal sudah menempel tepat di bawahnya. Bilah
+ * navigasi bawah (mobile/tablet) berbeda: ia `fixed` dan menumpuk DI ATAS
+ * isi halaman. Tanpa dikurangi, hero setinggi satu layar membuat baris CTA
+ * tertutup bilah itu.
+ *
+ * Kedua tinggi di sini HARUS sama dengan tinggi sebenarnya di navbar.blade.php
+ * (h-14 / lg:h-[72px]) dan bottom-nav.blade.php (min-h-[60px]). Berkas ini
+ * dulu memakai angka 56px yang tidak pernah cocok dengan header 57px/73px.
+ */
+:root {
+    /* 56px isi + 1px garis bawah header = 57px. */
+    --h-topbar: 57px;
+    --h-navbawah: 0px;
+}
+
+@media (min-width: 1024px) {
+    :root {
+        /* 72px isi + 1px garis bawah header. */
+        --h-topbar: 73px;
+        --h-navbawah: 0px;
+    }
+}
+
+@media (max-width: 1023.98px) {
+    :root {
+        /* 60px isi + garis atas 1px, ditambah area aman perangkat berponi. */
+        --h-navbawah: calc(61px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* ── Muncul saat digulir ────────────────────────────────────────────
+ *
+ * Bagian yang belum terlihat diredupkan sedikit lalu masuk saat mendekati
+ * layar. Tujuannya bukan hiasan: tanpa ini seluruh beranda melukis isinya
+ * serentak pada frame pertama, dan mata menerima semuanya sebagai satu
+ * lompatan.
+ *
+ * Bergantung pada skrip (resources/js/app.js). Tanpa skrip — atau bila
+ * pengunjung memilih mengurangi gerak — isinya harus tetap terbaca, jadi
+ * efeknya dimatikan lewat `html:not(.js)` (kelas dipasang di <head> sebelum
+ * CSS sempat menyembunyikan apa pun) dan media query prefers-reduced-motion.
+ */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+    will-change: opacity, transform;
+}
+
+[data-reveal].tampak {
+    opacity: 1;
+    transform: none;
+    /* will-change dilepas setelah masuk: menyimpannya membuat setiap bagian
+       terus memakan lapisan komposit sendiri. */
+    will-change: auto;
+}
+
+/* Tanpa JavaScript tidak ada yang menambahkan .tampak — isi harus terlihat. */
+html:not(.js) [data-reveal] {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* Catatan: `.tunda-render` (content-visibility: auto) sempat dipasang di tiga
+   bagian beranda, lalu DIBUANG setelah diukur. A/B tiga putaran
+   (tools/banding-tunda-render.py) menunjukkan tidak ada keuntungan: median
+   TaskDuration 1107ms dengan content-visibility vs 1071ms tanpanya, sementara
+   LayoutDuration justru naik 14ms karena taksiran tinggi bagian melenceng.
+   Isinya hanya tiga bagian; menunda tata letaknya tidak sepadan dengan risiko
+   bilah gulir melompat. Yang tersisa dari percobaan itu adalah data-reveal di
+   bawah, yang memang bekerja. */
+
+/* Satu layar penuh, dikurangi bilah-bilah halaman.
+ *
+ * Header `sticky` tetap MENEMPATI ruangnya (hero mulai di bawahnya), jadi
+ * tingginya ikut dikurangi; tanpa itu sisa 72px hero jatuh di bawah lipatan
+ * dan pengunjung harus menggulir sedikit hanya untuk melihat ujungnya.
+ *
+ * Memakai 100dvh (bukan 100vh) supaya bilah alamat peramban ponsel yang
+ * menyusut saat digulir tidak memotong hero. Peramban lama tidak mengenal
+ * dvh, jadi 100vh dipakai lebih dulu sebagai cadangan.
+ */
+@utility hero-layar {
+    height: calc(100vh - var(--h-topbar) - var(--h-navbawah));
+    height: calc(100dvh - var(--h-topbar) - var(--h-navbawah));
+}
+
 @utility visually-hidden {
     position: absolute;
     width: 1px;

@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+     * Web Push (VAPID).
+     *
+     * Kunci dibuat sekali, lihat .env. Subject harus berupa URL mailto: atau
+     * https:// — layanan push menolak nilai lain tanpa keterangan.
+     */
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT', env('MAIL_FROM_ADDRESS')),
+    ],
+
 ];

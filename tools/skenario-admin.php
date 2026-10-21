@@ -33,19 +33,44 @@ $periksa = static function (string $judul, bool $syarat, string $bukti) use (&$l
     }
 };
 
-$jar = tempnam(sys_get_temp_dir(), 'admin-');
+/*
+ * Cookie dikirim dan disimpan LEWAT HEADER, bukan lewat CURLOPT_COOKIEJAR.
+ *
+ * Terbukti di mesin ini: CURLOPT_COOKIEJAR tidak pernah menulis berkas —
+ * bukan "gagal menulis", tapi berkas tidak ada sama sekali setelah beberapa
+ * permintaan, padahal respons membawa Set-Cookie. Akibatnya setiap permintaan
+ * berikutnya dikirim tanpa cookie sesi, dan halaman /admin selalu dibalas
+ * dengan halaman masuk (yang juga 200 — sebabnya kegagalan tak terlihat).
+ *
+ * Yang dilakukan di sini: setiap Set-Cookie direspons disimpan ke larik, lalu
+ * dikirim kembali sebagai satu baris "Cookie:". Bentuknya sederhana dan
+ * berhasil di semua platform.
+ */
+$kuki = [];
 
-$minta = static function (string $url, array $o = []) use ($jar): array {
+$minta = static function (string $url, array $o = []) use (&$kuki): array {
     $ch = curl_init($url);
     $s = [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_COOKIEJAR => $jar,
-        CURLOPT_COOKIEFILE => $jar,
         CURLOPT_FOLLOWLOCATION => $o['ikut'] ?? true,
         CURLOPT_TIMEOUT => 60,
         CURLOPT_HEADER => true,
         CURLOPT_HTTPHEADER => $o['header'] ?? [],
     ];
+
+    if ($kuki !== []) {
+        // Baris Cookie tunggal: "nama=nilai; nama=nilai". Hanya nama=nilai yang
+        // diambil — atribut (path, expiry) tidak boleh ikut terkirim.
+        $baris = [];
+        foreach ($kuki as $pasangan) {
+            $namaNilai = explode(';', $pasangan, 2)[0];
+            if ($namaNilai !== '') {
+                $baris[] = $namaNilai;
+            }
+        }
+        $s[CURLOPT_COOKIE] = implode('; ', $baris);
+    }
+
     if (array_key_exists('pos', $o)) {
         $s[CURLOPT_POST] = true;
         $s[CURLOPT_POSTFIELDS] = $o['pos'];
@@ -56,21 +81,47 @@ $minta = static function (string $url, array $o = []) use ($jar): array {
     $kepala = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
     curl_close($ch);
 
-    return ['kode' => $kode, 'kepala' => substr((string) $mentah, 0, $kepala), 'isi' => substr((string) $mentah, $kepala)];
-};
+    $kepalaMentah = substr((string) $mentah, 0, $kepala);
 
-$xsrf = static function () use ($jar): string {
-    foreach (file($jar) ?: [] as $b) {
-        if (str_starts_with($b, '#') || trim($b) === '') {
-            continue;
-        }
-        $p = preg_split('/\t/', trim($b));
-        if (count($p) >= 7 && $p[5] === 'XSRF-TOKEN') {
-            return urldecode($p[6]);
+    // Setiap Set-Cookie masuk ke larik. Yang lama ditimpa yang baru, seperti
+    // peramban: cookie yang kedaluwarsa dan dikirim ulang menggantikan nilainya.
+    if (preg_match_all('/^Set-Cookie:\s*([^
+\n]+)/mi', $kepalaMentah, $m) > 0) {
+        foreach ($m[1] as $satu) {
+            $nama = trim(explode('=', $satu, 2)[0]);
+            if ($nama !== '') {
+                $kuki[$nama] = $satu;
+            }
         }
     }
 
-    return '';
+    // Token CSRF dari meta dicatat setiap kali halaman HTML diterima.
+    //
+    // Livewire mengganti snapshot setiap render, dan token ikut berganti setiap
+    // permintaan POST. Karena itu token HARUS diambil ulang dari halaman yang
+    // baru dirender, bukan disimpan sekali di awal.
+    if (preg_match('/name="csrf-token" content="([^"]+)"/', (string) $mentah, $m) === 1) {
+        $GLOBALS['csrf_token_terakhir'] = $m[1];
+    }
+
+    return ['kode' => $kode, 'kepala' => $kepalaMentah, 'isi' => substr((string) $mentah, $kepala)];
+};
+
+// Token CSRF diambil dari <meta name="csrf-token"> pada halaman, BUKAN dari
+// cookie XSRF-TOKEN.
+//
+// Keduanya berisi nilai yang sama tetapi TIDAK selalu identik bentuknya: cookie
+// XSRF-TOKEN dikirim ter-percent-encoded, sedangkan meta berisi nilai mentah.
+// Laravel membandingkan X-CSRF-TOKEN dengan isi sesi (nilai mentah), jadi
+// mengirim nilai terenkode dari cookie selalu ditolak 419 — meski cookie
+// sesinya sendiri terkirim benar.
+//
+// Terukur di mesin ini: header berisi nilai dari cookie → 419 berulang kali;
+// header berisi nilai dari meta → 200 dan masuk panel berhasil.
+$xsrf = static function (): string {
+    // Nilai meta halaman terakhir yang diambil. $halamanTerakhir diisi oleh
+    // pemanggil sebelum memakai token ini.
+    return $GLOBALS['csrf_token_terakhir'] ?? '';
 };
 
 $komponen = static function (string $html, string $nama): ?string {
@@ -91,13 +142,52 @@ $lw = static function (?string $snap, array $updates, array $calls) use ($minta,
         return ['kode' => 0, 'isi' => 'snapshot tidak ada', 'kepala' => ''];
     }
 
-    return $minta($basis.'/livewire/update', [
+    $jawaban = $minta($basis.'/livewire/update', [
         'pos' => json_encode([
             'components' => [['snapshot' => $snap, 'updates' => $updates, 'calls' => $calls]],
         ], JSON_UNESCAPED_SLASHES),
         'ikut' => false,
-        'header' => ['Content-Type: application/json', 'X-Livewire: 1', 'Accept: application/json', 'X-XSRF-TOKEN: '.$xsrf()],
+        'header' => [
+            'Content-Type: application/json',
+            'X-Livewire: 1',
+            'Accept: application/json',
+            // KEDUA tajuk dikirim, bukan hanya X-XSRF-TOKEN.
+            //
+            // Laravel membandingkan keduanya dengan cookie: X-CSRF-TOKEN mencari
+            // token di sesi (lewat meta csrf-token di halaman), sedangkan
+            // X-XSRF-TOKEN membandingkan dengan cookie XSRF-TOKEN. Mengirim
+            // salah satunya saja membuat permintaan ditolak 419 meski cookie
+            // terkirim benar — itu yang membuat skrip ini gagal berulang kali.
+            'X-CSRF-TOKEN: '.$xsrf(),
+            'X-XSRF-TOKEN: '.$xsrf(),
+        ],
     ]);
+
+    // Livewire mengalihkan lewat EFEK JAVASCRIPT, bukan lewat tajuk Location.
+    //
+    // Ketika satu aksi menghasilkan redirect — misalnya masuk() yang berhasil
+    // mengarahkan ke dasbor — jawabannya tetap HTTP 200, tetapi memuat
+    // {"effects":{"redirect":"/admin"}}. Peramban menjalankannya dari
+    // JavaScript; permintaan berikutnya otomatis menuju halaman baru.
+    //
+    // Skrip ini tidak menjalankan JavaScript, jadi redirect-nya harus diikuti
+    // dengan tangan. Tanpa itu, halaman sesudahnya adalah halaman SEBELUM
+    // redirect — halaman masuk lagi — dan pemeriksaan berikutnya membaca isi
+    // yang salah (halaman masuk juga 200).
+    if (preg_match('/"redirect":"([^"]+)"/', $jawaban['isi'], $m) === 1) {
+        $tujuan = str_replace(['\\/', '\/'], '/', $m[1]);
+
+        if ($tujuan !== '' && $tujuan[0] !== '#') {
+            $lanjut = str_starts_with($tujuan, 'http') ? $tujuan : $basis.$tujuan;
+            $halaman = $minta($lanjut, ['ikut' => false]);
+
+            if ($halaman['kode'] === 200) {
+                return $halaman;
+            }
+        }
+    }
+
+    return $jawaban;
 };
 
 /** Ukuran lembar PDF dalam milimeter, dibaca dari /MediaBox. */
@@ -124,7 +214,14 @@ $halamanMasuk = $minta($basis.'/admin/login');
 $snapMasuk = $komponen($halamanMasuk['isi'], 'admin.masuk');
 
 // Kata sandi salah dulu: harus ditolak.
-$salah = $lw($snapMasuk, ['email' => 'admin@iksanknalpot.test', 'password' => 'salah-total'], [
+//
+// Snapshot diambil ULANG untuk setiap percobaan. Satu snapshot tidak boleh
+// dipakai dua kali: Livewire mengikat snapshot pada keadaan sesi saat itu,
+// dan percobaan pertama — termasuk yang gagal — sudah mengubah keadaan itu.
+// Terbukti: snapshot yang sama dipakai dua kali membuat percobaan kedua
+// (dengan kata sandi benar) ditolak 419.
+$snapSalah = $komponen($minta($basis.'/admin/login')['isi'], 'admin.masuk');
+$salah = $lw($snapSalah, ['email' => 'admin@iksanknalpot.test', 'password' => 'salah-total'], [
     ['path' => '', 'method' => 'masuk', 'params' => []],
 ]);
 
@@ -134,7 +231,8 @@ $periksa(
     'HTTP '.$salah['kode'].', tidak ada sesi panel',
 );
 
-$masuk = $lw($snapMasuk, ['email' => 'admin@iksanknalpot.test', 'password' => 'password'], [
+// Snapshot baru untuk percobaan yang benar.
+$masuk = $lw($komponen($minta($basis.'/admin/login')['isi'], 'admin.masuk'), ['email' => 'admin@iksanknalpot.test', 'password' => 'password'], [
     ['path' => '', 'method' => 'masuk', 'params' => []],
 ]);
 
@@ -159,6 +257,7 @@ foreach ([
     'Keamanan' => '/admin/keamanan',
     'Pengaturan' => '/admin/pengaturan',
     'Hero' => '/admin/hero',
+    'Notifikasi perangkat' => '/admin/notifikasi',
 ] as $nama => $jalur) {
     $r = $minta($basis.$jalur);
     $periksa("Membuka halaman panel: {$nama}", $r['kode'] === 200, 'HTTP '.$r['kode']);
@@ -175,12 +274,22 @@ $pendingDb = (int) $pdo->query("select count(*) from orders where status = 'pend
 // Baris tabel dihitung dari nomor pesanan yang tampil, bukan dari tautan —
 // setiap baris punya satu tautan, tetapi nomor pesanannya yang membuktikan
 // barisnya benar-benar pesanan pending.
-preg_match_all('/IK-\d{8}-[A-Z0-9]{6}/', $saring['isi'], $mNomor);
+//
+// Bentuk nomor: IK-YYYYMMDD-NNNN (empat digit), seperti yang dibuat seeder dan
+// yang tertulis di basis data. Pola lama memakai [A-Z0-9]{6} dan tidak pernah
+// cocok, sehingga angka yang diperiksa selalu nol — alat ukurnya yang rusak,
+// bukan halamannya.
+//
+// Yang diperiksa: jumlah yang tampil SAMA DENGAN jumlah di basis data. Bukan
+// "lebih dari nol": run skenario ini sendiri menandai pesanan lunas, jadi
+// jumlah pending di basis data bisa nol pada run berikutnya — dan menuntut
+// "ada yang tampil" berarti menuntut pesanan yang tidak ada.
+preg_match_all('/IK-\d{8}-\d{4}/', $saring['isi'], $mNomor);
 $tampil = count(array_unique($mNomor[0]));
 
 $periksa(
     'Saringan status pesanan sesuai basis data',
-    $saring['kode'] === 200 && $tampil > 0 && $tampil <= max(1, $pendingDb),
+    $saring['kode'] === 200 && $tampil === $pendingDb,
     'status=pending: '.$tampil.' pesanan tampil, '.$pendingDb.' di basis data',
 );
 
@@ -372,7 +481,7 @@ $periksa(
     'logout HTTP '.$keluar['kode'].', panel HTTP '.$setelahKeluar['kode'],
 );
 
-@unlink($jar);
+// Berkas cookie tidak dipakai lagi — cookie dikirim lewat header (lihat $minta).
 
 echo "\nHasil admin: {$lulus} lulus, {$gagal} gagal\n";
 

@@ -20,6 +20,10 @@
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Livewire dimuat eksplisit. Tanpa ini, panel admin tampil tetapi seluruh
+         tombol wire:click mati — termasuk notifikasi, tabel, dan aksi simpan. --}}
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-bg text-ink">
 
@@ -60,6 +64,8 @@
             'kelompok' => 'Situs',
             'butir' => [
                 ['rute' => 'admin.hero.index', 'pola' => 'admin.hero.*', 'ikon' => 'image', 'label' => 'Hero', 'bawah' => false],
+                ['rute' => 'admin.faq.index', 'pola' => 'admin.faq.*', 'ikon' => 'info', 'label' => 'FAQ', 'bawah' => false],
+                ['rute' => 'admin.notifications.index', 'pola' => 'admin.notifications.*', 'ikon' => 'bell', 'label' => 'Notifikasi', 'bawah' => false],
                 ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => true],
                 ['rute' => 'admin.reports.index', 'pola' => 'admin.reports.*', 'ikon' => 'chart', 'label' => 'Laporan', 'bawah' => false],
                 ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false],
@@ -293,5 +299,6 @@
     </nav>
 </div>
 
+    @livewireScripts
 </body>
 </html>

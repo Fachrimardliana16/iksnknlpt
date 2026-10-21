@@ -118,32 +118,30 @@ class KeamananOperasionalTest extends TestCase
     // ── F10-13: cadangan ────────────────────────────────────────────
 
     /** @return array<int, string> */
-    private function isiFolderCadangan(): array
+    private function isiFolderCadangan(string $folder): array
     {
-        $folder = storage_path('app/backup');
         @mkdir($folder, 0755, true);
 
         return glob($folder.'/iksan-*.sqlite') ?: [];
     }
 
+    /**
+     * Perintah cadangan diuji di folder SEMENTARA, bukan di storage/app/backup.
+     *
+     * Versi pertama test ini menjalankan perintah di folder cadangan asli sambil
+     * mengarahkan koneksi ke berkas basis data kerja. Akibatnya pembersihan
+     * berkas berjalan di tengah siklus WAL dan menghapus isi
+     * database.sqlite — dua kali, dan data pengembangan hilang keduanya.
+     * Opsi --folder ada supaya test tidak pernah menyentuh berkas kerja.
+     */
     public function test_perintah_backup_menghasilkan_berkas_dan_menyimpan_empat_belas(): void
     {
-        // Folder cadangan dipakai perintah apa adanya, jadi isinya diselamatkan
-        // lebih dulu dan dipulihkan di akhir: cadangan sungguhan milik mesin
-        // ini tidak boleh ikut terhapus oleh aturan "sisakan 14" milik test.
-        $folder = storage_path('app/backup');
+        $folder = storage_path('app/backup-uji-'.uniqid());
         @mkdir($folder, 0755, true);
 
-        $simpanan = [];
-
-        foreach ($this->isiFolderCadangan() as $berkas) {
-            $simpanan[$berkas] = file_get_contents($berkas);
-            @unlink($berkas);
-        }
-
         try {
-            // 15 berkas lama, umurnya dibuat bertingkat: pengurutannya memakai
-            // umur berkas, dan filemtime yang sama membuat "tertua" menjadi acak.
+            // 15 berkas lama, umurnya bertingkat: pengurutannya memakai umur
+            // berkas, dan filemtime yang sama membuat "tertua" menjadi acak.
             for ($i = 1; $i <= 15; $i++) {
                 $jalur = $folder.'/iksan-2026-01-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT).'_020000.sqlite';
 
@@ -151,48 +149,72 @@ class KeamananOperasionalTest extends TestCase
                 touch($jalur, now()->subDays(30 - $i)->getTimestamp());
             }
 
-            // Perintah membaca berkas basis data dari koneksi yang sedang aktif.
-            // Di test, koneksinya ":memory:" dan tidak ada berkas untuk disalin,
-            // sehingga perintah berhenti sebelum aturan "sisakan 14" tercapai.
-            // Koneksinya diarahkan ke berkas basis data pengembangan hanya
-            // selama pemanggilan ini, lalu dikembalikan.
-            $basisData = base_path('database/database.sqlite');
-
-            $this->assertFileExists($basisData, 'Berkas basis data pengembangan tidak ada.');
-
-            $semula = config('database.connections.sqlite.database');
-
-            config(['database.connections.sqlite.database' => $basisData]);
-
-            try {
-                $kode = Artisan::call('iksan:backup', ['--simpan' => 14]);
-            } finally {
-                config(['database.connections.sqlite.database' => $semula]);
-            }
+            // Basis data test adalah ":memory:", yang tidak punya berkas untuk
+            // disalin. Yang diuji di sini adalah aturan "sisakan 14": perintah
+            // membersihkan berkas lama yang memang ada di folder tujuannya.
+            $kode = Artisan::call('iksan:backup', ['--simpan' => 14, '--folder' => $folder]);
             $keluaran = Artisan::output();
 
-            $berkas = $this->isiFolderCadangan();
+            $berkas = $this->isiFolderCadangan($folder);
 
-            $this->assertSame(0, $kode, 'Perintah cadangan gagal: '.$keluaran);
-            $this->assertCount(14, $berkas, 'Jumlah berkas cadangan bukan 14.');
-            $this->assertStringContainsString('Total cadangan tersimpan: 14', $keluaran);
+            $this->assertCount(14, $berkas, 'Jumlah berkas cadangan bukan 14. Keluaran: '.$keluaran);
 
             // Yang terhapus adalah yang paling tua, bukan sembarang berkas.
             $this->assertFileDoesNotExist($folder.'/iksan-2026-01-01_020000.sqlite');
             $this->assertFileExists($folder.'/iksan-2026-01-15_020000.sqlite');
-            $this->assertGreaterThan(
-                0,
-                filesize($folder.'/'.basename((string) collect($berkas)->sortByDesc(fn ($b): int => filemtime($b))->first())),
-                'Berkas cadangan baru kosong.',
-            );
+
+            // Basis data test kini berupa BERKAS (database/testing.sqlite), jadi
+            // perintah berhasil menyalinnya: keluaran kode 0, dan jumlah berkas
+            // tetap 14 karena cadangan yang baru menggantikan yang tertua.
+            $this->assertSame(0, $kode, 'Perintah cadangan gagal: '.$keluaran);
+            $this->assertStringContainsString('Cadangan tersimpan', $keluaran);
+            $this->assertStringContainsString('dari 14 yang dijaga', $keluaran);
+
+            // Berkas hasil salinan benar-benar berisi basis data, bukan nol bita.
+            $terbaru = collect($this->isiFolderCadangan($folder))->sortByDesc(fn ($b) => filemtime($b))->first();
+            $this->assertGreaterThan(1024, filesize((string) $terbaru), 'Berkas cadangan kosong.');
         } finally {
-            foreach ($this->isiFolderCadangan() as $berkas) {
-                @unlink($berkas);
+            foreach ($this->isiFolderCadangan($folder) as $b) {
+                @unlink($b);
             }
 
-            foreach ($simpanan as $jalur => $isi) {
-                file_put_contents($jalur, $isi);
+            @rmdir($folder);
+        }
+    }
+
+    public function test_perintah_backup_menolak_berkas_basis_data_rusak(): void
+    {
+        $folder = storage_path('app/backup-uji-'.uniqid());
+        @mkdir($folder, 0755, true);
+
+        $rusak = storage_path('app/db-rusak-'.uniqid().'.sqlite');
+        file_put_contents($rusak, '');
+
+        try {
+            // Yang diuji adalah penjaganya, bukan jalur koneksi: nama berkas
+            // rusak disuntikkan lewat opsi, sehingga config koneksi global
+            // TIDAK disentuh. Versi sebelumnya mengubah
+            // config('database.connections...') di dalam test, dan itu ikut
+            // membuat test lain memakai berkas yang salah.
+            $kode = \Illuminate\Support\Facades\Artisan::call('iksan:backup', [
+                '--simpan' => 14,
+                '--folder' => $folder,
+                '--basis-data' => $rusak,
+            ]);
+
+            $keluaran = \Illuminate\Support\Facades\Artisan::output();
+
+            $this->assertSame(1, $kode, 'Basis data rusak seharusnya ditolak.');
+            $this->assertStringContainsString('tampak rusak', $keluaran);
+            $this->assertSame([], $this->isiFolderCadangan($folder), 'Cadangan dibuat dari berkas rusak.');
+        } finally {
+            @unlink($rusak);
+
+            foreach ($this->isiFolderCadangan($folder) as $b) {
+                @unlink($b);
             }
+
+            @rmdir($folder);
         }
     }
 

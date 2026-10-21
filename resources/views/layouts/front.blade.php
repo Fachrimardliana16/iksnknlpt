@@ -17,14 +17,44 @@
     <title>{{ isset($title) && filled($title) ? $title : $toko->teks('site_name', __('site.brand.fallback_name')) }}</title>
     <meta name="description" content="{{ $deskripsi ?? $toko->teks('site_description', __('site.brand.tagline')) }}">
 
-    @isset($tanpaIndeks)
-        <meta name="robots" content="noindex, nofollow">
-    @endisset
-
     @isset($kanonikal)
         <link rel="canonical" href="{{ $kanonikal }}">
         <meta property="og:url" content="{{ $kanonikal }}">
     @endisset
+
+    {{--
+        GEO (Generative Engine Optimization).
+
+        Mesin jawaban — ChatGPT, Perplexity, Gemini, AI Overviews — mengutip
+        dari halaman yang jawabannya eksplisit. Tiga penanda di bawah memberi
+        mereka izin dan bentuk kutipan yang jelas:
+
+          ai-summary      ringkasan satu paragraf yang boleh dikutip apa adanya;
+          ai-content-declaration  menyatakan isi ini untuk dikutip, bukan
+                          diabaikan;
+          max-snippet:-1  mencabut batas panjang cuplikan (bawaan mesin
+                          pencari bisa memotong di tengah kalimat).
+
+        Tanpa ringkasan eksplisit, mesin jawaban menyusun jawabannya sendiri
+        dari menu navigasi, dan hasilnya sering salah sebut harga atau layanan.
+    --}}
+    @isset($ringkasanAi)
+        @if (filled($ringkasanAi))
+            <meta name="ai-summary" content="{{ $ringkasanAi }}">
+            <meta name="ai-content-declaration" content="original">
+        @endif
+    @endisset
+
+    <meta name="robots" content="{{ isset($tanpaIndeks) ? 'noindex, nofollow' : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1' }}">
+
+    <?php /* Bahasa alternatif: halaman yang sama tersedia dalam dua bahasa
+             lewat cookie, bukan lewat URL terpisah. Untuk mesin pencari, satu
+             URL dengan dua bahasa dinyatakan sebagai dua hreflang pada URL
+             yang sama — itu cara yang sah menyatakan "isi ini juga tersedia
+             dalam bahasa lain" tanpa membuat isi ganda. */ ?>
+    <link rel="alternate" hreflang="id" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="en" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
 
     @isset($metaOg)
         <meta property="og:type" content="{{ $metaOg['tipe'] ?? 'website' }}">
@@ -43,6 +73,15 @@
          service worker menyimpan aset statis dan halaman luring. Keduanya
          diletakkan di <head> supaya peramban menemukannya sebelum aset lain
          dimuat — manifes yang ditemukan terlambat tidak dianggap ada. --}}
+    {{-- Slide hero pertama dimuat lebih dulu: peramban mulai mengunduhnya saat
+         masih mengurai <head>, bukan setelah CSS dan skrip selesai. Tanpa ini,
+         gambar terbesar di beranda baru diminta paling akhir. --}}
+    @isset($heroPertama)
+        @if (filled($heroPertama))
+            <link rel="preload" as="image" href="{{ $heroPertama }}" fetchpriority="high">
+        @endif
+    @endisset
+
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#111114">
     <link rel="apple-touch-icon" href="/ikon-pwa-192.png">
@@ -84,6 +123,17 @@
     <link rel="preload" href="{{ asset('fonts/barlow-600-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Livewire WAJIB dimuat eksplisit di sini.
+         ...
+         Tanpa kedua direktif ini, markup komponen dirender (wire:id,
+         wire:snapshot ada di HTML) tetapi livewire.js tidak pernah dimuat,
+         sehingga SEMUA wire:click mati — tombol + dan − pada pemilih jumlah,
+         tambah ke keranjang, filter katalog, semuanya tidak bereaksi.
+         Itu bukan kegagalan sebagian: seluruh interaksi Livewire berhenti,
+         dan halaman tampak "normal" karena CSS-nya tetap termuat.
+    --}}
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-bg text-ink antialiased">
 
@@ -102,6 +152,55 @@
     @include('partials.front.bottom-nav')
     @include('partials.front.whatsapp')
 
+    @isset($remah)
+        @if (is_array($remah) && count($remah) > 1)
+            @php
+                $daftarRemah = [];
+
+                foreach (array_values($remah) as $i => $r) {
+                    $daftarRemah[] = [
+                        '@type' => 'ListItem',
+                        'position' => $i + 1,
+                        'name' => $r['nama'],
+                        'item' => $r['tautan'],
+                    ];
+                }
+
+                // Store ikut di setiap halaman yang mengirim remah. Mesin
+                // jawaban sering mengutip halaman kategori tanpa membuka
+                // beranda, jadi identitas penjual harus ada di sini juga.
+                $jsonRemah = json_encode([
+                    '@context' => 'https://schema.org',
+                    '@graph' => [
+                        \App\Support\DataTerstruktur::toko(),
+                        [
+                            '@type' => 'BreadcrumbList',
+                            'itemListElement' => $daftarRemah,
+                        ],
+                    ],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                $jsonRemah = str_replace(['</', '<!--'], ['<\/', '<\!--'], (string) $jsonRemah);
+            @endphp
+            <script type="application/ld+json">
+{!! $jsonRemah !!}
+            </script>
+        @endif
+    @endisset
+
+    @isset($faq)
+        @if (is_array($faq) && $faq !== [])
+            @php
+                $grafik = \App\Support\DataTerstruktur::untuk(['faq' => $faq]);
+                $jsonFaq = json_encode($grafik, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $jsonFaq = str_replace(['</', '<!--'], ['<\/', '<\!--'], (string) $jsonFaq);
+            @endphp
+            <script type="application/ld+json">
+{!! $jsonFaq !!}
+            </script>
+        @endif
+    @endisset
+
     @if (filled($kepala ?? null))
         {{-- Sudah berupa HTML yang dirender view lain (misalnya blok JSON-LD),
              jadi dicetak apa adanya. Isinya dibangun dari json_encode sehingga
@@ -109,5 +208,6 @@
         {!! $kepala !!}
     @endif
 
+    @livewireScripts
 </body>
 </html>

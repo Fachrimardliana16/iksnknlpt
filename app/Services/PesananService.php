@@ -139,8 +139,16 @@ class PesananService
                     'city' => $data['kota'],
                     'state_province' => $data['provinsi'],
                     'postal_code' => $data['kodePos'],
+                    'country' => $data['negara'] ?? 'ID',
                 ],
                 'shipping_courier' => $data['kurir'] ?? null,
+
+                // Negara dalam huruf latin yang seragam. Ongkir internasional
+                // dihitung manual oleh admin setelah pesanan masuk (lihat
+                // catatan di bawah), jadi biayanya belum masuk di sini.
+                'shipping_country' => $data['negara'] ?? 'ID',
+                'shipping_currency' => $data['mataUang'] ?? 'IDR',
+                'shipping_is_intl' => ! \App\Support\Internasional::dalamNegeri((string) ($data['negara'] ?? 'ID')),
                 'customer_note' => $data['catatan'] ?? null,
                 // Pesanan yang belum dibayar dalam 24 jam dibatalkan penjadwal,
                 // dan stok dikembalikan.

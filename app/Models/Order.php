@@ -36,6 +36,14 @@ class Order extends Model
         'shipping_address_snapshot',
         'shipping_courier',
         'shipping_service',
+        // Pengiriman luar negeri. shipping_is_intl adalah PENANDA SETELAH
+        // DIBUAT, bukan "negara !== ID" — sehingga mengubah daftar negara di
+        // kemudian hari tidak mengubah klasifikasi pesanan lama.
+        'shipping_country',
+        'shipping_currency',
+        'shipping_is_intl',
+        'shipping_quoted_at',
+        'printed_at',
         'tracking_number',
         'customer_note',
         'admin_note',

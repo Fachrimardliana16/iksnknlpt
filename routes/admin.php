@@ -29,10 +29,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('admin')->name('admin.')->group(function (): void {
-    // Middleware auth mengarahkan tamu ke rute bernama "login", yang tidak ada
-    // di aplikasi ini. Arahkan ke halaman masuk panel, bukan ke rute bawaan.
-    Authenticate::redirectUsing(fn () => route('admin.login'));
-
+    // Pengalihan tamu ke halaman masuk panel TIDAK dipasang di sini.
+    //
+    // Lihat bootstrap/app.php -> $middleware->redirectGuestsTo(): dengan
+    // `route:cache`, berkas ini tidak dieksekusi, sehingga pemanggilan
+    // Authenticate::redirectUsing() di sini akan hilang begitu rute di-cache.
+    //
     Route::get('login', Masuk::class)->name('login');
 
     Route::post('logout', function () {
@@ -55,13 +57,25 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         // ── Penjualan ────────────────────────────────────────────────
         Route::get('keranjang-terbuka', KeranjangTerbuka::class)->name('carts.index');
 
+
         Route::get('pesanan', PesananDaftar::class)->name('orders.index');
+
+        // Cetak resi BANYAK sekaligus: satu berkas PDF berisi beberapa label
+        // 100x150 mm. ULID dipisah koma pada parameter "ulid".
+        //
+        // HARUS didaftarkan SEBELUM 'pesanan/{ulid}': rute dengan parameter
+        // cocok lebih dulu dan akan menelan kata "cetak-resi" sebagai ULID,
+        // sehingga PesananDetail mencari pesanan bernama "cetak-resi" lalu
+        // menghasilkan 404 yang membingungkan.
+        Route::get('pesanan/cetak-resi', \App\Http\Controllers\Admin\ResiBanyak::class)
+            ->name('orders.receipt.bulk');
         Route::get('pesanan/{ulid}', PesananDetail::class)->name('orders.show');
 
         // Dokumen cetak. PDF sungguhan dari sisi server (dompdf), bukan HTML
         // yang baru menjadi PDF lewat dialog cetak peramban — ukuran lembarnya
         // karena itu dapat diperiksa, dan hasilnya sama di peramban mana pun.
         Route::get('pesanan/{ulid}/resi', [DokumenPesanan::class, 'resi'])->name('orders.receipt');
+
         Route::get('pesanan/{ulid}/invoice', [DokumenPesanan::class, 'invoice'])->name('orders.invoice');
         Route::get('pesanan/{ulid}/surat-jalan', [DokumenPesanan::class, 'suratJalan'])->name('orders.delivery');
 
@@ -94,6 +108,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');
         Route::get('hero', HeroBuilder::class)->name('hero.index');
+        Route::get('faq', \App\Livewire\Admin\FaqPanel::class)->name('faq.index');
+
+        // Halaman pendaftaran notifikasi perangkat. Tidak di bawah /pengaturan:
+        // izin notifikasi diminta sekali per perangkat, dan mencarinya di dalam
+        // halaman pengaturan yang panjang membuat orang tidak menemukannya.
+        Route::get('notifikasi', \App\Livewire\Admin\NotifikasiPerangkat::class)->name('notifications.index');
     });
 });
 

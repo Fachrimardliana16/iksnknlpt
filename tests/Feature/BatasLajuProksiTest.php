@@ -57,23 +57,46 @@ class BatasLajuProksiTest extends TestCase
 
     public function test_konfigurasi_proksi_tidak_terbuka_untuk_semua(): void
     {
-        // Nilai '*' pada trustProxies membuat setiap alamat di internet sah
-        // memalsukan X-Forwarded-For. Di produksi (APP_ENV bukan local),
+        // Nilai '*' membuat setiap alamat di internet sah memalsukan
+        // X-Forwarded-For. Di produksi (APP_ENV bukan local),
         // IKK_TRUSTED_PROXIES harus diisi alamat proksi yang sebenarnya.
-        $sumber = (string) file_get_contents(base_path('bootstrap/app.php'));
+        //
+        // Proxy kini dipasang lewat App\Http\Middleware\PercayaiProxy, bukan
+        // $middleware->trustProxies() di bootstrap/app.php: closure di sana
+        // berjalan sebelum konfigurasi termuat, sehingga config() melempar
+        // ReflectionException dan env() mengembalikan null setelah config:cache.
+        $sumber = (string) file_get_contents(base_path('app/Http/Middleware/PercayaiProxy.php'))
+            .(string) file_get_contents(base_path('config/iksan.php'))
+            .(string) file_get_contents(base_path('bootstrap/app.php'));
 
         $this->assertStringContainsString(
-            "IKK_TRUSTED_PROXIES",
+            'IKK_TRUSTED_PROXIES',
             $sumber,
             'Proksi tepercaya tidak dibaca dari konfigurasi.',
         );
 
-        // Jalur longgar ('*' otomatis) hanya boleh aktif di local, bukan di
-        // produksi — dan itu tertulis eksplisit di sumbernya.
+        // Hanya HEADER_X_FORWARDED_PROTO yang dipercaya: skema HTTPS dari
+        // tunnel. Alamat IP TIDAK diambil dari header, supaya pembatas laju
+        // tidak dapat dilewati dengan memalsukan X-Forwarded-For.
+        $middleware = (string) file_get_contents(base_path('app/Http/Middleware/PercayaiProxy.php'));
+
         $this->assertStringContainsString(
-            "APP_ENV', 'production') === 'local'",
-            $sumber,
-            'Proksi longgar tidak dibatasi ke lingkungan local.',
+            'HEADER_X_FORWARDED_PROTO',
+            $middleware,
+            'Middleware proxy tidak memakai HEADER_X_FORWARDED_PROTO.',
+        );
+
+        $this->assertStringNotContainsString(
+            'HEADER_X_FORWARDED_FOR',
+            $middleware,
+            'Alamat IP tidak boleh dipercaya dari header: pembatas laju bisa dilewati.',
+        );
+
+        // Jangan pernah '*' otomatis.
+        $this->assertStringNotContainsString(
+            '$proxies = \'*\'',
+            (string) file_get_contents(base_path('bootstrap/app.php')),
+            'Proksi tidak boleh terbuka untuk semua.',
         );
     }
 

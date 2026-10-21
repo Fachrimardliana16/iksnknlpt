@@ -106,4 +106,31 @@ class DokumenPdf
 
         return $html ?? '';
     }
+
+    /**
+     * Versi untuk HTML yang sudah jadi (bukan View).
+     *
+     * Dipakai cetak resi banyak: dua puluh label disatukan dalam satu berkas,
+     * dan masing-masing dirender terpisah lalu dirangkai. dompdf menerima satu
+     * dokumen, jadi dua puluh View tidak bisa dilempar sekaligus.
+     */
+    public static function dariHtml(string $html, string $kertas, string $namaBerkas): Response
+    {
+        $opsi = new Options;
+        $opsi->setDefaultFont('DejaVu Sans');
+        $opsi->setIsRemoteEnabled(false);
+        $opsi->setIsHtml5ParserEnabled(true);
+        $opsi->setChroot([public_path(), storage_path(), base_path()]);
+
+        $dompdf = new Dompdf($opsi);
+        $dompdf->setPaper(self::ukuranKertas($kertas), 'portrait');
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->render();
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$namaBerkas.'"',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
 }

@@ -133,6 +133,12 @@ class KeamananLoginTest extends TestCase
         Setting::query()->where('key', 'whatsapp_number')->update(['value' => '628123456789']);
         Pengaturan::lupakan();
 
+        // Halaman publik disimpan di cache. Yang membatalkannya adalah naiknya
+        // versi katalog — hal yang sama yang dilakukan panel admin saat
+        // pengaturan disimpan. Test menirunya di sini, bukan memanggil
+        // Cache::flush(): yang perlu dibuktikan adalah MEKANISME pembatalannya.
+        \App\Support\CacheKatalog::tandaiBerubah();
+
         $this->get('/')->assertOk()->assertSee('wa.me/628123456789');
     }
 

@@ -23,7 +23,9 @@ class CadangkanBasisData extends Command
 {
     protected $signature = 'iksan:backup
                             {--simpan=14 : Jumlah salinan terakhir yang disimpan}
-                            {--min-disk-mb=500 : Ruang disk minimum yang harus tersisa}';
+                            {--min-disk-mb=500 : Ruang disk minimum yang harus tersisa}
+                            {--folder= : Folder tujuan (bawaan storage/app/backup)}
+                            {--basis-data= : Berkas basis data yang disalin (bawaan dari koneksi aktif)}';
 
     protected $description = 'Menyimpan cadangan basis data dan membersihkan salinan lama';
 
@@ -32,7 +34,13 @@ class CadangkanBasisData extends Command
         $minDiskMb = (int) $this->option('min-disk-mb');
         $simpan = max(1, (int) $this->option('simpan'));
 
-        $folder = storage_path('app/backup');
+        // Folder dapat diganti lewat opsi, dan test WAJIB memakainya.
+        //
+        // Tanpa opsi ini, test "sisakan 14" harus menjalankan perintahnya di
+        // folder cadangan ASLI sambil mengarahkan koneksi basis data ke berkas
+        // kerja — dan pembersihan berkas di tengah siklus WAL dapat menghapus
+        // isi database.sqlite. Itu pernah terjadi dua kali di mesin ini.
+        $folder = (string) ($this->option('folder') ?: storage_path('app/backup'));
 
         if (! is_dir($folder) && ! @mkdir($folder, 0775, true) && ! is_dir($folder)) {
             $this->error('Folder cadangan tidak dapat dibuat: '.$folder);
@@ -64,10 +72,32 @@ class CadangkanBasisData extends Command
         $nama = 'iksan-'.now()->format('Y-m-d_His').'.sqlite';
         $tujuan = $folder.DIRECTORY_SEPARATOR.$nama;
 
-        $basisData = config('database.connections.'.config('database.default').'.database');
+        // Berkas yang disalin dapat ditentukan lewat opsi. Dipakai test supaya
+        // tidak perlu mengubah config koneksi global — mengubahnya di dalam
+        // test pernah membuat test lain memakai basis data yang salah.
+        $basisData = (string) ($this->option('basis-data')
+            ?: config('database.connections.'.config('database.default').'.database'));
 
         if (! is_string($basisData) || ! is_file($basisData)) {
             $this->error('Berkas basis data tidak ditemukan: '.(string) $basisData);
+
+            return self::FAILURE;
+        }
+
+        // Penjaga kerusakan: berkas 0 bita atau yang tidak berawalan "SQLite
+        // format 3" TIDAK dicadangkan, dan tidak boleh menimpa cadangan sehat.
+        // Tanpa penjaga ini, basis data yang sudah rusak tercadangkan seolah
+        // sehat, lalu cadangan baik yang tersisa ikut terhapus oleh aturan
+        // "sisakan 14" — persis yang pernah terjadi di mesin ini.
+        $kepala = (string) @file_get_contents($basisData, false, null, 0, 16);
+
+        if (filesize($basisData) < 1024 || ! str_starts_with($kepala, "SQLite format 3")) {
+            $this->error('Berkas basis data tampak rusak ('.filesize($basisData).' bita). Cadangan dibatalkan.');
+
+            CatatanAktivitas::catat('backup.gagal', [
+                'sebab' => 'berkas basis data tidak sah',
+                'ukuran' => filesize($basisData),
+            ]);
 
             return self::FAILURE;
         }

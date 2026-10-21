@@ -88,6 +88,32 @@
         </label>
     </div>
 
+    {{-- ── Bilah cetak banyak ────────────────────────────────────────
+         Tombol ini hidup dari peramban, bukan dari komponen Livewire: yang
+         diperlukan cuma membaca kotak centang yang sudah dicentang lalu
+         membangun alamatnya. Membuatnya milik Livewire berarti setiap centang
+         memicu permintaan ke server untuk sesuatu yang belum perlu.
+
+         Alpine TIDAK dipakai di sini dengan sengaja. Blade admin memuat
+         Alpine hanya untuk drawer, dan menggantungkan fungsinya padanya
+         berarti tombol ini mati bila penarikan Alpine gagal — sedangkan
+         mencetak resi dua puluh paket bukan pekerjaan yang boleh gagal
+         karena peramban. --}}
+    <div class="plate flex flex-wrap items-center justify-between gap-3 p-3">
+        <p class="text-sm text-muted">
+            Centang pesanan di bawah, lalu cetak semua label sekaligus dalam satu berkas PDF.
+        </p>
+
+        <div class="flex items-center gap-2">
+            <span id="jumlah-terpilih" class="tech text-sm text-dim">0 dipilih</span>
+
+            <button type="button" id="tombol-cetak-banyak" class="btn btn-primary" disabled>
+                <x-ikon name="printer" :size="16" />
+                Cetak resi terpilih
+            </button>
+        </div>
+    </div>
+
     {{-- ── Daftar pesanan ──────────────────────────────────────────── --}}
     <div class="space-y-3">
         @forelse ($pesanan as $o)
@@ -149,6 +175,18 @@
 
                 {{-- Tindakan cepat, di atas lapisan tautan --}}
                 <div class="relative z-10 mt-3 flex flex-wrap items-center gap-2 border-t border-line-soft pt-3">
+
+                    {{-- Kotak centang untuk cetak resi banyak.
+                         Tanpa wire:model: pilihannya milik peramban, bukan state
+                         Livewire, sehingga tidak memicu permintaan ke server tiap
+                         kali dicentang — dan yang penting, tidak hilang saat daftar
+                         disegarkan. --}}
+                    <label class="flex items-center gap-1.5 text-xs text-muted"
+                           title="Pilih untuk dicetak bersama yang lain">
+                        <input type="checkbox" class="h-4 w-4 accent-[var(--c-accent)]"
+                               data-cetak-resi value="{{ $o->ulid }}">
+                        <span>Pilih cetak</span>
+                    </label>
                     @if ($o->status === \App\Enums\StatusPesanan::Pending)
                         <button type="button" class="btn btn-primary"
                                 wire:click="tandaiDibayar({{ $o->id }})"

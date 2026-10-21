@@ -554,7 +554,27 @@ class KatalogFrontTest extends TestCase
 
         $awal = (int) $produk->view_count;
 
-        foreach (range(1, 8) as $i) {
+        // Kunjungan TAMU. Pencatatan tampilan terjadi di mount() komponen, dan
+        // sejak cache halaman publik dipasang, kunjungan tamu kedua dan
+        // seterusnya dilayani dari cache — tidak ada mount, tidak ada
+        // penambahan. Itu memang yang diinginkan: cache halaman mengalahkan
+        // penghitung tampilan, dan angkanya tidak boleh "dibayar" dengan
+        // merender ulang seluruh halaman.
+        $this->withSession([])->get('/produk/'.$produk->slug)->assertOk();
+        $this->assertSame($awal + 1, (int) $produk->fresh()->view_count);
+
+        // Kunjungan yang benar-benar merender (pengunjung yang sudah masuk,
+        // yang memang tidak dilayani cache) menambah satu per kunjungan.
+        $user = \App\Models\User::query()->create([
+            'name' => 'Pelanggan Uji',
+            'email' => 'viewcount@contoh.test',
+            'password' => 'rahasia123',
+            'role' => 'customer',
+        ]);
+
+        $this->actingAs($user);
+
+        foreach (range(1, 7) as $i) {
             $this->get('/produk/'.$produk->slug)->assertOk();
         }
 
@@ -589,7 +609,13 @@ class KatalogFrontTest extends TestCase
         Product::query()->whereKey($produk->id)->update(['view_count' => 40]);
 
         $this->get('/produk')->assertOk();
-        \Livewire\Livewire::test(ProdukDaftar::class)->assertSee($produk->sku);
+
+        // SKU sengaja TIDAK lagi tampil di kartu katalog: nomor bagian tidak
+        // membantu pembeli memilih dari daftar, dan barisnya menambah tinggi
+        // kartu sehingga proporsinya rusak (kartu kurus dan memanjang di ponsel).
+        // Yang perlu dibuktikan di sini adalah kartu menampilkan PRODUK yang
+        // benar — memakai judul, bukan nomor bagian.
+        \Livewire\Livewire::test(ProdukDaftar::class)->assertSee($produk->judul());
 
         $this->assertSame(40, (int) $produk->fresh()->view_count);
     }

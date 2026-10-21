@@ -27,6 +27,10 @@ return [
     ],
 
     'home' => [
+        'faq_title' => 'Pertanyaan yang sering diajukan',
+        'faq_subtitle' => 'Hal yang paling sering ditanyakan sebelum memesan.',
+        'faq_all' => 'Semua FAQ',
+
         'about_part' => 'Tentang',
         'products_part' => 'Katalog',
         'about_title' => 'Pipa diukur sebelum dipotong',
@@ -121,6 +125,11 @@ return [
     ],
 
     'checkout' => [
+        'country' => 'Negara tujuan',
+        'currency' => 'Mata uang',
+        'shipping_intl_quote' => 'ongkir internasional dihitung manual setelah pesanan masuk',
+        'intl_note' => 'Pengiriman ke luar negeri membutuhkan alamat dalam huruf Latin dan ongkir dihitung manual oleh admin.',
+
         'title' => 'Checkout',
         'guest_note' => 'Tidak perlu membuat akun untuk memesan.',
         'contact' => 'Data Kontak',
@@ -209,4 +218,9 @@ return [
         'back_home' => 'Kembali ke beranda',
     ],
 
+    'faq' => [
+        'title' => 'Pertanyaan yang sering diajukan',
+        'meta' => 'Jawaban atas pertanyaan pembeli tentang pembayaran, pengiriman, dan produk.',
+        'empty' => 'Belum ada pertanyaan yang dipublikasikan.',
+    ],
 ];

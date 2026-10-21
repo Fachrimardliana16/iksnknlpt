@@ -81,3 +81,68 @@ self.addEventListener('fetch', (event) => {
         fetch(permintaan).catch(() => caches.match(SHELL_LURING).then((r) => r || Response.error()))
     );
 });
+/* ── Notifikasi push (Fase 3: P3-05) ────────────────────────────────────
+ *
+ * Pesan dikirim oleh server dalam bentuk JSON: {title, body, url, icon}.
+ *
+ * Dua peristiwa yang wajib ada:
+ *   push          — menampilkan notifikasi
+ *   notificationclick — menangani klik
+ *
+ * Peraturan klik yang penting: kalau panel SUDAH terbuka di tab lain, jangan
+ * membuka tab baru — cukup memfokuskannya. Membuka tab kedua untuk notifikasi
+ * yang sama adalah cara tercepat membuat admin menutup semuanya.
+ */
+self.addEventListener('push', (event) => {
+    if (! event.data) return;
+
+    let muatan;
+
+    try {
+        muatan = event.data.json();
+    } catch (e) {
+        // Muatan bukan JSON: tampilkan teksnya apa adanya, jangan gugurkan
+        // notifikasi hanya karena bentuknya berbeda.
+        muatan = { title: 'Panel', body: event.data.text() };
+    }
+
+    const judul = muatan.title || 'Panel';
+    const opsi = {
+        body: muatan.body || '',
+        icon: muatan.icon || '/ikon-pwa-192.png',
+        badge: muatan.badge || '/ikon-pwa-192.png',
+        // Satu tag: notifikasi baru menimpa yang lama, tidak menumpuk.
+        tag: muatan.tag || 'panel-admin',
+        renotify: Boolean(muatan.renotify),
+        data: { url: muatan.url || '/admin' },
+    };
+
+    event.waitUntil(self.registration.showNotification(judul, opsi));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const tujuan = (event.notification.data && event.notification.data.url) || '/admin';
+
+    // Absolute-kan relatif ke origin service worker.
+    const alamat = new URL(tujuan, self.location.origin).href;
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
+            // Tab yang sudah membuka alamat itu cukup difokuskan.
+            for (const klien of daftar) {
+                if (klien.url === alamat && 'focus' in klien) {
+                    return klien.focus();
+                }
+            }
+
+            // Tidak ada? Buka tab baru, asalkan peramban mengizinkan.
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(alamat);
+            }
+
+            return undefined;
+        }),
+    );
+});

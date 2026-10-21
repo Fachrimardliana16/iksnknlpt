@@ -26,6 +26,15 @@ class CacheKatalog
 {
     private const KUNCI_VERSI = 'katalog:versi';
 
+    /**
+     * Nama kunci versi katalog, dipakai juga oleh cache halaman.
+     *
+     * Satu versi untuk keduanya: ketika panel admin mengubah produk atau
+     * pengaturan, versi naik dan SELURUH cache halaman publik yang bergantung
+     * pada isi katalog ikut batal — tanpa daftar halaman yang harus diingat.
+     */
+    public const KUNCI_VERSI_KATALOG = self::KUNCI_VERSI;
+
     /** Nomor versi saat ini, dipakai sebagai bagian dari setiap kunci cache. */
     public static function versi(): int
     {

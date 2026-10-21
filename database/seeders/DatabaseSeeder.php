@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             ProductMediaSeeder::class,
             SpesifikasiProdukSeeder::class,
             HeroSlideSeeder::class,
+            FaqSeeder::class,
             CouponSeeder::class,
             OrderSeeder::class,
             ContactMessageSeeder::class,

@@ -27,3 +27,14 @@ Thumbs.db
 # cookie sementara; ukurannya belasan MB per ukuran layar dan tidak perlu masuk
 # riwayat git.
 tools/out/profil-chrome/
+
+# Basis data sementara untuk test (dibuat & dihapus oleh suite).
+/database/testing.sqlite
+/database/testing.sqlite-wal
+/database/testing.sqlite-shm
+
+# Artefak harness pengukuran: keluaran log, tangkapan HTML, profil peramban.
+tools/out/
+tools/__pycache__/
+public/cek-header.php
+public/robots.txt.bawaan

@@ -54,7 +54,8 @@
                     {{ __('site.product.sku') }}: {{ $product->sku }}
                 </p>
 
-                <p class="tech mt-5 text-3xl font-medium">{{ rupiah($harga) }}</p>
+                <p class="tech mt-5 text-3xl font-medium tabular-nums">{{ rupiah($harga) }}</p>
+                <x-harga-asing :nominal="$harga" class="mt-1" />
 
                 @if ($tersedia > 0)
                     <p class="mt-1 text-sm text-ok">{{ __('site.product.in_stock', ['count' => $tersedia]) }}</p>

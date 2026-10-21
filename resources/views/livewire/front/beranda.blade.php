@@ -6,7 +6,7 @@
 <div>
 
     {{-- 01 / HERO — full viewport --}}
-    <section class="relative isolate" style="min-height: calc(100svh - 56px); height: 100dvh; max-height: 100dvh;"
+    <section class="hero-layar relative isolate"
              x-data="{
                 i: 0,
                 n: {{ max(1, $slides->count()) }},
@@ -25,13 +25,27 @@
              x-init="mulai()"
              x-on:livewire:navigated.window="i = 0; jeda = false; berhenti(); mulai()">
 
+        {{-- Slide pertama dimuat lebih dulu di <head> (lihat layouts/front), supaya
+             peramban mulai mengunduhnya saat masih mengurai HTML. Di sini ia
+             hanya dipakai sebagai latar. Slide berikutnya TIDAK dimuat sebelum
+             giliran tampil: tanpa itu, tiga gambar 1600 px diunduh pada setiap
+             kunjungan beranda, dan waktu muat ikut menanggung semuanya. --}}
         @forelse ($slides as $idx => $slide)
+            @php
+                $urlSlide = \App\Models\ProductMedia::urlMedia($slide->media_path);
+            @endphp
             <div class="absolute inset-0 -z-10 transition-opacity duration-700"
                  x-show="i === {{ $idx }}"
                  :style="'opacity: i === {{ $idx }} ? 1 : 0'"
-                 style="background-image: url('{{ \App\Models\ProductMedia::urlMedia($slide->media_path) }}');
-                        background-size: cover;
-                        background-position: {{ $slide->posisiFokus() }};">
+                 @if ($idx === 0)
+                     style="background-image: url('{{ $urlSlide }}');
+                            background-size: cover;
+                            background-position: {{ $slide->posisiFokus() }};"
+                 @else
+                     {{-- Dipasang saat slide ditampilkan (Alpine menyalin latar). --}}
+                     x-bind:style="i === {{ $idx }} ? \"background-image: url('{{ $urlSlide }}'); background-size: cover; background-position: {{ $slide->posisiFokus() }};\" : 'background-image: none;'"
+                 @endif
+                 >
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/45"></div>
             </div>
         @empty
@@ -138,7 +152,7 @@
     </section>
 
     {{-- 02 / TENTANG --}}
-    <section class="container-page py-10 lg:py-24">
+    <section class="container-page py-10 lg:py-24" data-reveal>
         <span class="part-no">02 / {{ __('site.home.about_part') }}</span>
 
         <div class="mt-5 grid gap-8 lg:mt-6 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
@@ -212,7 +226,7 @@
     <div class="container-page"><div class="measure-line"></div></div>
 
     {{-- 03 / KATALOG --}}
-    <section class="container-page py-10 lg:py-24">
+    <section class="container-page py-10 lg:py-24" data-reveal>
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <span class="part-no">03 / {{ __('site.home.products_part') }}</span>
@@ -244,7 +258,11 @@
                  lihat semua, bukan gulir. --}}
             <div class="mt-6 grid grid-cols-2 gap-3 lg:mt-8 lg:grid-cols-4 lg:gap-6">
                 @foreach ($unggulan as $produk)
-                    <div class="{{ $loop->index >= $batasKatalog ? 'hidden lg:block' : '' }} h-full">
+                    {{-- Tiap kartu muncul berurutan, dengan jeda 55ms. Muncul
+                         serentak membuat empat kartu terbaca sebagai satu blok
+                         yang melompat; berurutan, mata mengikutinya. --}}
+                    <div class="{{ $loop->index >= $batasKatalog ? 'hidden lg:block' : '' }} h-full"
+                         data-reveal style="transition-delay: {{ $loop->index * 55 }}ms">
                         <x-kartu-produk :produk="$produk" />
                     </div>
                 @endforeach
@@ -258,7 +276,7 @@
     </section>
 
     {{-- 04 / CTA --}}
-    <section class="carbon-panel">
+    <section class="carbon-panel" data-reveal>
         <div class="container-page py-12 lg:py-20">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
                 <div class="max-w-xl">
@@ -283,5 +301,8 @@
             </div>
         </div>
     </section>
+
+    {{-- 05 / FAQ, tepat di bawah CTA. --}}
+    @include('partials.front.faq-beranda', ['faq' => $faq])
 
 </div>

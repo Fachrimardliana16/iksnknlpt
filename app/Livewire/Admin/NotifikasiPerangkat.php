@@ -1,0 +1,130 @@
+<?php
+
+namespace App\Livewire\Admin;
+
+use App\Models\PushSubscription;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+/**
+ * Pendaftaran notifikasi perangkat (web push) untuk admin.
+ *
+ * Bootstrap: admin memasang izin di peramban, lalu peramban mengirim alamat
+ * push ke server. Skrip `app.js` memanggil `daftar()` di sini setelah
+ * berhasil berlangganan.
+ *
+ * Ada tombol "Matikan" supaya izin dapat dicabut tanpa harus membuka
+ * pengaturan peramban — pengguna yang tidak bisa mematikan sesuatu akan
+ * mematikannya dari sumbernya, dan itu berarti tidak bisa dihubungi lagi.
+ */
+#[Layout('layouts.admin')]
+class NotifikasiPerangkat extends Component
+{
+    public bool $aktif = false;
+
+    public ?string $pesan = null;
+
+    public function mount(): void
+    {
+        $this->muatUlang();
+    }
+
+    public function daftar(string $endpoint, string $publicKey, string $authToken, ?string $peramban = null): void
+    {
+        $pengguna = auth()->user();
+
+        if ($pengguna === null) {
+            return;
+        }
+
+        // updateOrCreate pada endpoint: peramban yang menekan "Izinkan" dua
+        // kali (atau admin yang membuka panel di dua perangkat dengan alamat
+        // sama) tidak menghasilkan baris kembar yang notifikasinya dobel.
+        PushSubscription::query()->updateOrCreate(
+            ['endpoint' => $endpoint],
+            [
+                'user_id' => $pengguna->getKey(),
+                'public_key' => $publicKey,
+                'auth_token' => $authToken,
+                'peramban' => $peramban ?? $this->namaPeramban(),
+                'last_used_at' => now(),
+            ],
+        );
+
+        $this->pesan = 'Perangkat ini akan menerima notifikasi.';
+        $this->muatUlang();
+    }
+
+    public function matikan(): void
+    {
+        $pengguna = auth()->user();
+
+        if ($pengguna === null) {
+            return;
+        }
+
+        // Hanya milik pengguna ini. Matikan "semua" berarti satu admin yang
+        // logout mematikan notifikasi semua orang.
+        PushSubscription::query()
+            ->where('user_id', $pengguna->getKey())
+            ->delete();
+
+        $this->pesan = 'Notifikasi dimatikan untuk perangkat Anda.';
+        $this->muatUlang();
+    }
+
+    public function ujiPush(): void
+    {
+        $pengguna = auth()->user();
+
+        if ($pengguna === null) {
+            return;
+        }
+
+        $hasil = \App\Support\NotifikasiPush::ke(
+            $pengguna,
+            'Notifikasi uji',
+            'Ini notifikasi uji dari panel Iksan Knalpot.',
+            route('admin.dashboard'),
+        );
+
+        $this->pesan = match (true) {
+            $hasil['push'] > 0 => 'Notifikasi terkirim ke '.$hasil['push'].' perangkat.',
+            $hasil['alasan'] !== null => 'Belum terkirim: '.$hasil['alasan'],
+            default => 'Belum terkirim.',
+        };
+    }
+
+    private function muatUlang(): void
+    {
+        $this->aktif = PushSubscription::query()
+            ->where('user_id', auth()->id())
+            ->exists();
+    }
+
+    private function namaPeramban(): string
+    {
+        $ua = (string) request()->userAgent();
+
+        return match (true) {
+            str_contains($ua, 'Firefox') => 'Firefox',
+            str_contains($ua, 'Edg') => 'Edge',
+            str_contains($ua, 'OPR') => 'Opera',
+            str_contains($ua, 'Chrome') => 'Chrome',
+            str_contains($ua, 'Safari') => 'Safari',
+            default => 'lain',
+        };
+    }
+
+    public function render(): View
+    {
+        return view('livewire.admin.notifikasi-perangkat', [
+            'jumlahPerangkat' => PushSubscription::query()
+                ->where('user_id', auth()->id())
+                ->count(),
+            'kunciPublik' => config('services.vapid.public_key'),
+            'siap' => \App\Support\NotifikasiPush::siap(),
+        ])->title('Notifikasi perangkat · Panel');
+    }
+}

@@ -25,6 +25,13 @@ return [
         'kirim_saat_dibuat' => (bool) env('IKK_NOTIF_DIBUAT', true),
         'kirim_saat_dibayar' => (bool) env('IKK_NOTIF_DIBAYAR', true),
         'kirim_saat_dikirim' => (bool) env('IKK_NOTIF_DIKIRIM', true),
+
+        // Push perangkat (web push) saat notifikasi panel BERTAMBAH.
+        // Matikan kalau admin lebih memilih surel saja.
+        'push_perangkat' => (bool) env('IKK_NOTIF_PUSH', true),
+        // Surel cadangan saat push tidak sampai (belum ada langganan, izin
+        // belum diberikan, atau layanan push sedang bermasalah).
+        'push_surel_cadangan' => (bool) env('IKK_NOTIF_PUSH_EMAIL', true),
     ],
 
     /*

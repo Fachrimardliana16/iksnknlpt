@@ -61,6 +61,21 @@ class AppServiceProvider extends ServiceProvider
             $pdo->exec('PRAGMA temp_store = MEMORY');
             $pdo->exec('PRAGMA cache_size = -20000');
 
+            // WAL hanya untuk basis data BERKAS.
+            //
+            // Basis data ":memory:" tidak mengenal WAL. Menjalankan PRAGMA-nya
+            // membuat Laravel membuang koneksi lalu membukanya ulang TANPA
+            // ":memory:" — koneksi baru memakai jalur dari konfigurasi, yaitu
+            // database/database.sqlite. Akibatnya yang dimigrasikan adalah
+            // berkas KERJA, bukan basis data test; di mesin ini berkas itu
+            // sempat terkunci proses lain, WAL-nya terpotong, dan isinya
+            // hilang (0 bita) — dua kali.
+            $basisData = (string) $connection->getDatabaseName();
+
+            if ($basisData === ':memory:' || $basisData === '') {
+                return;
+            }
+
             // WAL tidak dapat diubah di dalam transaksi, jadi kegagalannya diabaikan
             // dengan sengaja bila koneksi kebetulan sudah berada dalam transaksi.
             try {
@@ -78,10 +93,19 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureProxyTrust(): void
     {
-        $trusted = config('iksan.trusted_proxies');
-
-        if ($trusted !== null) {
-            URL::forceScheme('https');
-        }
+        // Skema URL TIDAK dipaksa di sini.
+        //
+        // Dulu: begitu proxy dipercaya, seluruh URL dipaksa https. Akibatnya
+        // akses LOKAL (http://127.0.0.1:8100) juga dirender dengan https, CSS
+        // gagal dimuat, dan halaman tampil tanpa gaya — kerusakan yang sama
+        // dengan yang hendak diperbaiki, hanya berpindah tempat.
+        //
+        // Yang benar: biarkan skema mengikuti permintaan. Saat tiba lewat
+        // tunnel, header X-Forwarded-Proto: https dihormati karena proxy sudah
+        // dipercaya (lihat config/iksan.php -> trusted_proxies), sehingga aset
+        // dirender https. Saat dibuka langsung di mesin ini, tetap http.
+        //
+        // Baris ini sengaja kosong; kepercayaan proxy dipasang di
+        // bootstrap/app.php, dan pembacaan skema dilakukan Laravel sendiri.
     }
 }

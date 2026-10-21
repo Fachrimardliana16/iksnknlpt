@@ -7,8 +7,9 @@
 
 {{-- Bar atas. Desktop: satu baris penuh. Tablet dan mobile: bar ringkas,
      menu lengkap pindah ke drawer dan bar navigasi bawah. --}}
-<header class="sticky top-0 z-40 border-b border-line-soft bg-surface/95 backdrop-blur"
-        x-data="{ menu: false, cari: false, kategori: false }">
+<div x-data="{ menu: false, cari: false, kategori: false }">
+
+<header class="sticky top-0 z-40 border-b border-line-soft bg-surface/95 backdrop-blur">
 
     <div class="container-page flex h-14 items-center gap-2 lg:h-[72px] lg:gap-6">
 
@@ -104,6 +105,7 @@
         </div>
     </div>
 
+</header>
     {{-- Drawer menu: tablet dan mobile --}}
     <div x-show="menu" x-cloak class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/50" @click="menu = false" x-transition.opacity></div>
@@ -170,4 +172,15 @@
             <livewire:front.pencarian />
         </div>
     </div>
-</header>
+
+{{-- Penutup pembungkus x-data.
+
+     Pembungkus ini ada karena drawer dan panel pencarian HARUS berada di luar
+     <header>. Header memakai backdrop-blur, dan backdrop-filter membuat
+     containing block baru untuk position:fixed. Akibatnya drawer
+     "fixed inset-0" tidak menutupi layar, melainkan terkurung di dalam kotak
+     header setinggi 56px — yang terlihat sebagai lapisan transparan tanpa isi.
+
+     Variabel Alpine (menu, cari, kategori) tetap satu lingkup karena keduanya
+     berada di dalam pembungkus ini. --}}
+</div>

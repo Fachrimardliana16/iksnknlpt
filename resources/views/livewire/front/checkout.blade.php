@@ -11,6 +11,23 @@
             </div>
         @endif
 
+        {{-- ── Jebakan bot ───────────────────────────────────────────
+             DUA lapis, keduanya disembunyikan dari manusia:
+
+             1. Kolom "situs". Bot mengisi setiap field yang ada; manusia
+                tidak melihat field ini sama sekali (tabindex negatif,
+                aria-hidden, tanpa label yang tampil).
+             2. wire:model="segel" — nilai acak yang diulang. Manusia mengirim
+                sekali; bot mengulang ratusan kali dari muatan yang sama.
+
+             Menjaga keduanya tetap tersembunyi: jangan pernah memberi tahu bot
+             bahwa field ini ada, dan jangan membalas galatnya dengan bahasa
+             natural — itu berarti memberi tahu bot cara memperbaiki diri. --}}
+        <input type="text" wire:model="situs" tabindex="-1" autocomplete="off"
+               aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0">
+
+        <input type="hidden" wire:model="segel">
+
         <form wire:submit="buatPesanan" class="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem]">
 
             <div class="space-y-8">
@@ -81,6 +98,40 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div>
+                            <label class="label" for="negara">{{ __('site.checkout.country') }}</label>
+                            <select id="negara" class="field" wire:model.live="negara">
+                                @foreach ($daftarNegara as $kode => $label)
+                                    <option value="{{ $kode }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label" for="mataUang">{{ __('site.checkout.currency') }}</label>
+                            <select id="mataUang" class="field" wire:model.live="mataUang" @disabled($danNegeri)>
+                                <option value="IDR">Rupiah (IDR)</option>
+                                <option value="USD">US Dollar (USD)</option>
+                            </select>
+                            @if ($danNegeri)
+                                <p class="mt-1 text-xs text-dim">Pengiriman dalam negeri ditagih dalam Rupiah.</p>
+                            @endif
+                        </div>
+
+                        @unless ($danNegeri)
+                            <div class="sm:col-span-2">
+                                <div class="plate border-l-2 border-l-warn p-3 text-sm">
+                                    <p class="font-semibold">Kirim ke {{ $namaNegara }}</p>
+                                    <ul class="mt-2 space-y-1 text-muted">
+                                        <li>Tulis alamat dalam huruf Latin. Nama jalan dan nomor saja sudah cukup — jangan campur bahasa setempat.</li>
+                                        <li>Ongkir internasional dihitung manual oleh admin setelah pesanan masuk. Anda akan dihubungi lewat surel atau WhatsApp sebelum pesanan dikirim.</li>
+                                        <li>Bea masuk dan pajak impor di negara tujuan menjadi tanggungan pembeli.</li>
+                                        <li>Harga yang dibayar tetap dalam Rupiah. {{ $kodeTelepon }} saja hanyalah kode telepon yang disarankan.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        @endunless
 
                         <div class="sm:col-span-2">
                             <label class="label" for="catatan">{{ __('site.checkout.note') }}</label>
@@ -183,10 +234,26 @@
                     <span class="tech text-2xl font-medium">{{ rupiah($ringkasan['total']) }}</span>
                 </div>
 
+                {{-- Perkiraan dalam mata uang pembeli asing.
+                     Sengaja BERADA di bawah total IDR, bukan menggantikannya:
+                     yang dipakai membayar tetap Rupiah, jadi angka itu yang
+                     dinomordukan dan angka ini yang diberi tanda "perkiraan". --}}
+                @if ($perkiraanAsing !== null)
+                    <p class="mt-1 text-xs text-dim">
+                        Perkiraan {{ $perkiraanAsing['mata'] }}: {{ $perkiraanAsing['teks'] }}
+                        @if ($perkiraanAsing['kurs'])
+                            (kurs {{ number_format($perkiraanAsing['kurs'], 0, ',', '.') }} · {{ $perkiraanAsing['sumber'] }})
+                        @endif
+                    </p>
+                @endif
+
                 <div class="measure-line my-4"></div>
 
                 <p class="text-sm text-muted">
                     {{ $ringkasan['item'] }} item · {{ __('site.checkout.courier') }}: {{ $kurir }}
+                    @unless ($danNegeri)
+                        · {{ __('site.checkout.shipping_intl_quote') }}
+                    @endunless
                 </p>
 
                 <button type="submit" class="btn btn-primary mt-5 w-full" wire:loading.attr="disabled">

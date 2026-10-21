@@ -1,19 +1,29 @@
 {{--
     Kartu produk.
 
-    Seluruh badan kartu sekarang dapat diklik, bukan hanya gambar dan judul.
-    Sebelumnya hanya dua elemen itu yang bertaut; kategori, SKU, dan harga
-    tidak bereaksi apa pun saat disentuh — pada ponsel itu terasa seperti kartu
-    rusak, karena separuh luas kartu memang mati.
+    Seluruh badan kartu dapat diklik, bukan hanya gambar dan judul. Satu
+    lapisan tautan absolut menutupi kartu, lalu elemen yang punya tindakan
+    sendiri (tombol keranjang) dinaikkan ke atas lapisan itu. Pola ini menjaga
+    kartu tetap satu tautan bagi pembaca layar — tanpa tautan bersarang, tanpa
+    JavaScript.
 
-    Caranya: satu lapisan tautan absolut menutupi seluruh kartu, lalu elemen
-    yang punya tindakan sendiri (tombol tambah ke keranjang) dinaikkan ke atas
-    lapisan itu. Pola ini menjaga kartu tetap satu tautan bagi pembaca layar —
-    tidak ada tautan bersarang yang membingungkan — tanpa JavaScript.
+    PROPORSI. Versi sebelumnya menumpuk enam lapis teks (kategori, judul, SKU,
+    "mulai dari", harga, dolar, jumlah varian) di bawah gambar 4:3. Di grid dua
+    kolom pada ponsel hasilnya kartu kurus dan memanjang — terlihat tidak
+    seimbang. Perbaikannya bukan memperkecil font, melainkan membuang yang tidak
+    perlu dan memindahkan yang bisa dipindah:
 
-    Karena tombol keranjang harus terlihat di ponsel, kartu memuat satu
-    formulir Livewire kecil per produk. Sepuluh kartu berarti sepuluh komponen,
-    dan itu masih jauh di bawah ambang yang membuat halaman berat.
+      1. SKU dihapus dari kartu. Nomor bagian itu berguna di halaman produk,
+         tidak di daftar — pembeli memilih dari gambar dan harga.
+      2. Jumlah varian pindah ke atas gambar sebagai lencana, bukan baris teks
+         tersendiri. Ia informasi sekunder dan tidak boleh memakan tinggi.
+      3. Dolar digabung SEBARIS dengan rupiah, dipisah titik tengah. Dua baris
+         harga untuk satu angka membuat mata berhenti dua kali.
+      4. Judul diberi tinggi tetap dua baris (min-h). Tanpa itu, kartu dengan
+         judul satu baris dan dua baris berdampingan jadi berbeda tinggi, dan
+         baris harganya tidak sejajar — itulah yang paling terasa "tidak rapi".
+      5. Umpan balik tombol tidak lagi memesan ruang kosong. Ia hanya muncul
+         saat ada pesan, jadi kartu tenang tidak menyisakan celah.
 --}}
 @php
     /** @var \App\Models\Product $produk */
@@ -23,6 +33,7 @@
     $jumlahVarian = $produk->variants->where('is_active', true)->count();
     $tujuan = route('front.products.show', $produk);
     $varianPertama = $produk->variants->where('is_active', true)->first();
+    $perkiraan = \App\Support\Kurs::perkiraan($harga);
 @endphp
 
 <article class="plate plate-interaktif group relative flex h-full flex-col overflow-hidden">
@@ -48,41 +59,63 @@
                 <x-ikon name="image" :size="32" />
             </div>
         @endif
+
+        {{-- Lencana di atas gambar: informasi sekunder yang tidak memakan
+             tinggi kartu. --}}
+        <div class="pointer-events-none absolute inset-x-2.5 top-2.5 z-10 flex items-start justify-between gap-2">
+            @unless ($adaStok)
+                <span class="badge badge-danger bg-surface">
+                    {{ __('site.product.out_of_stock') }}
+                </span>
+            @else
+                <span></span>
+            @endunless
+
+            @if ($jumlahVarian > 1)
+                <span class="badge bg-surface/90 text-[0.625rem] backdrop-blur">
+                    {{ $jumlahVarian }} {{ __('site.product.variant') }}
+                </span>
+            @endif
+        </div>
     </div>
 
-    {{-- Badge habis hanya muncul bila seluruh varian stoknya nol. --}}
-    @unless ($adaStok)
-        <span class="absolute left-2.5 top-2.5 z-10 badge badge-danger bg-surface">
-            {{ __('site.product.out_of_stock') }}
-        </span>
-    @endunless
-
     <div class="flex flex-1 flex-col p-3 lg:p-4">
-        <p class="part-no">{{ $produk->category?->nama() }}</p>
+        <p class="part-no truncate">{{ $produk->category?->nama() }}</p>
 
-        <h3 class="mt-1.5 line-clamp-2 text-base font-semibold leading-snug lg:text-lg">
-            {{-- Teks judul dibiarkan tanpa tautan sendiri: lapisan di atas sudah
-                 menjadi tautannya, dan dua tautan bernama sama membingungkan
-                 pembaca layar. pointer-events-none agar klik jatuh ke lapisan. --}}
+        {{-- Tinggi tetap dua baris: kartu yang berdampingan tetap sejajar, dan
+             baris harga selalu jatuh di garis yang sama. --}}
+        <h3 class="mt-1 line-clamp-2 min-h-[2.6em] text-[0.9375rem] font-semibold leading-snug lg:text-base">
+            {{-- Teks judul tanpa tautan sendiri: lapisan di atas sudah menjadi
+                 tautannya, dan dua tautan bernama sama membingungkan pembaca
+                 layar. pointer-events-none agar klik jatuh ke lapisan. --}}
             <span class="pointer-events-none">{{ $produk->judul() }}</span>
         </h3>
 
-        <p class="tech mt-2 text-sm text-dim">{{ $produk->sku }}</p>
+        <div class="mt-auto pt-3">
+            {{-- Rupiah dan perkiraan dolar SEBARIS. Rupiah tidak boleh
+                 terpotong dan tidak boleh meluber ke samping: tabular-nums
+                 menjaga lebarnya tetap, basis-0 + truncate menahan luberan. --}}
+            <p class="pointer-events-none flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                <span class="tech text-base font-semibold tabular-nums lg:text-lg">{{ rupiah($harga) }}</span>
 
-        <div class="mt-auto flex items-end justify-between gap-2 pt-3">
-            <div class="pointer-events-none min-w-0">
-                <p class="part-no">{{ __('site.product.from') }}</p>
-                <p class="tech text-lg font-medium">{{ rupiah($harga) }}</p>
-
-                @if ($jumlahVarian > 1)
-                    <p class="mt-0.5 text-xs text-dim">{{ $jumlahVarian }} {{ __('site.product.variant') }}</p>
+                @if ($perkiraan !== null)
+                    <span class="text-[0.6875rem] tabular-nums text-dim"
+                          title="Perkiraan pada kurs Rp {{ number_format($perkiraan['kurs'], 0, ',', '.') }} per USD">
+                        ≈ {{ $perkiraan['teks'] }}
+                    </span>
                 @endif
-            </div>
+            </p>
 
-            {{-- Tombol keranjang: dinaikkan di atas lapisan tautan. Produk tanpa
-                 stok tidak mendapat tombol. --}}
+            @unless ($adaStok)
+                <p class="mt-1 text-xs text-dim">{{ __('site.product.out_of_stock') }}</p>
+            @endunless
+
+            {{-- Tombol keranjang: barisnya sendiri di bawah harga, lebar penuh.
+                 Ia dinaikkan di atas lapisan tautan (z-10) supaya menambah
+                 barang, bukan membuka halaman produk. Produk tanpa stok tidak
+                 mendapat tombol. --}}
             @if ($adaStok && $varianPertama !== null)
-                <div class="relative z-10 flex-none">
+                <div class="relative z-10 mt-2.5">
                     <livewire:front.tambah-keranjang-cepat
                         :varian-id="$varianPertama->id"
                         :key="'cepat-'.$produk->id" />
