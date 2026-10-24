@@ -6,6 +6,7 @@ use App\Enums\StatusPesanan;
 use App\Jobs\KirimNotifikasiPesanan;
 use App\Models\Order;
 use App\Services\StatusPesananService;
+use App\Support\Galat;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -89,7 +90,18 @@ class PesananDetail extends Component
 
             session()->flash('pesan-admin', 'Status berpindah ke '.$tujuan->label().'.');
         } catch (RuntimeException $e) {
+            // RuntimeException dari StatusPesananService adalah pesan bisnis
+            // yang memang ditujukan untuk pengelola ("Status tidak dapat
+            // berpindah dari X ke Y"), jadi aman ditampilkan apa adanya.
+            //
+            // Yang TIDAK aman adalah exception tak terduga (PDO, table missing,
+            // TypeError). Pesannya memuat nama tabel, SQL, dan jalur berkas —
+            // peta dalam aplikasi bagi penyerang. Itu disaring Galat::ramah()
+            // supaya pengguna melihat kalimat biasa, sementara rinciannya
+            // tetap tercatat di log.
             session()->flash('galat-admin', $e->getMessage());
+        } catch (Throwable $e) {
+            session()->flash('galat-admin', Galat::denganKode($e, 'Status pesanan gagal dipindahkan.'));
         }
     }
 

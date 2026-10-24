@@ -151,77 +151,152 @@
         </div>
     </section>
 
-    {{-- 02 / TENTANG --}}
+    {{-- 02 / TENTANG + KATEGORI.
+
+         Dua bagian dalam satu section karena keduanya menjawab pertanyaan yang
+         sama: "ini toko apa, dan ada apa di dalamnya". Dipisah jadi dua
+         section yang berselang measure-line membuat halaman terasa patah.
+
+         Struktur: kepala (judul + narasi + tombol) dan baris angka berdampingan
+         di desktop; tiga proses pindah ke baris sendiri sebaris — sebelumnya
+         menumpuk vertikal di kolom kiri dan membuang enam baris tinggi sebelum
+         pengunjung sampai ke katalog; lalu strip kategori, yang sebelumnya
+         tidak ada sama sekali. --}}
     <section class="container-page py-10 lg:py-24" data-reveal>
-        <span class="part-no">02 / {{ __('site.home.about_part') }}</span>
+        <div class="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
 
-        <div class="mt-5 grid gap-8 lg:mt-6 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
             <div>
-                <h2 class="text-3xl font-semibold sm:text-4xl">{{ __('site.home.about_title') }}</h2>
+                <span class="part-no">02 / {{ __('site.home.about_part') }}</span>
+                <h2 class="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+                    {{ __('site.home.about_title') }}
+                </h2>
 
-                <p class="mt-4 text-muted lg:mt-5">
+                <p class="mt-5 max-w-xl text-base leading-relaxed text-muted lg:text-lg">
                     {{ $toko->teks('site_description') }}
                 </p>
-
-                <ol class="mt-6 space-y-4 lg:mt-8 lg:space-y-5">
-                    <li class="flex gap-4">
-                        <span class="tech flex-none text-accent">01</span>
-                        <div>
-                            <p class="font-semibold">Diukur per unit</p>
-                            <p class="mt-1 text-sm text-muted">Panjang pipa dan diameter dalam diperiksa sebelum pengelasan, bukan setelah.</p>
-                        </div>
-                    </li>
-                    <li class="flex gap-4">
-                        <span class="tech flex-none text-accent">02</span>
-                        <div>
-                            <p class="font-semibold">Bahan dari satu pemasok</p>
-                            <p class="mt-1 text-sm text-muted">Stainless dan titanium dari pemasok yang sama untuk setiap batch, sehingga warna las tidak berbeda.</p>
-                        </div>
-                    </li>
-                    <li class="flex gap-4">
-                        <span class="tech flex-none text-accent">03</span>
-                        <div>
-                            <p class="font-semibold">Dipasang lalu diuji</p>
-                            <p class="mt-1 text-sm text-muted">Setiap unit dicoba pasang sebelum dikirim, termasuk clearance terhadap bodi.</p>
-                        </div>
-                    </li>
-                </ol>
-
-                <a href="{{ route('front.about') }}" class="btn btn-outline mt-6 lg:mt-8">
-                    {{ __('site.nav.about') }}
-                    <x-ikon name="arrow-right" :size="16" />
-                </a>
             </div>
 
-            {{-- Angka nyata dari basis data. Bila nol, barisnya tidak dirender.
-                 Di ponsel tiga angka ditampilkan sebaris, bukan bertumpuk, agar
-                 tidak menambah tinggi halaman. --}}
-            <div class="plate dl-grid self-start p-5 lg:p-8">
-                <dl class="grid grid-cols-3 gap-4 lg:grid-cols-1 lg:gap-6">
+            {{-- Angka dari basis data. Bila nol, barisnya tidak dirender. --}}
+            @if (array_filter($angka))
+                <dl class="plate dl-grid grid grid-cols-3 content-center gap-3 self-start p-5 lg:gap-6 lg:p-8">
                     @if (($angka['produk'] ?? 0) > 0)
                         <div>
                             <dt class="part-no">{{ __('site.home.stats_products') }}</dt>
-                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['produk'], 0, ',', '.') }}</dd>
+                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['produk'], 0, ',', '.') }}</dd>
                         </div>
                     @endif
 
                     @if (($angka['pesanan'] ?? 0) > 0)
                         <div>
                             <dt class="part-no">{{ __('site.home.stats_customers') }}</dt>
-                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['pesanan'], 0, ',', '.') }}</dd>
+                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['pesanan'], 0, ',', '.') }}</dd>
                         </div>
                     @endif
 
                     @if (($angka['kategori'] ?? 0) > 0)
                         <div>
                             <dt class="part-no">{{ __('site.footer.categories') }}</dt>
-                            <dd class="tech mt-1 text-3xl">{{ number_format($angka['kategori'], 0, ',', '.') }}</dd>
+                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['kategori'], 0, ',', '.') }}</dd>
                         </div>
                     @endif
                 </dl>
-            </div>
+            @endif
         </div>
+
+        {{-- Tiga proses: baris sendiri, sebaris di desktop. Kartu memberi
+             pemisah visual yang dulu hanya berupa daftar bernomor. --}}
+        <ol class="mt-10 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-6">
+            <li class="plate plate-lux p-5 lg:p-6" data-reveal>
+                <span class="tech text-accent">01</span>
+                <p class="mt-2 font-semibold lg:text-lg">Diukur per unit</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-muted">Panjang pipa dan diameter dalam diperiksa sebelum pengelasan, bukan setelah.</p>
+            </li>
+            <li class="plate plate-lux p-5 lg:p-6" data-reveal style="transition-delay: 60ms">
+                <span class="tech text-accent">02</span>
+                <p class="mt-2 font-semibold lg:text-lg">Bahan dari satu pemasok</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-muted">Stainless dan titanium dari pemasok yang sama untuk setiap batch, sehingga warna las tidak berbeda.</p>
+            </li>
+            <li class="plate plate-lux p-5 lg:p-6" data-reveal style="transition-delay: 120ms">
+                <span class="tech text-accent">03</span>
+                <p class="mt-2 font-semibold lg:text-lg">Dipasang lalu diuji</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-muted">Setiap unit dicoba pasang sebelum dikirim, termasuk clearance terhadap bodi.</p>
+            </li>
+        </ol>
+
+        {{-- Tombol "Tentang" di bawah baris proses, bukan di kolom narasi.
+             Alasannya urutan baca: pengunjung membaca judul, narasi, angka,
+             lalu tiga proses — tombol yang ditaruh di kolom narasi muncul di
+             tengah urutan itu dan memotong alur sebelum proses selesai dibaca.
+             Rata kiri, bukan tengah: ia tindak lanjut dari daftar di atasnya. --}}
+        <a href="{{ route('front.about') }}" class="btn btn-outline mt-8 self-start lg:mt-10">
+            {{ __('site.nav.about') }}
+            <x-ikon name="arrow-right" :size="16" />
+        </a>
     </section>
+
+    {{-- 03 / KATEGORI — section mandiri, tepat di bawah about.
+
+         Satu klik menuju etalase — jalan yang dulu harus lewat navbar lalu
+         memilih filter di halaman produk.
+
+         Ikon, bukan gambar: kategori tidak punya media sendiri, dan ikon
+         membuat kartu tetap ringan serta seukuran. Angka produk dihitung satu
+         kueri untuk SEMUA lewat withCount, bukan satu per kartu.
+
+         Nomor bagian 03, bukan 02a: ia punya kepala sendiri, dan menomorinya
+         sebagai sub-bagian tentang membuat hierarki judul menyimpang dari
+         nomornya. --}}
+    @if ($kategori->isNotEmpty())
+        <section class="container-page py-10 lg:py-24" data-reveal>
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <span class="part-no">03 / {{ __('site.footer.categories') }}</span>
+                    <h2 class="mt-3 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+                        {{ __('site.home.categories_title') }}
+                    </h2>
+                    <p class="mt-4 max-w-2xl text-base text-muted lg:text-lg">
+                        {{ __('site.home.categories_subtitle') }}
+                    </p>
+                </div>
+
+                <a href="{{ route('front.products.index') }}" wire:navigate class="btn btn-outline">
+                    {{ __('site.home.view_all_products') }}
+                    <x-ikon name="arrow-right" :size="16" />
+                </a>
+            </div>
+
+            {{-- Kategori SEBARIS: enam kartu dalam satu baris di desktop, dua
+                 baris di ponsel (tiga + tiga). Bukan 2x3 yang menjorok —
+                 grid-cols-3 selalu membuat enam kartu jadi dua baris rapi,
+                 tapi di lebar tablet hasilnya tiga kolom yang tingginya tak
+                 sejajar. Dengan grid-cols-6 semua kartu seukuran dan namanya
+                 tetap terbaca; di bawah lg jatuh ke dua kolom.
+
+                 Angka produk dibuang. Ia menjawab "ada berapa", pertanyaan
+                 yang tidak pernah diajukan pembaca yang sedang memilih
+                 kategori — nama dan ikon sudah cukup, dan angka membuat nama
+                 kategori yang panjang (mis. "Aksesoris & Kelengkapan Racing")
+                 terpaksa memakai truncate di kartu yang lebarnya seperenam. --}}
+            <div class="mt-6 grid grid-cols-2 gap-3 lg:mt-10 lg:grid-cols-6 lg:gap-3">
+                @foreach ($kategori as $i => $kat)
+                    <a href="{{ route('front.category', $kat) }}" wire:navigate
+                       class="plate plate-interaktif group flex flex-col items-center gap-3 p-4 text-center lg:p-5"
+                       data-reveal style="transition-delay: {{ $i * 45 }}ms">
+                        <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-line-soft bg-sunken text-accent transition-colors group-hover:border-accent lg:h-12 lg:w-12">
+                            <x-ikon :name="$kat->ikon()" :size="20" />
+                        </span>
+
+                        <span class="w-full">
+                            <span class="block font-semibold leading-snug lg:text-base">{{ $kat->nama() }}</span>
+                        </span>
+
+                        <x-ikon name="arrow-right" :size="14"
+                                class="flex-none text-dim transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     <div class="container-page"><div class="measure-line"></div></div>
 
@@ -229,7 +304,7 @@
     <section class="container-page py-10 lg:py-24" data-reveal>
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <span class="part-no">03 / {{ __('site.home.products_part') }}</span>
+                <span class="part-no">04 / {{ __('site.home.products_part') }}</span>
                 <h2 class="mt-3 text-3xl font-semibold sm:text-4xl">{{ __('site.home.products_title') }}</h2>
                 <p class="mt-2 text-muted">{{ __('site.home.products_subtitle') }}</p>
             </div>

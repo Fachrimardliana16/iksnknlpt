@@ -33,8 +33,21 @@ class HeroBuilder extends Component
 {
     use WithFileUploads;
 
-    /** Slide yang sedang dibuka di panel penyuntingan. */
-    public ?int $sunting = null;
+    /** Slide yang sedang dibuka di panel penyuntingan.
+
+     *  Nama ini TIDAK BOLEH menjadi "sunting" — dan itu bukan selera penulisan.
+     *  Livewire menerjemahkan `wire:click="sunting(1)"` menjadi ekspresi Alpine
+     *  `$wire.sunting(1)`, sementara `$wire` adalah proxy yang urut
+     *  pemeriksaannya begini: alias, lalu method terdaftar, lalu PROPERTI data,
+     *  dan hanya sebagai jalan terakhir method apa pun melalui fallback.
+     *  Ketika properti data bernama "sunting" ada, setiap `$wire.sunting`
+     *  langsung kembali berupa angka id itu — bukan fungsinya. Klik pun
+     *  menghasilkan "1 is not a function", walau method sunting() di kelas
+     *  benar-benar ada dan sehat saat diuji dari server.
+     *
+     *  Karena itu properti memakai akhiran "Id", sementara method tetap
+     *  "sunting" agar nama di blade tetap pendek. */
+    public ?int $suntingId = null;
 
     /** @var array<string, mixed> */
     public array $form = [];
@@ -240,8 +253,8 @@ class HeroBuilder extends Component
 
         $this->rapikanUrutan();
 
-        if ($this->sunting === $id) {
-            $this->sunting = null;
+        if ($this->suntingId === $id) {
+            $this->suntingId = null;
             $this->kosongkanForm();
         }
 
@@ -260,7 +273,7 @@ class HeroBuilder extends Component
             return;
         }
 
-        $this->sunting = $slide->id;
+        $this->suntingId = $slide->id;
         $this->berkasGambar = null;
         $this->berkasPonsel = null;
         $this->berkasVideo = null;
@@ -286,7 +299,7 @@ class HeroBuilder extends Component
 
     public function batalSunting(): void
     {
-        $this->sunting = null;
+        $this->suntingId = null;
         $this->berkasGambar = null;
         $this->berkasPonsel = null;
         $this->berkasVideo = null;
@@ -298,7 +311,7 @@ class HeroBuilder extends Component
     {
         $this->bersihkanPesan();
 
-        $slide = $this->sunting === null ? null : HeroSlide::query()->find($this->sunting);
+        $slide = $this->suntingId === null ? null : HeroSlide::query()->find($this->suntingId);
 
         if ($slide === null) {
             $this->galat = 'Slide tidak ditemukan. Muat ulang halaman.';
@@ -393,14 +406,14 @@ class HeroBuilder extends Component
     /** Pindahkan titik fokus tanpa memuat ulang halaman. */
     public function ubahFokus(float $x, float $y): void
     {
-        if ($this->sunting === null) {
+        if ($this->suntingId === null) {
             return;
         }
 
         $this->form['focal_point_x'] = max(0.0, min(1.0, $x));
         $this->form['focal_point_y'] = max(0.0, min(1.0, $y));
 
-        HeroSlide::query()->whereKey($this->sunting)->update([
+        HeroSlide::query()->whereKey($this->suntingId)->update([
             'focal_point_x' => $this->form['focal_point_x'],
             'focal_point_y' => $this->form['focal_point_y'],
         ]);
@@ -461,7 +474,7 @@ class HeroBuilder extends Component
     {
         $slides = HeroSlide::query()->orderBy('display_order')->orderBy('id')->get();
 
-        $sedang = $this->sunting === null ? null : $slides->firstWhere('id', $this->sunting);
+        $sedang = $this->suntingId === null ? null : $slides->firstWhere('id', $this->suntingId);
 
         return view('livewire.admin.hero', [
             'judul' => 'Hero Beranda',

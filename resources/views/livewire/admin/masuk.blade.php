@@ -25,7 +25,7 @@
 
                 <button type="submit" class="btn btn-primary mt-5 w-full" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="verifikasiOtp">Verifikasi</span>
-                    <span wire:loading wire:target="verifikasiOtp">{{ __('common.loading') }}</span>
+                    <span wire:loading wire:target="verifikasiOtp">{{ __('site.common.loading') }}</span>
                 </button>
             </form>
         @else
@@ -47,7 +47,7 @@
 
                 <button type="submit" class="btn btn-primary mt-5 w-full" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="masuk">Masuk</span>
-                    <span wire:loading wire:target="masuk">{{ __('common.loading') }}</span>
+                    <span wire:loading wire:target="masuk">{{ __('site.common.loading') }}</span>
                 </button>
             </form>
         @endif

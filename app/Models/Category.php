@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -78,5 +79,49 @@ class Category extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Ikon untuk kartu kategori di beranda.
+     *
+     * Dipilih dari kata kunci pada nama kategori (Indonesia dan Inggris), bukan
+     * dari kolom baru: kategori tidak punya media maupun ikon sendiri, dan
+     * menambah kolom hanya untuk lima hingga enam kartu di beranda berarti
+     * satu migrasi plus satu bidang di panel admin untuk hiasan. Kembali ke
+     * 'box' bila tidak ada yang cocok — ikon default harus aman untuk semua
+     * kategori, termasuk yang dibuat nanti oleh admin.
+     *
+     * Urutan pengecekan penting: 'knalpot' dan 'downpipe' harus diperiksa
+     * sebelum 'pipa' atau 'bodi', karena nama kategori bisa memuat lebih dari
+     * satu kata kunci (mis. "Downpipe Bodi Racing").
+     */
+    public function ikon(): string
+    {
+        $nama = Str::lower($this->nama().' '.($this->name_en ?? ''));
+
+        $peta = [
+            'knalpot' => 'shield',
+            'downpipe' => 'activity',
+            'header' => 'activity',
+            'pipa' => 'activity',
+            'bodi' => 'box',
+            'body' => 'box',
+            'velg' => 'chart',
+            'roda' => 'chart',
+            'rem' => 'shield',
+            'suspensi' => 'sliders',
+            'shock' => 'sliders',
+            'lampu' => 'sun',
+            'aki' => 'refresh',
+            'aplikasi' => 'grid',
+        ];
+
+        foreach ($peta as $kunci => $ikon) {
+            if (str_contains($nama, $kunci)) {
+                return $ikon;
+            }
+        }
+
+        return 'box';
     }
 }

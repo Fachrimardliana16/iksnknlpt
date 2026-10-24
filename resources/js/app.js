@@ -224,6 +224,7 @@ const reveal = (() => {
     function siapkan() {
         var bilah = document.getElementById('tombol-cetak-banyak');
         var label = document.getElementById('jumlah-terpilih');
+        var wadah = document.getElementById('bilah-cetak');
 
         if (! bilah) return;
 
@@ -243,6 +244,16 @@ const reveal = (() => {
             bilah.textContent = daftar.length > 1
                 ? 'Cetak ' + daftar.length + ' resi sekaligus'
                 : 'Cetak resi terpilih';
+
+            // Seluruh bilah ikut hilang selama belum ada satu pun centang.
+            // Dulu bilahnya selalu tampil dengan tombol mati — itu memakan
+            // tempat tetap di halaman untuk sesuatu yang belum bisa dipakai,
+            // dan mengundang pertanyaan "kenapa tidak bisa diklik?" padahal
+            // jawabannya ada di kalimat sebelahnya.
+            //
+            // hidden (bukan x-show) dipilih dengan sengaja: blok ini harus
+            // tetap bekerja tanpa Alpine, sama seperti tombol cetaknya.
+            if (wadah) wadah.hidden = daftar.length === 0;
         }
 
         document.addEventListener('change', function (e) {
@@ -447,3 +458,38 @@ const reveal = (() => {
 
     document.addEventListener('livewire:navigated', siapkan);
 })();
+
+/* ── Hero builder: seret-lepas urutan slide (panel admin) ──────────────
+ *
+ * Didaftarkan sebagai Alpine.data(), bukan x-data inline, supaya daftar id
+ * ikut sebagai parameter. Dengan begitu urutan yang dikirim ke server adalah
+ * urutan yang terlihat, bukan yang mungkin sudah berubah karena pembaruan
+ * Livewire lain — tidak perlu membaca ulang DOM.
+ *
+ * Peringatan yang pernah menimpa halaman ini ("$wire.sunting is not a
+ * function") jangan salah tempatkan: itu bukan soal scope x-data. Livewire
+ * menyalin wire:click="sunting(N)" menjadi ekspresi Alpine "$wire.sunting(N)",
+ * sementara proxy $wire memeriksa PROPERTI data sebelum method. Properti data
+ * yang bernama sama dengan method membuat $wire.sunting menjadi angka, bukan
+ * fungsi. Karena itu properti di HeroBuilder bernama suntingId.
+ */
+document.addEventListener('alpine:init', () => {
+    Alpine.data('heroUrutan', (wire, ids) => ({
+        menyeret: null,
+        atas: null,
+
+        taruh(posisi) {
+            if (this.menyeret === null || this.menyeret === posisi) return;
+
+            const daftar = ids.slice();
+            const dipindah = daftar.splice(this.menyeret, 1)[0];
+            daftar.splice(posisi, 0, dipindah);
+
+            wire.terapkanUrutan(daftar);
+
+            this.menyeret = null;
+            this.atas = null;
+        },
+    }));
+});
+

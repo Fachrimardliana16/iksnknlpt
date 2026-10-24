@@ -32,6 +32,10 @@ return [
         'faq_all' => 'All FAQs',
 
         'about_part' => 'About',
+        'categories_title' => 'Pick by what you need',
+        'categories_subtitle' => 'The six most browsed categories. One click to the shelf.',
+        'faq_more' => 'Show more',
+        'faq_less' => 'Show less',
         'products_part' => 'Catalog',
         'about_title' => 'Pipe measured before it is cut',
         'products_title' => 'Ready to fit exhausts',

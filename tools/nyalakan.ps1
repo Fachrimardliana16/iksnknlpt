@@ -13,6 +13,16 @@
 
 param(
     [switch]$Stop,
+
+    # Jalankan hanya server lokal, tanpa tunnel publik.
+    #
+    # Tanpa switch ini perilaku lama dipertahankan: satu perintah menyalakan
+    # nginx + php-cgi + tunnel trycloudflare. Tapi tunnel itu berarti aplikasi
+    # dan panel adminnya dapat diakses siapa pun di internet, tanpa autentikasi
+    # di lapisan jaringan. Untuk pekerjaan sehari-hari di mesin sendiri, itu
+    # bukan kebutuhan — jadi tersedia jalan yang tidak membuka apa pun.
+    [switch]$TanpaTunnel,
+
     [int]$Port = 8100
 )
 
@@ -59,6 +69,19 @@ if (-not $siap) { throw "Server di 127.0.0.1:$Port tidak menjawab. Tunnel dibata
 Write-Output '   server menjawab 200.'
 
 # 3. Tunnel, dengan log ditangkap supaya URL-nya dapat dibaca.
+if ($TanpaTunnel) {
+    Write-Output '== 2/3 tunnel DILEWATI (-TanpaTunnel) =='
+    Write-Output ''
+    Write-Output '  ===================================================='
+    Write-Output "   HANYA LOKAL:  http://127.0.0.1:$Port"
+    Write-Output '  ===================================================='
+    Write-Output ''
+    Write-Output '  Tidak ada alamat publik yang dibuka. Panel admin hanya'
+    Write-Output '  dapat dijangkau dari mesin ini.'
+    Remove-Item $berkasUrl -ErrorAction SilentlyContinue
+    exit 0
+}
+
 Write-Output '== 2/3 menyalakan tunnel =='
 $logTunnel = Join-Path $proyek 'tools\out\tunnel.log'
 Remove-Item $logTunnel -ErrorAction SilentlyContinue

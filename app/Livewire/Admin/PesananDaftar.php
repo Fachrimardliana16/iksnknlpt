@@ -167,7 +167,7 @@ class PesananDaftar extends Component
             $dariKolom->whereNotIn('id', $idCocokNama);
         }
 
-        $halaman = $dariKolom->paginate(25);
+        $halaman = $dariKolom->paginate(10);
 
         // Hasil nama ditempel di halaman pertama, di atas hasil kolom.
         if ($idCocokNama !== [] && $halaman->currentPage() === 1) {

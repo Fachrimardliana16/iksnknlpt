@@ -144,113 +144,105 @@
                 @endif
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="p-3"><span class="visually-hidden">Pilih</span></th>
-                            <th class="part-no p-3 font-medium">Produk</th>
-                            <th class="part-no p-3 font-medium">Kategori</th>
-                            <th class="part-no p-3 text-right font-medium">Harga</th>
-                            <th class="part-no p-3 text-right font-medium">Stok</th>
-                            <th class="part-no p-3 font-medium">Status</th>
-                            <th class="p-3"><span class="visually-hidden">Tindakan</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($daftar as $produk)
-                            @php
-                                $stokBebas = (int) ($produk->stok_fisik ?? 0) - (int) ($produk->stok_ditahan ?? 0);
-                                $menipis = $stokBebas > 0 && $stokBebas <= (int) config('iksan.low_stock_threshold', 3);
-                                $gmbr = $produk->primaryMedia;
-                            @endphp
+            <div class="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-5">
+                @foreach ($daftar as $produk)
+                    @php
+                        $stokBebas = (int) ($produk->stok_fisik ?? 0) - (int) ($produk->stok_ditahan ?? 0);
+                        $menipis = $stokBebas > 0 && $stokBebas <= (int) config('iksan.low_stock_threshold', 3);
+                        $gmbr = $produk->primaryMedia;
+                    @endphp
 
-                            <tr class="border-b border-line-soft last:border-0 hover:bg-sunken">
-                                <td class="p-3">
-                                    <input type="checkbox" value="{{ $produk->id }}" wire:model.live="terpilih"
-                                           class="h-4 w-4" aria-label="Pilih {{ $produk->title_id }}">
-                                </td>
+                    <article class="group relative flex flex-col overflow-hidden rounded-[var(--r-sedang)] border border-line-soft bg-surface transition-colors hover:border-line"
+                             wire:key="produk-{{ $produk->id }}">
 
-                                <td class="p-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="h-11 w-11 flex-none overflow-hidden rounded-md bg-sunken">
-                                            @if ($gmbr)
-                                                <img src="{{ $gmbr->url('thumb') }}" alt=""
-                                                     width="44" height="44" loading="lazy" decoding="async"
-                                                     class="h-full w-full object-cover">
-                                            @else
-                                                <div class="flex h-full w-full items-center justify-center text-dim">
-                                                    <x-ikon name="image" :size="16" />
-                                                </div>
-                                            @endif
-                                        </div>
+                        {{-- Gambar: seluruh permukaannya membuka penyuntingan. --}}
+                        <a href="{{ route('admin.products.edit', $produk->ulid) }}"
+                           class="relative block aspect-square bg-sunken" aria-label="Sunting {{ $produk->title_id }}">
+                            @if ($gmbr)
+                                <img src="{{ $gmbr->url('thumb') }}" alt=""
+                                     width="220" height="220" loading="lazy" decoding="async"
+                                     class="h-full w-full object-cover">
+                            @else
+                                <div class="flex h-full w-full items-center justify-center text-dim">
+                                    <x-ikon name="image" :size="22" />
+                                </div>
+                            @endif
 
-                                        <div class="min-w-0">
-                                            <a href="{{ route('admin.products.edit', $produk->ulid) }}"
-                                               class="block truncate font-medium hover:text-accent">
-                                                {{ $produk->title_id }}
-                                            </a>
-                                            <p class="tech text-xs text-dim">
-                                                {{ $produk->sku }} · {{ $produk->variants_count }} varian
-                                                @if ($produk->is_featured) · <span class="text-brass">unggulan</span> @endif
-                                            </p>
-                                        </div>
-                                    </div>
-                                </td>
+                            @if ($produk->is_featured)
+                                <span class="absolute left-2 top-2 rounded-full bg-brass/90 px-2 py-0.5 text-[11px] font-medium text-white">
+                                    unggulan
+                                </span>
+                            @endif
 
-                                <td class="p-3 text-muted">{{ $produk->category?->name_id ?? '—' }}</td>
+                            <span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-surface/90 shadow-sm">
+                                <input type="checkbox" value="{{ $produk->id }}" wire:model.live="terpilih"
+                                       class="h-3.5 w-3.5" aria-label="Pilih {{ $produk->title_id }}">
+                            </span>
+                        </a>
 
-                                <td class="tech p-3 text-right">{{ rupiah($produk->base_price) }}</td>
+                        <div class="flex flex-1 flex-col gap-2 p-3">
+                            <div class="min-w-0">
+                                <a href="{{ route('admin.products.edit', $produk->ulid) }}"
+                                   class="line-clamp-2 block text-sm font-medium leading-snug hover:text-accent">
+                                    {{ $produk->title_id }}
+                                </a>
+                                <p class="tech mt-1 truncate text-xs text-dim">
+                                    {{ $produk->sku }} · {{ $produk->variants_count }} varian
+                                </p>
+                            </div>
 
-                                <td class="p-3 text-right">
-                                    @if ($stokBebas <= 0)
-                                        <span class="tech text-danger">habis</span>
-                                    @elseif ($menipis)
-                                        <span class="tech text-warn">{{ $stokBebas }}</span>
-                                    @else
-                                        <span class="tech">{{ $stokBebas }}</span>
-                                    @endif
+                            <p class="truncate text-xs text-muted">{{ $produk->category?->name_id ?? '—' }}</p>
 
-                                    @if ((int) ($produk->stok_ditahan ?? 0) > 0)
-                                        <span class="block text-xs text-dim" title="Ditahan pesanan berjalan">
-                                            {{ $produk->stok_ditahan }} ditahan
-                                        </span>
-                                    @endif
-                                </td>
+                            <div class="mt-auto flex items-end justify-between gap-2">
+                                <div>
+                                    <p class="tech text-sm font-medium">{{ rupiah($produk->base_price) }}</p>
+                                    <p class="tech text-xs">
+                                        @if ($stokBebas <= 0)
+                                            <span class="text-danger">habis</span>
+                                        @elseif ($menipis)
+                                            <span class="text-warn">{{ $stokBebas }} sisa</span>
+                                        @else
+                                            <span class="text-muted">{{ $stokBebas }} stok</span>
+                                        @endif
 
-                                <td class="p-3">
-                                    <button type="button" wire:click="ubahTerbitSatu({{ $produk->id }})"
-                                            class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs
-                                                   {{ $produk->is_published ? 'bg-ok/12 text-ok' : 'bg-sunken text-muted' }}">
-                                        <span class="h-1.5 w-1.5 rounded-full {{ $produk->is_published ? 'bg-ok' : 'bg-line' }}"></span>
-                                        {{ $produk->is_published ? 'Terbit' : 'Draf' }}
-                                    </button>
-                                </td>
+                                        @if ((int) ($produk->stok_ditahan ?? 0) > 0)
+                                            <span class="text-dim" title="Ditahan pesanan berjalan">· {{ $produk->stok_ditahan }} ditahan</span>
+                                        @endif
+                                    </p>
+                                </div>
 
-                                <td class="p-3">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <a href="{{ route('admin.products.edit', $produk->ulid) }}"
-                                           class="btn-icon h-8 w-8" title="Sunting">
-                                            <x-ikon name="sliders" :size="15" />
-                                            <span class="visually-hidden">Sunting produk</span>
-                                        </a>
-                                        <button type="button" wire:click="duplikat({{ $produk->id }})"
-                                                class="btn-icon h-8 w-8" title="Duplikat">
-                                            <x-ikon name="copy" :size="15" />
-                                            <span class="visually-hidden">Duplikat</span>
-                                        </button>
-                                        <button type="button" wire:click="hapus({{ $produk->id }})"
-                                                wire:confirm="Hapus produk &quot;{{ $produk->title_id }}&quot; beserta varian dan gambarnya?"
-                                                class="btn-icon h-8 w-8 hover:text-danger" title="Hapus">
-                                            <x-ikon name="trash" :size="15" />
-                                            <span class="visually-hidden">Hapus</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                <button type="button" wire:click="ubahTerbitSatu({{ $produk->id }})"
+                                        class="inline-flex flex-none items-center gap-1.5 rounded-full px-2 py-0.5 text-xs
+                                               {{ $produk->is_published ? 'bg-ok/12 text-ok' : 'bg-sunken text-muted' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $produk->is_published ? 'bg-ok' : 'bg-line' }}"></span>
+                                    {{ $produk->is_published ? 'Terbit' : 'Draf' }}
+                                </button>
+                            </div>
+
+                            {{-- Tindakan: muncul saat kartu disentuh penunjuk atau difokuskan.
+                                 Di ponsel tidak ada hover, jadi selalu tampil di layar kecil. --}}
+                            <div class="flex items-center justify-end gap-1 border-t border-line-soft pt-2
+                                        opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+                                <a href="{{ route('admin.products.edit', $produk->ulid) }}"
+                                   class="btn-icon h-8 w-8" title="Sunting">
+                                    <x-ikon name="sliders" :size="15" />
+                                    <span class="visually-hidden">Sunting produk</span>
+                                </a>
+                                <button type="button" wire:click="duplikat({{ $produk->id }})"
+                                        class="btn-icon h-8 w-8" title="Duplikat">
+                                    <x-ikon name="copy" :size="15" />
+                                    <span class="visually-hidden">Duplikat</span>
+                                </button>
+                                <button type="button" wire:click="hapus({{ $produk->id }})"
+                                        wire:confirm="Hapus produk &quot;{{ $produk->title_id }}&quot; beserta varian dan gambarnya?"
+                                        class="btn-icon h-8 w-8 hover:text-danger" title="Hapus">
+                                    <x-ikon name="trash" :size="15" />
+                                    <span class="visually-hidden">Hapus</span>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
             </div>
 
             @if ($daftar->hasPages())

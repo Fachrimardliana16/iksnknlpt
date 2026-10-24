@@ -174,7 +174,7 @@ class PesanKontak extends Component
             ->when($this->urut === 'terlama', fn ($q) => $q->orderBy('id'))
             ->when($this->urut === 'belum', fn ($q) => $q->orderBy('is_read')->orderByDesc('id'));
 
-        $daftar = $kueri->paginate(20);
+        $daftar = $kueri->paginate(10);
 
         return view('livewire.admin.pesan-kontak', [
             'daftar' => $daftar,

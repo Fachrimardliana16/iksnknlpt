@@ -89,7 +89,7 @@
             <aside id="panel-filter" class="{{ $filterTerbuka ? 'block' : 'hidden' }} lg:block">
                 <div class="plate p-4 lg:sticky lg:top-24">
 
-                    <label class="label" for="kata">{{ __('common.search') }}</label>
+                    <label class="label" for="kata">{{ __('site.common.search') }}</label>
                     <input id="kata" type="search" class="field" wire:model.live.debounce.400ms="kata"
                            placeholder="{{ __('site.nav.search') }}">
 
@@ -104,7 +104,7 @@
                         <li>
                             <button type="button" wire:click="$set('kategoriSlug', '')"
                                     class="min-h-[36px] w-full text-left text-sm {{ $kategoriSlug === '' ? 'text-accent' : 'text-muted' }}">
-                                {{ __('common.all') }}
+                                {{ __('site.common.all') }}
                             </button>
                         </li>
                         @foreach ($semuaKategori as $kat)

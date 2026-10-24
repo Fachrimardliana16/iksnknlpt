@@ -23,7 +23,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $proyek = 'D:\Projects\iksanknalpot'
 $nginxDir = Join-Path $env:LOCALAPPDATA 'nginx\nginx-1.28.0'
-$php = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php-cgi.exe'
+# PHP 8.5.12 dipasang di folder terpisah (bukan folder WinGet 8.4), supaya
+# rollback cukup dengan mengubah satu baris ini kembali ke path WinGet 8.4.
+$php = Join-Path $env:LOCALAPPDATA 'php85\php-cgi.exe'
 $portPhp = 9200..9207
 
 function Hentikan {

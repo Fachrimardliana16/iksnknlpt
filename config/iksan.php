@@ -66,6 +66,9 @@ return [
         'featured_mobile' => (int) env('IKK_HOME_FEATURED_MOBILE', 4),
         // Kategori yang tampil di footer, maksimum.
         'footer_categories' => (int) env('IKK_HOME_FOOTER_CATEGORIES', 4),
+        // Butir FAQ yang tampil di beranda sebelum tombol "Lihat lebih banyak".
+        // Sisanya ada di DOM dan dibuka tombol, jadi Ctrl+F tetap menemukannya.
+        'faq_visible' => (int) env('IKK_HOME_FAQ_VISIBLE', 4),
     ],
 
     /*

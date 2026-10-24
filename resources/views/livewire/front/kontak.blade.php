@@ -57,7 +57,7 @@
 
                         <button type="submit" class="btn btn-primary mt-5 w-full sm:w-auto" wire:loading.attr="disabled">
                             <span wire:loading.remove wire:target="kirim">{{ __('site.contact.send') }}</span>
-                            <span wire:loading wire:target="kirim">{{ __('common.loading') }}</span>
+                            <span wire:loading wire:target="kirim">{{ __('site.common.loading') }}</span>
                         </button>
 
                         @if ($galat)

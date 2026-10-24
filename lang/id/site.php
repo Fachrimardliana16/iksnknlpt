@@ -32,6 +32,10 @@ return [
         'faq_all' => 'Semua FAQ',
 
         'about_part' => 'Tentang',
+        'categories_title' => 'Pilih sesuai kebutuhan',
+        'categories_subtitle' => 'Enam kategori paling dicari. Satu klik menuju etalasenya.',
+        'faq_more' => 'Lihat lebih banyak',
+        'faq_less' => 'Tampilkan lebih sedikit',
         'products_part' => 'Katalog',
         'about_title' => 'Pipa diukur sebelum dipotong',
         'products_title' => 'Knalpot siap pasang',

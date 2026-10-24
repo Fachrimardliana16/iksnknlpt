@@ -32,23 +32,27 @@
     </div>
 
     {{-- ── Daftar slide ────────────────────────────────────────────── --}}
+
+    {{-- Seret-lepas urutan.
+
+         Memakai Alpine.data('heroUrutan') yang terdaftar di resources/js/app.js.
+         Alasannya supaya daftar id dikirim sebagai parameter dan tidak perlu
+         dibaca ulang dari DOM: urutan yang terkirim ke server harus sama dengan
+         yang terlihat, bukan urutan yang mungkin sudah berubah karena
+         pembaruan Livewire lain.
+
+         Bug yang dulu muncul di halaman ini ("$wire.sunting is not a
+         function") bukan berasal dari scope x-data, melainkan dari tabrakan
+         nama: Livewire menerjemahkan wire:click="sunting(N)" menjadi ekspresi
+         Alpine "$wire.sunting(N)", sedangkan proxy $wire mengembalikan
+         PROPERTI data lebih dulu daripada method. Ketika properti bernama
+         "sunting" ada, $wire.sunting berupa angka, bukan fungsi. Properti itu
+         karena itu dinamai "suntingId" — lihat komentar di HeroBuilder. --}}
     <div class="plate divide-y divide-line-soft"
-         x-data="{
-            menyeret: null,
-            atas: null,
-            taruh(posisi) {
-                if (this.menyeret === null || this.menyeret === posisi) return;
-                const ids = @js($slides->pluck('id')->all());
-                const dipindah = ids.splice(this.menyeret, 1)[0];
-                ids.splice(posisi, 0, dipindah);
-                $wire.terapkanUrutan(ids);
-                this.menyeret = null;
-                this.atas = null;
-            }
-         }">
+         x-data="heroUrutan($wire, {{ json_encode($slides->pluck('id')->all()) }})">
 
         @forelse ($slides as $i => $s)
-            <div class="flex items-start gap-3 p-3 {{ $sunting === $s->id ? 'bg-sunken' : '' }}"
+            <div class="flex items-start gap-3 p-3 {{ $suntingId === $s->id ? 'bg-sunken' : '' }}"
                  wire:key="slide-{{ $s->id }}"
                  draggable="true"
                  @dragstart="menyeret = {{ $i }}"

@@ -139,7 +139,7 @@
 
     <a href="#konten-utama"
        class="visually-hidden focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:px-4 focus:py-2 focus:text-ink">
-        {{ __('common.search') }}
+        {{ __('site.common.search') }}
     </a>
 
     @include('partials.front.navbar')

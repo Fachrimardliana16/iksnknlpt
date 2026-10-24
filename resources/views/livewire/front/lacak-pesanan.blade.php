@@ -24,7 +24,7 @@
 
                 <button type="submit" class="btn btn-primary mt-5 w-full sm:w-auto" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="lacak">{{ __('site.order.track_submit') }}</span>
-                    <span wire:loading wire:target="lacak">{{ __('common.loading') }}</span>
+                    <span wire:loading wire:target="lacak">{{ __('site.common.loading') }}</span>
                 </button>
 
                 @if ($galat)

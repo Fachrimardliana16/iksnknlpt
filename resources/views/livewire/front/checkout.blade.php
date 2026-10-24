@@ -258,7 +258,7 @@
 
                 <button type="submit" class="btn btn-primary mt-5 w-full" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="buatPesanan">{{ __('site.checkout.place_order') }}</span>
-                    <span wire:loading wire:target="buatPesanan">{{ __('common.loading') }}</span>
+                    <span wire:loading wire:target="buatPesanan">{{ __('site.common.loading') }}</span>
                 </button>
 
                 <a href="{{ route('front.cart') }}" class="btn btn-ghost mt-2 w-full" wire:navigate>

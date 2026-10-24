@@ -409,7 +409,7 @@ class ProdukDaftar extends Component
 
     public function render(): View
     {
-        $daftar = $this->kueri()->paginate(20);
+        $daftar = $this->kueri()->paginate(25);
 
         return view('livewire.admin.produk-daftar', [
             'daftar' => $daftar,

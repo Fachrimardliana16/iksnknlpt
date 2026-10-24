@@ -12,7 +12,7 @@
 
         <a href="{{ route('admin.exports.orders') }}" class="btn btn-outline">
             <x-ikon name="download" :size="16" />
-            Unduh CSV
+            Report Penjualan
         </a>
     </div>
 
@@ -65,27 +65,76 @@
         </div>
     </div>
 
-    {{-- ── Saringan tambahan ───────────────────────────────────────── --}}
-    <div class="plate flex flex-wrap items-center gap-2 p-3">
-        <select wire:model.live="bayar" class="field w-auto">
-            <option value="semua">Semua pembayaran</option>
-            @foreach (\App\Enums\StatusPembayaran::cases() as $s)
-                <option value="{{ $s->value }}">{{ $s->label() }}</option>
-            @endforeach
-        </select>
+    {{-- ── Saringan tambahan ─────────────────────────────────────────
 
-        <select wire:model.live="urut" class="field w-auto">
-            <option value="terbaru">Terbaru</option>
-            <option value="terlama">Terlama</option>
-            <option value="terbesar">Nilai terbesar</option>
-            <option value="kedaluwarsa">Hampir batal</option>
-        </select>
+         Satu baris, tiga hal: cari, cara bayar, urutan. Dulu dua <select>
+         memakan lebar penuh sebelum pencarian — padahal pencarian yang paling
+         sering dipakai. Sekarang input yang paling lebar, dan "semua
+         pembayaran" serta "terbaru" jadi tombol chip yang menampilkan pilihan
+         sedang aktif; pilihan lain dibuka dari dropdown Alpine kecil.
 
-        <label class="flex min-w-[12rem] flex-1 items-center gap-2 lg:max-w-sm">
+         Alpine sengaja dipakai HANYA untuk membuka panel pilihan. Nilai yang
+         terpilih tetap dibaca dari properti Livewire ($bayar, $urut), bukan
+         dari keadaan Alpine — supaya menyaring tetap bekerja walau Alpine
+         gagal dimuat. --}}
+    <div class="plate flex flex-wrap items-center gap-2 p-3" x-data="{bukaBayar: false, bukaUrut: false}">
+        <label class="flex min-w-[12rem] flex-1 items-center gap-2 lg:max-w-md">
             <x-ikon name="search" :size="17" class="flex-none text-dim" />
             <input type="search" wire:model.live.debounce.400ms="cari" class="field"
                    placeholder="Cari nomor pesanan, nama, atau email" />
         </label>
+
+        {{-- Chip cara bayar --}}
+        <div class="relative">
+            <button type="button" @click="bukaBayar = !bukaBayar; bukaUrut = false"
+                    class="btn btn-outline" aria-haspopup="true" :aria-expanded="bukaBayar">
+                <x-ikon name="card" :size="16" />
+                {{ \App\Enums\StatusPembayaran::tryFrom($bayar)?->label() ?? 'Semua pembayaran' }}
+                <x-ikon name="chevron-down" :size="14" class="text-dim" />
+            </button>
+
+            <div x-show="bukaBayar" x-cloak @click.outside="bukaBayar = false"
+                 class="plate absolute right-0 z-20 mt-1 w-52 overflow-hidden p-1 shadow-lg">
+                <button type="button" wire:click="$set('bayar', 'semua')" @click="bukaBayar = false"
+                        class="flex w-full items-center justify-between gap-2 rounded-[var(--r-kecil)] px-3 py-2 text-left text-sm hover:bg-sunken">
+                    Semua pembayaran
+                    @if ($bayar === 'semua') <x-ikon name="check" :size="15" class="text-accent" /> @endif
+                </button>
+                @foreach (\App\Enums\StatusPembayaran::cases() as $s)
+                    <button type="button" wire:click="$set('bayar', '{{ $s->value }}')" @click="bukaBayar = false"
+                            class="flex w-full items-center justify-between gap-2 rounded-[var(--r-kecil)] px-3 py-2 text-left text-sm hover:bg-sunken">
+                        {{ $s->label() }}
+                        @if ($bayar === $s->value) <x-ikon name="check" :size="15" class="text-accent" /> @endif
+                    </button>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Chip urutan --}}
+        <div class="relative">
+            <button type="button" @click="bukaUrut = !bukaUrut; bukaBayar = false"
+                    class="btn btn-outline" aria-haspopup="true" :aria-expanded="bukaUrut">
+                <x-ikon name="sliders" :size="16" />
+                {{ match ($urut) {
+                    'terlama' => 'Terlama',
+                    'terbesar' => 'Nilai terbesar',
+                    'kedaluwarsa' => 'Hampir batal',
+                    default => 'Terbaru',
+                } }}
+                <x-ikon name="chevron-down" :size="14" class="text-dim" />
+            </button>
+
+            <div x-show="bukaUrut" x-cloak @click.outside="bukaUrut = false"
+                 class="plate absolute right-0 z-20 mt-1 w-52 overflow-hidden p-1 shadow-lg">
+                @foreach (['terbaru' => 'Terbaru', 'terlama' => 'Terlama', 'terbesar' => 'Nilai terbesar', 'kedaluwarsa' => 'Hampir batal'] as $nilai => $label)
+                    <button type="button" wire:click="$set('urut', '{{ $nilai }}')" @click="bukaUrut = false"
+                            class="flex w-full items-center justify-between gap-2 rounded-[var(--r-kecil)] px-3 py-2 text-left text-sm hover:bg-sunken">
+                        {{ $label }}
+                        @if ($urut === $nilai) <x-ikon name="check" :size="15" class="text-accent" /> @endif
+                    </button>
+                @endforeach
+            </div>
+        </div>
     </div>
 
     {{-- ── Bilah cetak banyak ────────────────────────────────────────
@@ -99,7 +148,7 @@
          berarti tombol ini mati bila penarikan Alpine gagal — sedangkan
          mencetak resi dua puluh paket bukan pekerjaan yang boleh gagal
          karena peramban. --}}
-    <div class="plate flex flex-wrap items-center justify-between gap-3 p-3">
+    <div id="bilah-cetak" class="plate flex flex-wrap items-center justify-between gap-3 p-3" hidden>
         <p class="text-sm text-muted">
             Centang pesanan di bawah, lalu cetak semua label sekaligus dalam satu berkas PDF.
         </p>
