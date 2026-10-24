@@ -10,6 +10,7 @@ use App\Livewire\Admin\Kupon;
 use App\Livewire\Admin\KeranjangTerbuka;
 use App\Livewire\Admin\Masuk;
 use App\Livewire\Admin\Pelanggan;
+use App\Livewire\Admin\PenggunaPeran;
 use App\Livewire\Admin\PesananDaftar;
 use App\Livewire\Admin\PesananDetail;
 use App\Livewire\Admin\PengaturanSitus;
@@ -92,6 +93,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         // data langsung.
         Route::get('pesan', PesanKontak::class)->name('messages.index');
         Route::get('pelanggan', Pelanggan::class)->name('customers.index');
+        Route::get('pengguna', PenggunaPeran::class)->name('users.index');
         Route::get('kupon', Kupon::class)->name('coupons.index');
 
         Route::get('produk', ProdukDaftar::class)->name('products.index');
