@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DokumenPesanan;
 use App\Http\Middleware\PastikanAdmin;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\CadanganPanel;
 use App\Livewire\Admin\HeroBuilder;
 use App\Livewire\Admin\Kategori;
 use App\Livewire\Admin\KeamananPanel;
@@ -114,6 +115,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         // aplikasi. Tanpa halaman ini, IP pelanggan yang diblokir otomatis
         // hanya dapat dipulihkan lewat basis data langsung.
         Route::get('keamanan', KeamananPanel::class)->name('security.index');
+
+        // Cadangan basis data. Terpisah dari halaman Keamanan karena
+        // pertanyaannya berbeda: Keamanan menjawab "siapa mencoba masuk",
+        // halaman ini menjawab "apa masih ada salinan yang bisa dipulihkan".
+        Route::get('cadangan', CadanganPanel::class)->name('backup.index');
 
         Route::get('pengaturan', PengaturanSitus::class)->name('settings.index');
         Route::get('hero', HeroBuilder::class)->name('hero.index');

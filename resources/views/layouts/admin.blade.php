@@ -71,6 +71,7 @@
                 ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => true],
                 ['rute' => 'admin.reports.index', 'pola' => 'admin.reports.*', 'ikon' => 'chart', 'label' => 'Laporan', 'bawah' => false],
                 ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false],
+                ['rute' => 'admin.backup.index', 'pola' => 'admin.backup.*', 'ikon' => 'download', 'label' => 'Cadangan', 'bawah' => false],
             ],
         ],
     ];
