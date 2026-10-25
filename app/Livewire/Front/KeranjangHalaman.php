@@ -38,6 +38,31 @@ class KeranjangHalaman extends Component
         $this->kodeKupon = $keranjang->kupon()?->code ?? '';
         $this->catatan = $keranjang->catatan();
 
+        // Tautan berbagi KOL: ?kupon=KODE.
+        //
+        // Pembeli yang datang dari tautan milik KOL tidak perlu mengetik kode.
+        // Yang tersimpan adalah KODE KUPON, bukan slug KOL — slug hanya
+        // penanda laporan, dan menyimpannya di keranjang akan menyimpan data
+        // yang tidak dipakai di jalur pembelian.
+        //
+        // Hanya dipasang bila keranjang belum punya kupon, supaya pembeli yang
+        // sengaja mengetik kode lain tidak melihat pilihannya ditimpa saat
+        // halaman dimuat ulang.
+        if ($this->kodeKupon === '') {
+            $dariTautan = trim((string) request()->query('kupon', ''));
+
+            if ($dariTautan !== '') {
+                $kupon = Coupon::query()->kode($dariTautan)->berlaku()->first();
+
+                if ($kupon !== null && $kupon->alasanTidakSah($keranjang->subtotal()) === null) {
+                    $keranjang->terapkanKupon($kupon);
+                    $this->kodeKupon = $kupon->code;
+                    $this->pesanKupon = __('site.cart.coupon_applied', ['kode' => $kupon->code]);
+                    $this->nadaKupon = 'ok';
+                }
+            }
+        }
+
         $this->periksaStok($keranjang);
     }
 

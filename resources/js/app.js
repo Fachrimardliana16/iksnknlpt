@@ -98,7 +98,67 @@ document.addEventListener('click', (event) => {
     if (aksi === 'cetak') {
         window.print();
     }
+
+    // Persetujuan cookie. Cookie izin ditulis dari sini supaya middleware
+    // ZonaPelanggan dapat menulis cookie zona pada permintaan BERIKUTNYA:
+    // menuliskannya dari server berarti membacanya pada permintaan yang sama,
+    // saat pembeli belum menekan apa pun.
+    if (aksi === 'cookie-setuju') {
+        window.iksanCookie.setuju();
+    }
 });
+
+/**
+ * Pemberitahuan cookie.
+ *
+ * Nama cookie ditulis apa adanya di sini (bukan diterima dari server) karena
+ * nilainya hanya perlu dibaca oleh skrip ini — sama dengan cara ZonaPelanggan
+ * membacanya di PHP. Cookie ini tidak dienkripsi oleh Laravel dengan sengaja,
+ * jadi keduanya membaca nilai yang sama.
+ */
+window.iksanCookie = {
+    get key() {
+        return 'iksan_izin';
+    },
+
+    get disetujui() {
+        try {
+            return document.cookie
+                .split('; ')
+                .some((baris) => baris.startsWith(this.key + '='));
+        } catch (e) {
+            return false;
+        }
+    },
+
+    setuju() {
+        // Satu tahun, sama dengan cookie zona. Hati-hati: tanpa SameSite,
+        // cookie ini ikut terkirim pada permintaan lintas situs.
+        document.cookie =
+            this.key +
+            '=1; path=/; max-age=31536000; SameSite=Lax' +
+            (window.location.protocol === 'https:' ? '; Secure' : '');
+
+        const notice = document.getElementById('cookie-notice');
+        if (notice) {
+            notice.classList.add('hidden');
+        }
+    },
+
+    /** Tampilkan pemberitahuan hanya bila belum ada persetujuan. */
+    perbarui() {
+        if (this.disetujui) {
+            return;
+        }
+
+        const notice = document.getElementById('cookie-notice');
+        if (notice) {
+            notice.classList.remove('hidden');
+        }
+    },
+};
+
+window.iksanCookie.perbarui();
 
 window.iksanLang = {
     get current() {

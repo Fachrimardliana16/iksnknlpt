@@ -24,6 +24,9 @@ class Coupon extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'kol_nama',
+        'kol_slug',
+        'kol_kontak',
     ];
 
     protected function casts(): array
@@ -53,6 +56,68 @@ class Coupon extends Model
         $this->attributes['code'] = $value === null
             ? null
             : mb_strtoupper(trim($value));
+    }
+
+    /**
+     * Slug KOL: huruf kecil, tanpa spasi, aman dipakai di tautan.
+     *
+     * Dibentuk dari nama KOL bila slug dikosongkan. Tanpa ini, setiap KOL harus
+     * mengingat format slug sendiri, dan "Budi Santoso" bisa jadi budi-santoso,
+     * budi_santoso, atau BUDI — lalu tautan berbagi tidak cocok dengan yang
+     * tercatat di laporan.
+     */
+    public function setKolSlugAttribute(?string $value): void
+    {
+        $slug = $value !== null ? trim($value) : '';
+
+        if ($slug === '' && $this->kol_nama !== null) {
+            $slug = \Illuminate\Support\Str::slug($this->kol_nama);
+        }
+
+        $this->attributes['kol_slug'] = $slug === '' ? null : $slug;
+    }
+
+    /**
+     * Nama KOL ikut menjaga slug.
+     *
+     * Menyimpan hanya `kol_nama` (mis. lewat updateOrCreate, seeder, atau
+     * tinker) tidak memanggil mutator slug sama sekali — slug tetap NULL dan
+     * kupon yang sudah punya pemilik tidak punya tautan berbagi. Gejalanya
+     * sunyi: kupon tampak normal, laporan performa hanya kehilangan satu
+     * baris tanpa pesan kesalahan.
+     */
+    public function setKolNamaAttribute(?string $value): void
+    {
+        $this->attributes['kol_nama'] = $value === null ? null : trim($value);
+
+        // Nama dihapus berarti kupon kembali menjadi kupon biasa. Slug yang
+        // tertinggal akan membuatnya tetap terhitung sebagai kupon berbagi.
+        if ($this->attributes['kol_nama'] === null || $this->attributes['kol_nama'] === '') {
+            $this->attributes['kol_slug'] = null;
+        } elseif (blank($this->attributes['kol_slug'] ?? null)) {
+            $this->attributes['kol_slug'] = \Illuminate\Support\Str::slug($this->attributes['kol_nama']);
+        }
+    }
+
+    /** Apakah kupon ini kupon berbagi milik seorang KOL. */
+    public function punyaKol(): bool
+    {
+        return filled($this->kol_slug);
+    }
+
+    /**
+     * Tautan berbagi untuk KOL.
+     *
+     * Menunjuk halaman katalog dengan kode kupon sudah terpasang, supaya KOL
+     * cukup membagikan satu alamat dan pembeli tidak perlu mengetik kodenya.
+     */
+    public function tautanKol(): ?string
+    {
+        if (! $this->punyaKol()) {
+            return null;
+        }
+
+        return route('front.home', ['kupon' => $this->code]);
     }
 
     public function scopeKode($query, string $kode)

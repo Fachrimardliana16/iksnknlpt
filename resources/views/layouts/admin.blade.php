@@ -52,6 +52,7 @@
                 ['rute' => 'admin.users.index', 'pola' => 'admin.users.*', 'ikon' => 'shield', 'label' => 'Pengguna & Peran', 'bawah' => true],
                 ['rute' => 'admin.messages.index', 'pola' => 'admin.messages.*', 'ikon' => 'mail', 'label' => 'Pesan', 'bawah' => false],
                 ['rute' => 'admin.coupons.index', 'pola' => 'admin.coupons.*', 'ikon' => 'tag', 'label' => 'Kupon', 'bawah' => false],
+                ['rute' => 'admin.kol.index', 'pola' => 'admin.kol.*', 'ikon' => 'share', 'label' => 'Performa KOL', 'bawah' => false],
             ],
         ],
         [

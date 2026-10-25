@@ -151,6 +151,7 @@
     @include('partials.front.footer')
     @include('partials.front.bottom-nav')
     @include('partials.front.whatsapp')
+    @include('partials.front.cookie-notice')
 
     @isset($remah)
         @if (is_array($remah) && count($remah) > 1)

@@ -21,12 +21,18 @@ class ContactMessageSeeder extends Seeder
     public function run(): void
     {
         foreach (self::PESAN as $i => [$nama, $email, $telepon, $subjek, $pesan, $sudahDibaca]) {
+            // Kunci idempotensi memakai email, bukan subjek: subjek ber-cast
+            // encrypted sehingga nilainya berbeda setiap kali ditulis, dan
+            // updateOrCreate dengan kunci terenkripsi akan membuat baris baru
+            // di setiap seeding. Email punya indeks buta (email_bidx) yang
+            // stabil — sama untuk nilai yang sama.
             ContactMessage::query()->updateOrCreate(
-                ['subject' => $subjek],
+                ['email_bidx' => \App\Support\BlindIndex::buat($email, 'email_bidx')],
                 [
                     'name' => $nama,
                     'email' => $email,
                     'phone' => $telepon,
+                    'subject' => $subjek,
                     'message' => $pesan,
                     'ip_hash' => hash('sha256', 'seeder-'.$email),
                     'user_agent' => 'Seeder/1.0',

@@ -137,7 +137,13 @@ class Checkout extends Component
         // Negara mengikuti alamat tersimpan, atau Indonesia. Mata uang mengikuti
         // negara: dalam negeri selalu IDR, luar negeri menawarkan USD sebagai
         // pilihan (tetap boleh memilih IDR).
-        $this->negara = 'ID';
+        //
+        // Pembeli yang kembali memakai zona yang dipilih sebelumnya lewat
+        // cookie. Bila ia sudah pernah memilih Singapura, kolom negara sudah
+        // terisi — dan ia tidak perlu mengulanginya setiap kali kembali.
+        $zona = \App\Http\Middleware\ZonaPelanggan::sekarang();
+
+        $this->negara = $zona !== '' ? $zona : 'ID';
 
         if (auth()->check()) {
             $user = auth()->user();
@@ -184,7 +190,9 @@ class Checkout extends Component
         }
 
         // Dalam-negeri -> luar-negeri: USD lebih umum bagi pembeli asing.
-        if ($this->mataUang === 'IDR') {
+        // Yang kembali memakai zona tersimpan tidak diusulkan USD bila ia
+        // sengaja memilih IDR sebelumnya.
+        if ($this->mataUang === 'IDR' && $nilai !== \App\Http\Middleware\ZonaPelanggan::sekarang()) {
             $this->mataUang = 'USD';
         }
     }
@@ -404,6 +412,36 @@ class Checkout extends Component
         }
 
         session()->put($kunciPesan, $order->order_number);
+
+        // Zona pengiriman diingat supaya kunjungan berikutnya tidak mengisi
+        // ulang kolom negara. Ditulis hanya setelah pesanan berhasil dibuat:
+        // pilihan yang gagal tersimpan akan membuat pembeli terjebak di zona
+        // yang bukan ia pilih.
+        //
+        // Ini penulisan yang TIDAK butuh cookie izin terlebih dulu: pembeli
+        // baru saja memilih negara sendiri di form ini, jadi persetujuannya
+        // nyata dan tertulis pada tindakan itu — bukan sekedar izin di
+        // pemberitahuan cookie. Cookie izin ikut ditulis supaya pemberitahuan
+        // tidak muncul lagi setelahnya.
+        cookie()->queue(cookie(
+            name: \App\Http\Middleware\ZonaPelanggan::COOKIE,
+            value: $this->negara,
+            minutes: 60 * 24 * 365,
+            path: '/',
+            secure: request()->isSecure(),
+            httpOnly: false,
+            sameSite: 'lax',
+        ));
+
+        cookie()->queue(cookie(
+            name: \App\Http\Middleware\ZonaPelanggan::IZIN,
+            value: '1',
+            minutes: 60 * 24 * 365,
+            path: '/',
+            secure: request()->isSecure(),
+            httpOnly: false,
+            sameSite: 'lax',
+        ));
 
         $this->dispatch('keranjang-berubah');
         $this->redirect(route('front.order.success', $order), navigate: true);

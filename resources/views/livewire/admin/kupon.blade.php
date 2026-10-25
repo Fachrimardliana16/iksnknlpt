@@ -62,6 +62,7 @@
                                 <th class="part-no p-3 text-right font-medium">Min. belanja</th>
                                 <th class="part-no p-3 text-right font-medium">Terpakai</th>
                                 <th class="part-no p-3 font-medium">Masa berlaku</th>
+                                <th class="part-no p-3 font-medium">Pemilik KOL</th>
                                 <th class="part-no p-3 font-medium">Status</th>
                                 <th class="p-3"><span class="visually-hidden">Tindakan</span></th>
                             </tr>
@@ -114,6 +115,15 @@
                                             {{ $k->ends_at?->format('d/m/y') ?? '—' }}
                                         @else
                                             <span class="text-dim">tanpa batas</span>
+                                        @endif
+                                    </td>
+
+                                    <td class="p-3">
+                                        @if ($k->punyaKol())
+                                            <p class="text-sm">{{ $k->kol_nama ?? $k->kol_slug }}</p>
+                                            <p class="tech text-xs text-dim">{{ $k->kol_kontak }}</p>
+                                        @else
+                                            <span class="text-dim">—</span>
                                         @endif
                                     </td>
 
@@ -244,6 +254,47 @@
                             <input id="ends_at" type="datetime-local" wire:model="ends_at" class="field mt-1 text-xs">
                             @error('ends_at') <p class="field-error">{{ $message }}</p> @enderror
                         </div>
+                    </div>
+
+                    {{-- ── Pemilik KOL ────────────────────────────────────
+                         Kosong = kupon biasa. Terisi = kupon berbagi milik seorang
+                         KOL: punya tautan sendiri dan penjualannya terhitung di
+                         halaman Performa KOL. --}}
+                    <div class="rounded-lg border border-line-soft p-3">
+                        <p class="part-no">Pemilik KOL <span class="font-normal text-dim">(opsional)</span></p>
+                        <p class="mt-1 text-xs text-dim">
+                            Isi bila kupon ini dibagikan seorang KOL. Kosongkan untuk kupon biasa.
+                        </p>
+
+                        <div class="mt-3">
+                            <label for="kol_nama" class="part-no">Nama KOL</label>
+                            <input id="kol_nama" type="text" wire:model.blur="kol_nama" class="field mt-1"
+                                   placeholder="Budi Santoso" aria-invalid="{{ $errors->has('kol_nama') ? 'true' : 'false' }}">
+                            @error('kol_nama') <p class="field-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="kol_slug" class="part-no">Slug tautan</label>
+                            <input id="kol_slug" type="text" wire:model.blur="kol_slug" class="field tech mt-1"
+                                   placeholder="budi-santoso" aria-invalid="{{ $errors->has('kol_slug') ? 'true' : 'false' }}">
+                            <p class="mt-1 text-xs text-dim">
+                                Dibentuk otomatis dari nama bila dikosongkan. Huruf kecil, angka, tanda hubung.
+                            </p>
+                            @error('kol_slug') <p class="field-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="kol_kontak" class="part-no">Kontak KOL</label>
+                            <input id="kol_kontak" type="text" wire:model.blur="kol_kontak" class="field mt-1"
+                                   placeholder="08xxxxxxxxxx atau @akun" aria-invalid="{{ $errors->has('kol_kontak') ? 'true' : 'false' }}">
+                            @error('kol_kontak') <p class="field-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        @if ($kol_slug !== '' || $kol_nama !== '')
+                            <p class="mt-3 break-all text-xs text-muted">
+                                Tautan berbagi: <span class="tech">{{ $tautanKol ?? url('/').'?kupon='.($code ?: '…') }}</span>
+                            </p>
+                        @endif
                     </div>
 
                     <label class="flex items-center gap-2">

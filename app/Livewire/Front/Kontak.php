@@ -70,7 +70,14 @@ class Kontak extends Component
             'subject' => $this->subjek ?: 'Pesan dari halaman kontak',
             'message' => $this->pesan,
             'ip_hash' => hash('sha256', (string) request()->ip()),
-            'user_agent' => substr((string) request()->userAgent(), 0, 255),
+
+            // User agent dipangkas sebelum disimpan, bukan diandalkan pada
+            // kolom basis data. Header ini panjangnya sewenang-wenang — ada
+            // peramban dan ekstensi yang mengirim ratusan karakter, dan
+            // memotongnya di sini berarti panjang yang tersimpan selalu dapat
+            // diperkirakan.
+            'user_agent' => mb_substr((string) request()->userAgent(), 0, 255),
+
             'is_read' => false,
         ]);
 

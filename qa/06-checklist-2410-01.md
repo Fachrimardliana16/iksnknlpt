@@ -69,31 +69,31 @@ berubah), bukan ada-tidaknya exception. "Tidak ada exception" bukan berarti
 
 ## Tahap 3 — Referral KOL (butir 9)
 
-- [ ] **3.1** Migrasi: kolom pemilik KOL pada `coupons` (nullable + default aman,
+- [x] **3.1** Migrasi: kolom pemilik KOL pada `coupons` (nullable + default aman,
       supaya baris lama tidak gagal)
-- [ ] **3.2** Migrasi: pencatatan pemakaian kupon per pesanan (sumber performa)
-- [ ] **3.3** UI: tetapkan KOL pada kupon + bentuk tautan berbagi per KOL
-- [ ] **3.4** UI: halaman performa KOL (jumlah pakai, total belanja, potongan
+- [x] **3.2** Migrasi: pencacatan pemakaian kupon per pesanan (sumber performa)
+- [x] **3.3** UI: tetapkan KOL pada kupon + bentuk tautan berbagi per KOL
+- [x] **3.4** UI: halaman performa KOL (jumlah pakai, total belanja, potongan
       yang diberikan)
-- [ ] **3.5** Uji: migrasi jalan pada basis data yang sudah berisi; suite hijau
+- [x] **3.5** Uji: migrasi jalan pada basis data yang sudah berisi; suite hijau
 
 ## Tahap 4 — Zona pelanggan, front end (butir F1)
 
-- [ ] **4.1** Cookie `iksan_zona`: simpan preferensi zona pengiriman pelanggan
+- [x] **4.1** Cookie `iksan_zona`: simpan preferensi zona pengiriman pelanggan
       (bukan sekadar locale), HttpOnly + SameSite=Lax
-- [ ] **4.2** Zona dipakai untuk memperkirakan ongkir / ketersediaan kirim
-- [ ] **4.3** Catat persetujuan cookie (privacy notice singkat) sebelum cookie
+- [x] **4.2** Zona dipakai untuk memperkirakan ongkir / ketersediaan kirim
+- [x] **4.3** Catat persetujuan cookie (privacy notice singkat) sebelum cookie
       non-esensial ditulis
-- [ ] **4.4** Uji: cookie terkirim, bertahan antar kunjungan, tidak memblokir
+- [x] **4.4** Uji: cookie terkirim, bertahan antar kunjungan, tidak memblokir
       halaman bila ditolak
 
 ## Tahap 5 — Keamanan pesan (butir 7)
 
-- [ ] **5.1** Enkripsi kolom `subject` (saat ini satu-satunya kolom pesan yang
+- [x] **5.1** Enkripsi kolom `subject` (saat ini satu-satunya kolom pesan yang
       masih teks terbuka)
-- [ ] **5.2** Migrasi data: enkripsi baris `subject` yang sudah ada
-- [ ] **5.3** Batasi panjang `user_agent` yang disimpan
-- [ ] **5.4** Uji: pesan baru tersimpan terenkripsi; pesan lama terbaca benar;
+- [x] **5.2** Migrasi data: enkripsi baris `subject` yang sudah ada
+- [x] **5.3** Batasi panjang `user_agent` yang disimpan
+- [x] **5.4** Uji: pesan baru tersimpan terenkripsi; pesan lama terbaca benar;
       suite hijau
 
 ## Penutup

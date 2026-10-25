@@ -119,12 +119,23 @@ $middleware->web(append: [
         // maupun panel admin.
         $middleware->web(prepend: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\ZonaPelanggan::class,
         ]);
 
         // Kue bahasa tidak dienkripsi. Nilainya bukan rahasia, dan membiarkannya
-        // terbaca membuat kue ini dapat diperiksa langsung dari sisi klien.
+        // terbuka membuat kue ini dapat diperiksa langsung dari sisi klien.
+        //
+        // Zona pengiriman ikut tidak dienkripsi, dengan alasan yang sama: kode
+        // negara bukan data pribadi, dan pembeli perlu bisa melihat apa yang
+        // tersimpan di perambannya sendiri.
+        //
+        // Cookie izin ikut tidak dienkripsi: isinya penanda persetujuan, bukan
+        // data. Kalau dienkripsi, nilainya tak terbaca oleh skrip sisi klien
+        // yang harus memeriksa apakah pemberitahuan cookie perlu tampil lagi.
         $middleware->encryptCookies(except: [
             \App\Http\Middleware\SetLocale::COOKIE,
+            \App\Http\Middleware\ZonaPelanggan::COOKIE,
+            \App\Http\Middleware\ZonaPelanggan::IZIN,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

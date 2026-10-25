@@ -197,6 +197,13 @@ return [
         'rights' => 'Seluruh hak cipta dilindungi.',
     ],
 
+    'cookie' => [
+        'title' => 'Cookie',
+        'body' => 'Kami memakai cookie untuk mengingat zona pengiriman yang Anda pilih, supaya kolom negara tidak perlu diisi ulang setiap kali berkunjung. Data pribadi tetap terenkripsi dan tidak kami bagikan.',
+        'accept' => 'Setuju',
+        'learn_more' => 'Selengkapnya',
+    ],
+
     'common' => [
         'loading' => 'Memuat',
         'save' => 'Simpan',

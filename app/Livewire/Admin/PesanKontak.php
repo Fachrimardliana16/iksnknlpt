@@ -174,7 +174,32 @@ class PesanKontak extends Component
             ->when($this->urut === 'terlama', fn ($q) => $q->orderBy('id'))
             ->when($this->urut === 'belum', fn ($q) => $q->orderBy('is_read')->orderByDesc('id'));
 
-        $daftar = $kueri->paginate(10);
+        // Pencarian subjek dan isi pesan tidak dapat dilakukan di SQL karena
+        // kolomnya terenkripsi. Yang cocok diambil lebih dulu lewat
+        // cocokPencarian() pada kumpulan yang sudah dipangkas saringan basis
+        // data, lalu dipaginasi.
+        //
+        // PONI: pencarian saringan email memakai sidik jari (pencocokan persis),
+        // sehingga kata yang bukan alamat surel tidak mempersempit apa pun di
+        // SQL — seluruh baris ikut terbaca lalu disaring di PHP. Untuk pesan
+        // kontak skala toko (ratusan, bukan jutaan baris) ini cukup; bila
+        // jumlahnya tumbuh, ganti dengan kolom pencarian khusus atau indeks
+        // terbalik pada subjek.
+        if ($this->cari !== '') {
+            $semua = $kueri->get()->filter(
+                fn (ContactMessage $p): bool => $p->cocokPencarian($this->cari),
+            )->values();
+
+            $daftar = new \Illuminate\Pagination\LengthAwarePaginator(
+                $semua->forPage($this->getPage(), 10),
+                $semua->count(),
+                10,
+                $this->getPage(),
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()],
+            );
+        } else {
+            $daftar = $kueri->paginate(10);
+        }
 
         return view('livewire.admin.pesan-kontak', [
             'daftar' => $daftar,

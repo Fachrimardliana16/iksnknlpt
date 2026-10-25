@@ -6,6 +6,7 @@ use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\HeroBuilder;
 use App\Livewire\Admin\Kategori;
 use App\Livewire\Admin\KeamananPanel;
+use App\Livewire\Admin\KolPerforma;
 use App\Livewire\Admin\Kupon;
 use App\Livewire\Admin\KeranjangTerbuka;
 use App\Livewire\Admin\Masuk;
@@ -95,6 +96,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('pelanggan', Pelanggan::class)->name('customers.index');
         Route::get('pengguna', PenggunaPeran::class)->name('users.index');
         Route::get('kupon', Kupon::class)->name('coupons.index');
+
+        // Performa KOL. Terpisah dari halaman Kupon karena pertanyaannya
+        // berbeda: halaman Kupon mengelola aturan diskon, halaman ini menjawab
+        // siapa yang menghasilkan penjualan. Menumpuk keduanya membuat salah
+        // satu hilang di antara kolom yang lain.
+        Route::get('kol', KolPerforma::class)->name('kol.index');
 
         Route::get('produk', ProdukDaftar::class)->name('products.index');
         Route::get('produk/baru', ProdukForm::class)->name('products.create');

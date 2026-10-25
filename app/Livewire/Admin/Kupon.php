@@ -57,6 +57,13 @@ class Kupon extends Component
 
     public bool $is_active = true;
 
+    /** Nama KOL pemilik kupon. Kosong = kupon biasa, bukan kupon berbagi. */
+    public string $kol_nama = '';
+
+    public string $kol_slug = '';
+
+    public string $kol_kontak = '';
+
     public ?string $pesan = null;
 
     public function updatedCari(): void
@@ -99,6 +106,9 @@ class Kupon extends Component
         $this->starts_at = $kupon->starts_at?->format('Y-m-d\TH:i') ?? '';
         $this->ends_at = $kupon->ends_at?->format('Y-m-d\TH:i') ?? '';
         $this->is_active = (bool) $kupon->is_active;
+        $this->kol_nama = (string) ($kupon->kol_nama ?? '');
+        $this->kol_slug = (string) ($kupon->kol_slug ?? '');
+        $this->kol_kontak = (string) ($kupon->kol_kontak ?? '');
         $this->formTerbuka = true;
         $this->pesan = null;
 
@@ -131,7 +141,17 @@ class Kupon extends Component
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
             'is_active' => ['boolean'],
+            'kol_nama' => ['nullable', 'string', 'max:120'],
+            'kol_slug' => ['nullable', 'string', 'max:120', 'regex:/^[a-z0-9\-]+$/'],
+            'kol_kontak' => ['nullable', 'string', 'max:120'],
         ];
+
+        // Slug unik hanya untuk baris yang punya slug. Dua kupon tanpa pemilik
+        // sama-sama NULL, dan indeks unik parsial pada SQLite memperlakukan
+        // NULL sebagai bukan duplikat — jadi keduanya boleh hidup berdampingan.
+        if (filled($this->kol_slug)) {
+            $aturan['kol_slug'][] = Rule::unique('coupons', 'kol_slug')->ignore($this->suntingId);
+        }
 
         $pesan = [
             'code.required' => 'Kode kupon wajib diisi.',
@@ -141,6 +161,8 @@ class Kupon extends Component
             'value.required' => 'Nilai potongan wajib diisi.',
             'value.numeric' => 'Nilai potongan harus berupa angka.',
             'ends_at.after' => 'Tanggal berakhir harus setelah tanggal mulai.',
+            'kol_slug.regex' => 'Slug KOL hanya boleh huruf kecil, angka, dan tanda hubung.',
+            'kol_slug.unique' => 'Slug ini sudah dipakai KOL lain.',
         ];
 
         $bersih = $this->validate($aturan, $pesan);
@@ -179,6 +201,13 @@ class Kupon extends Component
             'starts_at' => $bersih['starts_at'] ?: null,
             'ends_at' => $bersih['ends_at'] ?: null,
             'is_active' => $bersih['is_active'],
+            // Nama KOL menentukan apakah kupon ini kupon berbagi. Slug dibentuk
+            // dari nama bila dikosongkan (lihat Coupon::setKolSlugAttribute),
+            // supaya tautan yang dibagikan KOL cocok dengan yang tercatat di
+            // laporan performa.
+            'kol_nama' => $bersih['kol_nama'] ?: null,
+            'kol_slug' => $bersih['kol_slug'] ?: null,
+            'kol_kontak' => $bersih['kol_kontak'] ?: null,
         ];
 
         if ($this->suntingId === null) {
@@ -278,6 +307,9 @@ class Kupon extends Component
         $this->starts_at = '';
         $this->ends_at = '';
         $this->is_active = true;
+        $this->kol_nama = '';
+        $this->kol_slug = '';
+        $this->kol_kontak = '';
 
         $this->resetValidation();
     }
@@ -305,6 +337,29 @@ class Kupon extends Component
                 'habis' => Coupon::query()->whereNotNull('quota')->whereColumn('used_count', '>=', 'quota')->count(),
             ],
             'pratinjau' => $this->pratinjauPotongan(),
+
+            // Tautan berbagi untuk kupon yang sedang disunting. Bila belum
+            // tersimpan, tautan tetap ditunjukkan supaya pengelola tahu bentuk
+            // alamat yang akan dibagikan KOL — dari kode yang sedang diketik.
+            'tautanKol' => $this->tautanKol(),
         ])->layout('layouts.admin', ['judul' => 'Kupon', 'bagian' => 'Penjualan']);
+    }
+
+    /**
+     * Tautan berbagi kupon yang sedang dibuka di formulir.
+     *
+     * Kode yang sudah tersimpan dipakai apa adanya; yang belum tersimpan
+     * dinormalkan ke huruf besar seperti yang dilakukan model saat menyimpan,
+     * supaya yang terlihat di layar sama dengan yang akhirnya berlaku.
+     */
+    private function tautanKol(): ?string
+    {
+        $kode = mb_strtoupper(trim($this->code));
+
+        if ($kode === '') {
+            return null;
+        }
+
+        return route('front.home', ['kupon' => $kode]);
     }
 }
