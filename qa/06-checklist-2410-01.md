@@ -98,10 +98,15 @@ berubah), bukan ada-tidaknya exception. "Tidak ada exception" bukan berarti
 
 ## Penutup
 
-- [ ] **6.1** `npm run build` (setiap perubahan blade/CSS) — sudah untuk tahap 1
-- [ ] **6.2** Suite penuh: `php -d max_execution_time=0 vendor/bin/phpunit`
-- [ ] **6.3** Uji hidup: `/` `/produk` `/admin/login` `/admin/pesanan`
+- [x] **6.1** `npm run build` (setiap perubahan blade/CSS) — sudah untuk tahap 1
+- [x] **6.2** Suite penuh: `php -d max_execution_time=0 vendor/bin/phpunit`
+- [x] **6.3** Uji hidup: `/` `/produk` `/admin/login` `/admin/pesanan`
       `/admin/pesan` `/admin/produk` `/admin/pengguna` → 200
-- [ ] **6.4** LAN `192.168.1.61:8100` tetap tertutup — sudah untuk tahap 1
-- [ ] **6.5** Laporan `qa/07-laporan-2410-01.md`: apa yang berubah, apa yang
+      Bukti: `tools/uji-panel-hidup.php` → `21 lulus, 0 gagal` (termasuk
+      `/admin/kol` dan `/admin/kupon` sesudah login; tamu dapat 302 ke
+      `/admin/login`)
+- [x] **6.4** LAN `192.168.1.61:8100` tetap tertutup — sudah untuk tahap 1
+      Bukti: nginx hanya mendengarkan `127.0.0.1:8100`;
+      `curl http://192.168.1.61:8100/` → 000 (tak terjangkau)
+- [x] **6.5** Laporan `qa/07-laporan-2410-01.md`: apa yang berubah, apa yang
       dibuktikan, apa yang sisa
