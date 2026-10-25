@@ -123,6 +123,21 @@
         </p>
     </div>
 
+    {{-- ── Catatan unduhan ───────────────────────────────────────── --}}
+    <div class="plate p-4 text-sm">
+        <p class="font-medium">Taut unduh berumur 15 menit</p>
+        <p class="mt-1 text-muted">
+            Berkas cadangan memuat seluruh basis data — pesanan, alamat pengiriman, nomor telepon,
+            dan surel pelanggan. Tautannya karena itu bertanda tangan dan kedaluwarsa sendiri,
+            tidak ada alamat permanen yang bisa ditebak atau disalin ke tempat lain.
+            Tombol yang sudah lewat 15 menit tinggal dimuat ulang halamannya.
+        </p>
+        <p class="mt-2 text-muted">
+            Cadangan di server ini masih di disk yang sama dengan basis datanya. Menyimpannya di
+            tempat lain — komputer sendiri, atau penyimpanan luar — tetap perlu dilakukan.
+        </p>
+    </div>
+
     {{-- ── Daftar cadangan ───────────────────────────────────────── --}}
     <div class="plate">
         <div class="border-b border-line-soft p-4">
@@ -146,11 +161,23 @@
                             </p>
                         </div>
 
-                        @if ($c['sah'])
-                            <span class="badge badge-ok flex-none">dapat dipulihkan</span>
-                        @else
-                            <span class="badge badge-neutral flex-none">tidak dapat dipulihkan</span>
-                        @endif
+                        <div class="flex flex-none items-center gap-2">
+                            @if ($c['sah'])
+                                <span class="badge badge-ok">dapat dipulihkan</span>
+
+                                @php($tautan = $this->urlUnduh($c['nama']))
+                                @if ($tautan !== null)
+                                    {{-- Taut bertanda tangan berumur 15 menit: berkas
+                                         ini seluruh basis data, bukan aset biasa. --}}
+                                    <a href="{{ $tautan }}" class="btn btn-outline">
+                                        <x-ikon name="download" :size="16" />
+                                        Unduh
+                                    </a>
+                                @endif
+                            @else
+                                <span class="badge badge-neutral">tidak dapat dipulihkan</span>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>

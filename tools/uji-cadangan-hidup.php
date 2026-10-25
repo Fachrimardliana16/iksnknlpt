@@ -137,5 +137,32 @@ $dash = minta($asas.'/admin', $jar);
 periksa('Menu "Cadangan" ada di sidebar', str_contains($dash['isi'], 'Cadangan'), 'tautan sidebar ditemukan');
 periksa('Menu menaut ke admin.backup.index', str_contains($dash['isi'], '/admin/cadangan'), 'href /admin/cadangan');
 
+// ── Tombol unduh ─────────────────────────────────────────────────────
+periksa('Tombol Unduh tampil', str_contains($hal['isi'], 'Unduh'), 'taut unduh pada salinan sah');
+
+// Blade menulis & sebagai &amp; di dalam atribut href, dan URL dibuat absolut.
+preg_match('#href="([^"]*cadangan/unduh/[^"]+)"#', $hal['isi'], $u);
+$tautan = isset($u[1]) ? html_entity_decode($u[1], ENT_QUOTES) : null;
+
+// Yang diuji harus jalur relatif, jadi asas ditambahkan saat diminta.
+if ($tautan !== null && str_starts_with($tautan, 'http')) {
+    $tautan = preg_replace('#^https?://[^/]+#', '', $tautan);
+}
+
+periksa('Taut unduh bertanda tangan', $tautan !== null && str_contains($tautan, 'signature='), $tautan ?? '(tidak ada)');
+
+if ($tautan !== null) {
+    $unduh = minta($asas.$tautan, $jar);
+
+    periksa('Unduhan berhasil', $unduh['kode'] === 200, 'HTTP '.$unduh['kode']);
+    periksa('Isi unduhan berkas SQLite', str_starts_with($unduh['isi'], 'SQLite format 3'), substr($unduh['isi'], 0, 15));
+    periksa('Dikirim sebagai lampiran', (bool) preg_match('/Content-Disposition:\s*attachment/i', $unduh['kepala']), 'header attachment');
+
+    // Tanpa tanda tangan, tautan yang sama harus ditolak.
+    $tanpaTanda = preg_replace('/[?&]signature=[^&]*/', '', $tautan);
+    $tolak = minta($asas.$tanpaTanda, $jar);
+    periksa('Tanpa tanda tangan ditolak', $tolak['kode'] === 403, 'HTTP '.$tolak['kode']);
+}
+
 echo "\nHasil: {$lulus} lulus, {$gagal} gagal\n";
 exit($gagal === 0 ? 0 : 1);

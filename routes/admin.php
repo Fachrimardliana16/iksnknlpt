@@ -144,3 +144,16 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 Route::get('bukti-bayar/{payment:ulid}', \App\Http\Controllers\Admin\BuktiPembayaran::class)
     ->middleware(['signed', 'throttle:30,1'])
     ->name('admin.payments.proof');
+
+/*
+|--------------------------------------------------------------------------
+| Unduh cadangan basis data
+|--------------------------------------------------------------------------
+| Sama pola dengan bukti pembayaran: berkas berisi seluruh basis data, jadi
+| tidak pernah disajikan dari disk publik dan hanya lewat URL bertanda tangan
+| berumur 15 menit. Controller juga memeriksa perannya sendiri — tanda tangan
+| yang sah tidak cukup tanpa sesi Super Admin.
+*/
+Route::get('cadangan/unduh/{berkas}', \App\Http\Controllers\Admin\UnduhCadangan::class)
+    ->middleware(['signed', 'throttle:10,1'])
+    ->name('admin.backup.download');

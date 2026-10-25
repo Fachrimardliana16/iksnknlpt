@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Support\CatatanAktivitas;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
@@ -86,6 +87,30 @@ class CadanganPanel extends Component
     {
         $this->galat = null;
         $this->pesan = null;
+    }
+
+    /**
+     * URL bertanda tangan untuk mengunduh satu cadangan.
+     *
+     * Berumur 15 menit, dibuat saat halaman dirender — bukan disimpan. Tautan
+     * yang tersalin ke tempat lain (catatan, pesan) kedaluwarsa sendiri, dan
+     * berkas yang memuat seluruh basis data tidak punya alamat permanen yang
+     * bisa ditebak.
+     */
+    public function urlUnduh(string $nama): ?string
+    {
+        $folder = storage_path('app/backup');
+        $jalur = $folder.DIRECTORY_SEPARATOR.basename($nama);
+
+        if (! is_file($jalur)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'admin.backup.download',
+            now()->addMinutes(15),
+            ['berkas' => basename($nama)],
+        );
     }
 
     /**
