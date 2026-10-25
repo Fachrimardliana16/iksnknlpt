@@ -69,7 +69,25 @@ class SettingSeeder extends Seeder
             ['shipping_couriers', json_encode(['JNE', 'J&T Express', 'SiCepat', 'Pos Indonesia']), $G(GrupPengaturan::Pembayaran), 'json', 'Daftar kurir', false, true],
             ['shipping_courier_default', 'JNE', $G(GrupPengaturan::Pembayaran), 'text', 'Kurir bawaan', false, true],
 
-            // ── Tab 5: Lanjutan ───────────────────────────────────────
+            // ── Tab 5: Notifikasi ─────────────────────────────────────
+            // Sakelar butir lonceng panel. Bawaan 1 = perilaku sebelum tab ini
+            // ada, supaya toko yang sudah berjalan tidak kehilangan notifikasi
+            // hanya karena barisnya baru dibuat.
+            ['notif_item_stok_habis', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Stok habis', false, false],
+            ['notif_item_stok_menipis', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Stok menipis', false, false],
+            ['notif_item_pesanan_siap_kirim', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Pesanan siap dikirim', false, false],
+            ['notif_item_hampir_batal', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Pesanan hampir batal otomatis', false, false],
+            ['notif_item_masuk_keranjang', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Produk masuk keranjang', false, false],
+
+            // Sakelar pengiriman. Nilainya mengikuti config lama (env) supaya
+            // deployment yang sudah memakai IKK_NOTIF_* tidak berubah.
+            ['notif_kirim_dibuat', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Surel/WA saat pesanan dibuat', false, false],
+            ['notif_kirim_dibayar', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Surel/WA saat pesanan dibayar', false, false],
+            ['notif_kirim_dikirim', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Surel/WA saat pesanan dikirim', false, false],
+            ['notif_push_perangkat', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Push ke perangkat admin', false, false],
+            ['notif_push_surel_cadangan', '1', $G(GrupPengaturan::Notifikasi), 'boolean', 'Surel cadangan bila push gagal', false, false],
+
+            // ── Tab 6: Lanjutan ───────────────────────────────────────
             ['maintenance_mode', '0', $G(GrupPengaturan::Lanjutan), 'boolean', 'Mode pemeliharaan', false, true],
             ['maintenance_message', 'Situs sedang dalam pemeliharaan singkat.', $G(GrupPengaturan::Lanjutan), 'textarea', 'Pesan pemeliharaan', false, true],
             ['analytics_id', null, $G(GrupPengaturan::Lanjutan), 'text', 'ID Analytics', false, true],

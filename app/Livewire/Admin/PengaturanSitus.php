@@ -319,6 +319,16 @@ class PengaturanSitus extends Component
             'order_prefix' => 'Dipakai di depan nomor pesanan, contoh IK-20261017-0001.',
             'low_stock_threshold' => 'Peringatan stok menipis muncul saat sisa stok mencapai angka ini.',
             'maintenance_mode' => 'Saat aktif, pengunjung melihat halaman pemeliharaan. Panel admin tetap dapat diakses.',
+            'notif_item_stok_habis' => 'Varian yang benar-benar tidak dapat dipesan lagi. Paling mendesak.',
+            'notif_item_stok_menipis' => 'Varian yang sisanya di bawah ambang stok menipis.',
+            'notif_item_pesanan_siap_kirim' => 'Pesanan lunas yang belum dikirim.',
+            'notif_item_hampir_batal' => 'Pesanan menunggu bayar yang mendekati batas 24 jam.',
+            'notif_item_masuk_keranjang' => 'Keranjang yang masih aktif dalam 24 jam terakhir.',
+            'notif_kirim_dibuat' => 'Dikirim ke pembeli saat pesanan baru masuk.',
+            'notif_kirim_dibayar' => 'Dikirim ke pembeli setelah pembayaran diverifikasi.',
+            'notif_kirim_dikirim' => 'Dikirim ke pembeli saat pesanan berubah menjadi dikirim.',
+            'notif_push_perangkat' => 'Notifikasi panel muncul di peramban walau panel tidak terbuka. Perlu izin peramban, satu kali per perangkat.',
+            'notif_push_surel_cadangan' => 'Bila push tidak sampai — belum ada perangkat berlangganan atau layanan push bermasalah — kirim surel ke admin sebagai gantinya.',
             default => null,
         };
     }

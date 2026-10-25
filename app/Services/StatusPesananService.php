@@ -94,7 +94,7 @@ class StatusPesananService
         // Notifikasi hanya untuk kejadian yang berarti bagi pembeli. Dikirim
         // setelah transaksi selesai: pekerjaan antrean di dalam transaksi dapat
         // berjalan sebelum datanya tersimpan.
-        if ($tujuan === StatusPesanan::Shipped && config('iksan.notifikasi.kirim_saat_dikirim', true)) {
+        if ($tujuan === StatusPesanan::Shipped && \App\Support\SakelarNotifikasi::kirimAktif('kirim_saat_dikirim')) {
             KirimNotifikasiPesanan::dispatch($hasil->id, KirimNotifikasiPesanan::KEJADIAN_DIKIRIM);
         }
 

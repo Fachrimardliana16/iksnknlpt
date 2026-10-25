@@ -233,7 +233,7 @@ class PembayaranManual
         $pesanan->refresh();
 
         // Dikirim setelah transaksi selesai, bukan di dalamnya.
-        if (config('iksan.notifikasi.kirim_saat_dibayar', true)) {
+        if (\App\Support\SakelarNotifikasi::kirimAktif('kirim_saat_dibayar')) {
             KirimNotifikasiPesanan::dispatch(
                 $pesanan->id,
                 KirimNotifikasiPesanan::KEJADIAN_DIBAYAR,

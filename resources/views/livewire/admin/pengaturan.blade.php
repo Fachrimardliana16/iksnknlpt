@@ -65,6 +65,26 @@
         {{-- ── Kolom pengaturan ────────────────────────────────────── --}}
         <div class="plate divide-y divide-line-soft">
             @foreach ($baris as $b)
+                @php
+                    // Tab notifikasi dipisah dua kelompok: butir yang tampil di
+                    // lonceng panel, dan notifikasi yang keluar ke luar.
+                    $kelompokNotif = $tab !== 'notification'
+                        ? null
+                        : (\Illuminate\Support\Str::startsWith($b['kunci'], 'notif_item_')
+                            ? 'Butir lonceng panel'
+                            : 'Notifikasi yang dikirim');
+
+                    $kelompokTerakhir ??= null;
+                @endphp
+
+                @if ($kelompokNotif !== null && $kelompokNotif !== $kelompokTerakhir)
+                    <div class="bg-sunken px-4 py-2 lg:px-5">
+                        <p class="part-no">{{ $kelompokNotif }}</p>
+                    </div>
+                @endif
+
+                @php($kelompokTerakhir = $kelompokNotif)
+
                 <div class="p-4 lg:p-5" wire:key="kolom-{{ $b['kunci'] }}">
 
                     <div class="flex items-baseline justify-between gap-3">
@@ -200,6 +220,13 @@
                     <span wire:loading.remove wire:target="ujiKoneksiPaypal">Uji koneksi PayPal</span>
                     <span wire:loading wire:target="ujiKoneksiPaypal">Menghubungi PayPal…</span>
                 </button>
+            @endif
+
+            @if ($tab === 'notification')
+                <a href="{{ route('admin.notifications.index') }}" class="btn btn-outline">
+                    <x-ikon name="bell" :size="17" />
+                    Daftar perangkat notifikasi
+                </a>
             @endif
 
             <p class="text-xs text-dim">

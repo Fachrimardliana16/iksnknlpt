@@ -88,7 +88,7 @@ class LoncengNotifikasi extends Component
 
         $pengguna = auth()->user();
 
-        if ($pengguna === null || ! config('iksan.notifikasi.push_perangkat', true)) {
+        if ($pengguna === null || ! \App\Support\SakelarNotifikasi::kirimAktif('push_perangkat')) {
             return;
         }
 

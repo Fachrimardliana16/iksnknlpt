@@ -8,6 +8,7 @@ enum GrupPengaturan: string
     case Kontak = 'contact';
     case Sosial = 'social';
     case Pembayaran = 'payment';
+    case Notifikasi = 'notification';
     case Lanjutan = 'advanced';
 
     public function label(): string
@@ -17,6 +18,7 @@ enum GrupPengaturan: string
             self::Kontak => 'Kontak dan Lokasi',
             self::Sosial => 'Media Sosial',
             self::Pembayaran => 'Pembayaran',
+            self::Notifikasi => 'Notifikasi',
             self::Lanjutan => 'Lanjutan',
         };
     }
@@ -28,6 +30,7 @@ enum GrupPengaturan: string
             self::Kontak => 'phone',
             self::Sosial => 'share',
             self::Pembayaran => 'card',
+            self::Notifikasi => 'bell',
             self::Lanjutan => 'gear',
         };
     }

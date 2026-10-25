@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\NotificationRead;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Support\SakelarNotifikasi;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,11 @@ class NotifikasiAdmin
             ->merge(self::hampirBatal())
             ->merge(self::pesananBaru())
             ->merge(self::masukKeranjang())
+            // Sakelar per butir dari panel. Diterapkan di sini, bukan di
+            // tampilan: yang dimatikan admin harus benar-benar tidak
+            // dihitung, termasuk pada lencana dan push — bukan hanya
+            // disembunyikan dari daftar.
+            ->filter(fn (array $b): bool => SakelarNotifikasi::butirAktif((string) ($b['kunci'] ?? '')))
             ->values();
 
         $pengguna ??= auth()->user();

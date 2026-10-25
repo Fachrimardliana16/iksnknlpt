@@ -180,7 +180,7 @@ class PesananService
         // sebelum datanya benar-benar tersimpan, terutama pada antrean
         // database yang diproses proses lain. Pada antrean sinkron, ia bahkan
         // memblokir permintaan checkout sampai surel terkirim.
-        if (config('iksan.notifikasi.kirim_saat_dibuat', true)) {
+        if (\App\Support\SakelarNotifikasi::kirimAktif('kirim_saat_dibuat')) {
             KirimNotifikasiPesanan::dispatch($pesanan->id, KirimNotifikasiPesanan::KEJADIAN_DIBUAT);
         }
 

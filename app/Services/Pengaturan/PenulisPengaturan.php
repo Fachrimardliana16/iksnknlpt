@@ -225,7 +225,12 @@ class PenulisPengaturan
             'email' => [...$dasar, 'email', 'max:120'],
             'url' => [...$dasar, 'url', 'max:255'],
             'number' => [...$dasar, 'regex:/^-?\d+(\.\d+)?$/'],
-            'boolean' => [...$dasar, 'in:0,1,true,false,on,off,yes,no'],
+            // '' ikut diterima: sakelar yang dicabut di panel tiba sebagai
+            // boolean false, dan Validator mengubahnya menjadi string kosong
+            // sebelum aturan "in" dijalankan. Tanpa '' di daftar, setiap
+            // sakelar yang dimatikan gagal tersimpan — panel menolak
+            // mematikan notifikasi, dan itu tidak kelihatan sebagai galat.
+            'boolean' => [...$dasar, 'in:,0,1,true,false,on,off,yes,no'],
             'select' => [...$dasar, 'in:'.implode(',', $setting->options_json ?? [])],
             'json' => [...$dasar, 'string'],
             'image' => [...$dasar, 'string', 'max:255'],

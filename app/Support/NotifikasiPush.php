@@ -144,10 +144,11 @@ class NotifikasiPush
             ->each(function (User $admin) use ($judul, $isi, $url): void {
                 $hasil = self::ke($admin, $judul, $isi, $url);
 
-                // Push tidak sampai? Surel sebagai cadangan. Kekecewaan
-                // penting, tetapi tidak boleh mengganggu halaman yang
-                // memicunya, sehingga jalur suree diletakkan di belakang.
-                if ($hasil['push'] === 0) {
+                // Push tidak sampai? Surel sebagai cadangan — kecuali admin
+                // mematikannya. Kekecewaan penting, tetapi tidak boleh
+                // mengganggu halaman yang memicunya, sehingga jalur surel
+                // diletakkan di belakang.
+                if ($hasil['push'] === 0 && \App\Support\SakelarNotifikasi::kirimAktif('push_surel_cadangan')) {
                     self::kirimSurel($admin, $judul, $isi, $url);
                 }
             });
