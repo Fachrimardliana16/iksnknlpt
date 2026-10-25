@@ -104,7 +104,7 @@ class KeranjangHalaman extends Component
 
     public function ubahJumlah(int $itemId, int $jumlah, Keranjang $keranjang): void
     {
-        $item = $this->cariItem($itemId);
+        $item = $this->cariItem($itemId, $keranjang);
 
         if ($item === null) {
             return;
@@ -134,7 +134,7 @@ class KeranjangHalaman extends Component
 
     public function hapusItem(int $itemId, Keranjang $keranjang): void
     {
-        $item = $this->cariItem($itemId);
+        $item = $this->cariItem($itemId, $keranjang);
 
         if ($item !== null) {
             $keranjang->hapus($item);
@@ -201,9 +201,27 @@ class KeranjangHalaman extends Component
         //
     }
 
-    private function cariItem(int $itemId): ?CartItem
+    /**
+     * Item hanya boleh dicari DI DALAM keranjang pemanggil.
+     *
+     * `itemId` datang dari sisi klien (parameter metode Livewire, sama seperti
+     * tombol hapus pada halaman keranjang). Pencarian `whereKey()` saja
+     * menemukan baris milik sesi lain atau akun lain, sehingga keranjang orang
+     * lain dapat diubah jumlahnya dan dihapus (IDOR). Kueri karena itu dibatasi
+     * pada `cart_id` milik pemanggil — keranjang yang sudah dimuat di memori.
+     */
+    private function cariItem(int $itemId, Keranjang $keranjang): ?CartItem
     {
-        return CartItem::query()->whereKey($itemId)->with(['variant.product', 'product'])->first();
+        $cart = $keranjang->ambil();
+
+        if ($cart === null) {
+            return null;
+        }
+
+        return $cart->items()
+            ->whereKey($itemId)
+            ->with(['variant.product', 'product'])
+            ->first();
     }
 
     public function render(): View

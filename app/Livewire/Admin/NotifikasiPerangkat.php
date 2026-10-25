@@ -38,13 +38,28 @@ class NotifikasiPerangkat extends Component
             return;
         }
 
-        // updateOrCreate pada endpoint: peramban yang menekan "Izinkan" dua
-        // kali (atau admin yang membuka panel di dua perangkat dengan alamat
-        // sama) tidak menghasilkan baris kembar yang notifikasinya dobel.
+        // Alamat push ini sudah terdaftar pada akun lain. Endpoint milik
+        // peramban orang lain tidak boleh diambil alih: kalau boleh, satu admin
+        // yang mengetahui alamat itu dapat memindahkan notifikasi orang lain
+        // ke perangkatnya sendiri.
+        $ada = PushSubscription::query()->where('endpoint', $endpoint)->first();
+
+        if ($ada !== null && $ada->user_id !== $pengguna->getKey()) {
+            $this->pesan = 'Alamat push ini sudah terdaftar pada akun lain.';
+
+            return;
+        }
+
+        // updateOrCreate dengan KUNCI endpoint + user_id (bukan endpoint saja).
+        //
+        // Endpoint datang dari sisi klien. Kalau kuncinya hanya endpoint, satu
+        // admin yang tahu (atau menebak) endpoint milik admin lain dapat
+        // mendaftarkannya sebagai miliknya sendiri — baris pemilik lama
+        // berpindah kepadanya beserta kunci push-nya. Endpoint milik sendiri
+        // tetap satu baris walau tombol "Izinkan" ditekan dua kali.
         PushSubscription::query()->updateOrCreate(
-            ['endpoint' => $endpoint],
+            ['endpoint' => $endpoint, 'user_id' => $pengguna->getKey()],
             [
-                'user_id' => $pengguna->getKey(),
                 'public_key' => $publicKey,
                 'auth_token' => $authToken,
                 'peramban' => $peramban ?? $this->namaPeramban(),
