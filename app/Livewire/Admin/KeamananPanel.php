@@ -14,7 +14,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -32,7 +31,7 @@ use Livewire\WithPagination;
  * dipulihkan lewat basis data langsung.
  */
 #[Layout('layouts.admin')]
-class KeamananPanel extends Component
+class KeamananPanel extends KomponenAdmin
 {
     use WithPagination;
 

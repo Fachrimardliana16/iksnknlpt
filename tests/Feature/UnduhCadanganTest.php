@@ -77,7 +77,8 @@ class UnduhCadanganTest extends TestCase
 
         try {
             // Tidak ada tanda tangan sama sekali: URL permanen tidak ada.
-            $this->get('/cadangan/unduh/'.$nama)->assertForbidden();
+            // Tamu dialihkan ke halaman masuk panel oleh middleware auth.
+            $this->get('/cadangan/unduh/'.$nama)->assertRedirect('/admin/login');
         } finally {
             @unlink($jalur);
         }
@@ -105,9 +106,9 @@ class UnduhCadanganTest extends TestCase
         $jalur = $this->buatCadangan($nama);
 
         try {
-            // Rute ini di luar grup auth panel, jadi tamu ditolak 403 oleh
-            // controller sendiri — bukan dialihkan ke login.
-            $this->get($this->tautSah($nama))->assertForbidden();
+            // Rute ini kini memakai middleware auth, jadi tamu dialihkan ke
+            // halaman masuk panel sebelum sampai ke controller.
+            $this->get($this->tautSah($nama))->assertRedirect('/admin/login');
         } finally {
             @unlink($jalur);
         }

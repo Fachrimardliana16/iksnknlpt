@@ -7,7 +7,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 use Throwable;
 
 /**
@@ -25,7 +24,7 @@ use Throwable;
  * disk yang sama dengan basis datanya tidak menolong kalau disknya mati.
  */
 #[Layout('layouts.admin')]
-class CadanganPanel extends Component
+class CadanganPanel extends KomponenAdmin
 {
     public ?string $pesan = null;
 

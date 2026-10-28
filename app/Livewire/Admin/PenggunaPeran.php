@@ -8,7 +8,6 @@ use App\Support\CatatanAktivitas;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 
 /**
  * Pengguna & Peran — halaman khusus akun panel.
@@ -26,7 +25,7 @@ use Livewire\Component;
  * Livewire dapat dikirim langsung tanpa melewati tombol.
  */
 #[Layout('layouts.admin')]
-class PenggunaPeran extends Component
+class PenggunaPeran extends KomponenAdmin
 {
     /** Akun yang sedang dibuka di panel rincian. */
     public ?int $dipilih = null;

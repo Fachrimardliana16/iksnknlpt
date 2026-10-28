@@ -16,9 +16,32 @@
 
 @if ($wa)
     {{-- Satu-satunya elemen di situs yang boleh berbentuk bulat penuh. --}}
-    <div x-data="{ buka: !sessionStorage.getItem('iksan.wa.tutup') }" class="fixed z-30"
-         style="right: 20px; bottom: calc(84px + env(safe-area-inset-bottom, 0px));"
-         :style="window.innerWidth >= 1024 ? 'right:24px;bottom:24px' : 'right:20px;bottom:calc(84px + env(safe-area-inset-bottom,0px))'">
+    {{-- Bottom bar keranjang lengket (ada di halaman detail produk) setinggi
+         60px (bottom-nav) + 56px (tombol) + padding 12px + jeda = ~152px.
+         Tanpa kompensasi, floating WA menutupi tombol "Tambah ke Keranjang".
+         Perhitungan dilakukan setiap render via Alpine: kita cek apakah
+         elemen .fixed.bottom-bar-cart ada di DOM halaman ini. --}}
+    <div x-data="{
+            buka: !sessionStorage.getItem('iksan.wa.tutup'),
+            lebar: window.innerWidth,
+            adaBar: false,
+            get offsetBottom() {
+                if (this.lebar >= 1024) return '24px';
+                return this.adaBar
+                    ? 'calc(152px + env(safe-area-inset-bottom, 0px))'
+                    : 'calc(60px + env(safe-area-inset-bottom, 0px))';
+            },
+            ukur() {
+                this.lebar = window.innerWidth;
+                this.adaBar = !!document.querySelector('.bottom-bar-cart');
+            }
+         }"
+         x-init="ukur()"
+         x-on:resize.window.debounce.150ms="ukur()"
+         x-on:livewire:navigated.window="ukur()"
+         class="fixed z-30"
+         style="right: 20px;"
+         :style="'right:' + (lebar >= 1024 ? '24px' : '20px') + ';bottom:' + offsetBottom">
 
         <div x-show="buka" x-cloak x-transition.opacity
              class="plate-up plate-besar mb-3 w-[min(78vw,19rem)] p-4">

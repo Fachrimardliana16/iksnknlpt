@@ -214,6 +214,13 @@ class DetailProduk extends Component
             'tautanWhatsApp' => $this->tautanWhatsApp(),
             'media3d' => $media3d,
             'audio' => $audio,
+            // Status suka produk ini. Satu kueri hitung + satu kueri status,
+            // keduanya indeks — halaman detail memang memuat satu produk.
+            'suka' => \App\Models\ProductLike::propsUntuk(
+                collect([$this->product]),
+                auth()->user(),
+                session()->getId(),
+            ),
         ])
             ->title($judul.' · '.$toko->teks('site_name'))
             ->layoutData([

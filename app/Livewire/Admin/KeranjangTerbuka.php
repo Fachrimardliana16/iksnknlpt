@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Cart;
+use App\Models\ProductLike;
 use App\Models\ProductVariant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
@@ -10,11 +11,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * Keranjang terbuka: barang yang sudah dimasukkan pembeli tetapi belum
+ * Keranjang ditinggalkan: barang yang sudah dimasukkan pembeli tetapi belum
  * dibayar.
  *
  * Halaman ini menjawab satu pertanyaan operasional: siapa yang tertarik dan
@@ -25,9 +25,15 @@ use Livewire\WithPagination;
  * Yang TIDAK ditampilkan: identitas pengunjung anonim. Keranjang tamu tanpa
  * akun tidak punya nama maupun kontak, jadi yang tampil hanya sesi dan barang.
  * Menampilkan dugaan identitas di sini akan menyesatkan.
+ *
+ * Kartu statistik empat petak (keranjang aktif, nilai tertahan, baru,
+ * mengendap) DIHAPUS. Keempatnya menjawab pertanyaan berbeda dari yang
+ * dibutuhkan halaman ini — yang dibutuhkan adalah daftar barang apa yang
+ * paling sering ditinggalkan, bukan angka agregat yang tidak punya tindakan
+ * lanjut. Angka yang berguna kini jadi baris ringkas di kepala halaman.
  */
 #[Layout('layouts.admin')]
-class KeranjangTerbuka extends Component
+class KeranjangTerbuka extends KomponenAdmin
 {
     use WithPagination;
 
@@ -99,11 +105,11 @@ class KeranjangTerbuka extends Component
             ->paginate(15);
 
         return view('livewire.admin.keranjang-terbuka', [
-            'judul' => 'Keranjang Terbuka',
+            'judul' => 'Keranjang Ditinggalkan',
             'bagian' => 'Penjualan',
             'keranjang' => $keranjang,
             'ringkas' => $this->ringkasan(),
-        ])->layout('layouts.admin', ['judul' => 'Keranjang Terbuka', 'bagian' => 'Penjualan']);
+        ])->layout('layouts.admin', ['judul' => 'Keranjang Ditinggalkan', 'bagian' => 'Penjualan']);
     }
 
     /**
@@ -147,6 +153,15 @@ class KeranjangTerbuka extends Component
             'mengendap' => $total - $harian,
             'nilai' => $nilai,
             'terpopuler' => $terpopuler,
+            // Produk yang DISUKAI, bukan yang tertinggal di keranjang.
+            //
+            // Dipisah dari daftar "paling sering tertinggal" karena
+            // menjawab pertanyaan berbeda: menyukai adalah sinyal minat
+            // termurah (satu ketukan, tanpa stok ditahan), sementara
+            // tertinggal di keranjang berarti pembeli sempat serius lalu
+            // ragu. Keduanya berguna sebagai parameter iklan, tapi bukan
+            // daftar yang sama.
+            'disukai' => ProductLike::terpopuler(5),
         ];
     }
 

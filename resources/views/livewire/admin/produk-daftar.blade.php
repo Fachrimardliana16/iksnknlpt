@@ -54,25 +54,65 @@
     @enderror
 
     {{-- ── Saringan ────────────────────────────────────────────────── --}}
-    <div class="plate space-y-3 p-3">
-        <div class="flex flex-wrap items-center gap-2">
-            <div class="relative min-w-[200px] flex-1">
+
+    {{-- x-data di wadah TERLUAR, bukan di tombol.
+
+         Versi pertama memasang x-data pada tombol itu sendiri dan memanggil
+         $refs.saringanProduk dari sana. Itu tidak pernah jalan: $refs hanya
+         memuat ref di dalam subtree elemen yang memegang x-data, dan div
+         saringan adalah SAUDARA tombol, bukan anaknya. Hasilnya
+         $refs.saringanProduk === undefined, dan kliknya diam tanpa galat —
+         saringan di ponsel tidak pernah terbuka.
+
+         Dengan x-data di .plate, $refs milik tombol melihat div di sebelahnya.
+         aria-expanded ikut diperbarui supaya pembaca layar tahu keadaannya.
+
+         `lebar` juga tinggal di sini, bukan di div saringan: x-data pada div
+         itu akan membuat scope BARU, dan `lebar` milik induk tidak lagi
+         terbaca dari sana. --}}
+    <div class="plate space-y-3 p-3" x-data="{
+            saringan: false,
+            lebar: window.matchMedia('(min-width: 640px)').matches,
+         }">
+        <div class="flex items-center gap-2">
+            <div class="relative min-w-0 flex-1">
                 <x-ikon name="search" :size="16" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-dim" />
                 <input type="search" wire:model.live.debounce.400ms="cari"
                        class="field pl-9" placeholder="Cari nama atau SKU produk…" aria-label="Cari produk">
             </div>
 
-            <a href="{{ route('admin.products.index', ['terbit' => 'terbit']) }}"
-               class="btn {{ $terbit === 'terbit' ? 'btn-primary' : 'btn-outline' }}">Terbit</a>
-            <a href="{{ route('admin.products.index', ['terbit' => 'draf']) }}"
-               class="btn {{ $terbit === 'draf' ? 'btn-primary' : 'btn-outline' }}">Draf</a>
-            <a href="{{ route('admin.products.index', ['stok' => 'habis']) }}"
-               class="btn {{ $stok === 'habis' ? 'btn-primary' : 'btn-outline' }}">Stok habis</a>
-            <a href="{{ route('admin.products.index', ['stok' => 'menipis']) }}"
-               class="btn {{ $stok === 'menipis' ? 'btn-primary' : 'btn-outline' }}">Menipis</a>
+            <button type="button" class="btn btn-outline flex-none sm:hidden"
+                    @click="saringan = !saringan"
+                    :aria-expanded="saringan"
+                    aria-label="Buka saringan">
+                <x-ikon name="sliders" :size="16" />
+            </button>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        {{-- Baris saringan: DUA select, bukan empat tombol + empat select.
+
+             Sebelumnya ada sembilan kontrol di sini — tombol Terbit, Draf,
+             Stok habis, Menipis, ditambah select kategori, stok, publikasi,
+             urutan, dan Bersihkan. Empat tombol itu SEPENUHNYA redundan:
+             "Terbit" sama dengan publikasi=terbit, "Menipis" sama dengan
+             stok=menipis. Menghapusnya tidak menghilangkan satu pun
+             kemampuan menyaring.
+
+             Select publikasi dan stok juga digabung jadi satu pilihan
+             Kondisi (6 nilai). Hasil akhirnya: Cari, Kategori, Kondisi,
+             Urutan, Bersihkan — lima kontrol, dan yang paling sering dipakai
+             (cari) tetap terbuka.
+
+             Nilai `terbit` dan `stok` TETAP dipakai sebagai properti: tautan
+             ?stok=habis&terbit=draf dari lonceng notifikasi dan dari halaman
+             Kategori masih harus bekerja. Select Kondisi hanya menulis ke
+             keduanya.
+
+             Di ponsel barisnya dilipat di balik tombol saringan; x-show
+             memasang style="display:none" sehingga penglihatannya dibalik
+             lewat `saringan || lebar`, bukan lewat class responsif. --}}
+        <div x-ref="saringanProduk" x-show="saringan || lebar" x-cloak
+             class="flex flex-wrap items-center gap-2">
             <select wire:model.live="kategori" class="field w-auto" aria-label="Saring kategori">
                 <option value="semua">Semua kategori</option>
                 @foreach ($daftarKategori as $k)
@@ -80,17 +120,18 @@
                 @endforeach
             </select>
 
-            <select wire:model.live="stok" class="field w-auto" aria-label="Saring stok">
-                <option value="semua">Semua stok</option>
-                <option value="ada">Ada stok</option>
-                <option value="menipis">Menipis</option>
-                <option value="habis">Habis</option>
-            </select>
+            {{-- Kondisi: gabungan publikasi + stok.
 
-            <select wire:model.live="terbit" class="field w-auto" aria-label="Saring publikasi">
-                <option value="semua">Semua publikasi</option>
+                 Nilainya dipetakan ke dua properti di aturKondisi(); bentuk
+                 "terbit:habis" dipakai supaya satu select bisa mewakili dua
+                 dimensi tanpa kolom tersembunyi yang dapat menyimpang. --}}
+            <select wire:model.live="kondisi" class="field w-auto" aria-label="Saring kondisi produk">
+                <option value="semua">Semua kondisi</option>
                 <option value="terbit">Terbit</option>
                 <option value="draf">Draf</option>
+                <option value="habis">Stok habis</option>
+                <option value="menipis">Stok menipis</option>
+                <option value="ada">Ada stok</option>
             </select>
 
             <select wire:model.live="urut" class="field w-auto" aria-label="Urutkan">
@@ -104,9 +145,9 @@
             </select>
 
             @if ($cari !== '' || $kategori !== 'semua' || $stok !== 'semua' || $terbit !== 'semua' || $urut !== 'terbaru')
-                <a href="{{ route('admin.products.index') }}" class="btn btn-ghost">
+                <a href="{{ route('admin.products.index') }}" class="btn btn-ghost btn-sm">
                     <x-ikon name="close" :size="15" />
-                    Bersihkan saringan
+                    Bersihkan
                 </a>
             @endif
         </div>
@@ -152,7 +193,16 @@
                         $gmbr = $produk->primaryMedia;
                     @endphp
 
-                    <article class="group relative flex flex-col overflow-hidden rounded-[var(--r-sedang)] border border-line-soft bg-surface transition-colors hover:border-line"
+                    {{-- Sudut r-card (14px), sama dengan .plate.
+
+                         Versi lama memakai var(--r-sedang) yang TIDAK ADA di
+                         tokens.css — skalanya adalah mikro/kecil/btn/card/panel.
+                         Variabel yang tidak terdefinisi membuat properti
+                         border-radius tidak berlaku sama sekali, jadi kartu
+                         produk tampil bersudut siku sementara seluruh panel
+                         lain melengkung. Tidak ada galat; hanya terlihat
+                         berbeda tanpa sebab yang tertulis. --}}
+                    <article class="group relative flex flex-col overflow-hidden rounded-[var(--r-card)] border border-line-soft bg-surface transition-colors hover:border-line"
                              wire:key="produk-{{ $produk->id }}">
 
                         {{-- Gambar: seluruh permukaannya membuka penyuntingan. --}}

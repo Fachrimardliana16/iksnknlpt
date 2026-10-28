@@ -11,7 +11,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 use RuntimeException;
 
@@ -22,7 +21,7 @@ use RuntimeException;
  * uang yang belum masuk, lalu membuka pesanan untuk diproses.
  */
 #[Layout('layouts.admin')]
-class PesananDaftar extends Component
+class PesananDaftar extends KomponenAdmin
 {
     use WithPagination;
 
@@ -47,6 +46,7 @@ class PesananDaftar extends Component
      */
     public function mount(): void
     {
+
         $this->status = self::saring($this->status, StatusPesanan::values());
         $this->bayar = self::saring($this->bayar, StatusPembayaran::values());
     }

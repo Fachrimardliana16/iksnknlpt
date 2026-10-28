@@ -115,6 +115,14 @@ class SakelarNotifikasi
         // ini, jadi nilai bawaan (config/env) yang dipakai.
         $nilai = Pengaturan::instance()->ambil($kunci);
 
-        return $nilai === null ? $bawaan : filter_var($nilai, FILTER_VALIDATE_BOOLEAN);
+        // Nilai yang bukan salah satu ejaan boolean yang dikenal dianggap
+        // TIDAK ADA, lalu jatuh ke bawaan. filter_var saja akan mengubah
+        // "ya"/"tidak" menjadi true/false yang berbeda arti, dan string
+        // rusak menjadi false — yang mematikan notifikasi keamanan tanpa suara.
+        if (! in_array($nilai, ['0', '1', 'true', 'false', 'on', 'off'], true)) {
+            return $bawaan;
+        }
+
+        return $nilai === '1' || $nilai === 'true' || $nilai === 'on';
     }
 }

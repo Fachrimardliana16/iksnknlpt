@@ -9,7 +9,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -25,7 +24,7 @@ use Livewire\WithPagination;
  * yang tampak sah di sini pasti dapat dipakai pembeli.
  */
 #[Layout('layouts.admin')]
-class Kupon extends Component
+class Kupon extends KomponenAdmin
 {
     use WithPagination;
 

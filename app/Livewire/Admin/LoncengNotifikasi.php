@@ -6,7 +6,6 @@ use App\Events\NotifikasiPanelMuncul;
 use App\Support\NotifikasiAdmin;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
-use Livewire\Component;
 
 /**
  * Lonceng notifikasi pada kepala panel.
@@ -24,7 +23,7 @@ use Livewire\Component;
  * Komponen ini menyegarkan diri saat menerima peristiwa 'notifikasi-diperbarui',
  * yang dikirim komponen lain setelah tindakan yang mengubah angkanya.
  */
-class LoncengNotifikasi extends Component
+class LoncengNotifikasi extends KomponenAdmin
 {
     public bool $buka = false;
 

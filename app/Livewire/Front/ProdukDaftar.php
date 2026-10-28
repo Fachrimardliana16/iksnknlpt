@@ -139,6 +139,13 @@ class ProdukDaftar extends Component
             'daftar' => $daftar,
             'kategoriAktif' => $kategori,
             'semuaKategori' => \App\Models\Category::query()->aktif()->terurut()->get(),
+            // Data suka untuk SELURUH halaman, satu kueri — bukan satu kueri
+            // per kartu. Lihat ProductLike::propsUntuk().
+            'suka' => \App\Models\ProductLike::propsUntuk(
+                $daftar->getCollection(),
+                auth()->user(),
+                session()->getId(),
+            ),
             // Berapa saringan yang sedang menyala. Ditampilkan pada tombol
             // "Filter" di ponsel: tanpa angka itu, panel yang tertutup membuat
             // pembeli tidak tahu daftarnya sedang tersaring, dan hasil yang

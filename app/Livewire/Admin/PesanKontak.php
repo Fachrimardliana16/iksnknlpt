@@ -7,7 +7,6 @@ use App\Support\CatatanAktivitas;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -24,7 +23,7 @@ use Livewire\WithPagination;
  * bertanya ulang.
  */
 #[Layout('layouts.admin')]
-class PesanKontak extends Component
+class PesanKontak extends KomponenAdmin
 {
     use WithPagination;
 

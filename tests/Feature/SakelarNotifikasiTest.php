@@ -192,8 +192,23 @@ class SakelarNotifikasiTest extends TestCase
 
         $this->actingAs($tamu);
 
-        Livewire::test(\App\Livewire\Admin\PengaturanSitus::class)
-            ->call('pilihTab', 'notification');
+        // Komponen panel kini menolak di boot() — SYARAT MINIMUM pemanggilnya
+        // pengguna panel. Dulu pemeriksaan baru terjadi di method simpan(),
+        // sehingga komponennya masih bisa dirender oleh pelanggan; sekarang
+        // ditolak sejak siklus permintaan pertama.
+        //
+        // Keduanya diuji: komponen (jalur /livewire/update) dan rute (jalur
+        // halaman).
+        $ditolak = false;
+
+        try {
+            Livewire::test(\App\Livewire\Admin\PengaturanSitus::class)
+                ->call('pilihTab', 'notification');
+        } catch (\Throwable) {
+            $ditolak = true;
+        }
+
+        $this->assertTrue($ditolak, 'Pelanggan seharusnya ditolak saat merender komponen panel.');
 
         $this->actingAs($tamu)
             ->get(route('admin.settings.index'))

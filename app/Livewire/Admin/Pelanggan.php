@@ -10,7 +10,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -32,7 +31,7 @@ use Livewire\WithPagination;
  *     yang boleh mengubah kredensial pembayaran dan mengelola admin.
  */
 #[Layout('layouts.admin')]
-class Pelanggan extends Component
+class Pelanggan extends KomponenAdmin
 {
     use WithPagination;
 

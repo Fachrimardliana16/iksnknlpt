@@ -33,8 +33,19 @@
              menutupi layar, di bawah panel. --}}
         <div class="fixed inset-0 z-40" wire:click="alihkan" aria-hidden="true"></div>
 
-        <div class="plate-up absolute right-0 top-full z-50 mt-2 w-[min(92vw,22rem)]" role="dialog"
-             aria-label="Daftar notifikasi">
+        {{-- Panel lonceng memakai posisi FIXED, bukan absolute.
+
+             Alasannya: tombol lonceng berada di tengah header, dan panel
+             lebarnya min(92vw, 22rem). Dengan absolute + right-0, panel
+             diposisikan relatif terhadap TOMBOLnya, bukan layar — di ponsel
+             panelnya meluber ke kiri tepi viewport dan terpotong.
+
+             Fixed + right-0 + left-0 membuat panel menempel pada tepi layar
+             dan tetap terpusat di ponsel, sedangkan di desktop `max-w-md`
+             menahannya supaya tidak selebar layar. --}}
+        <div class="fixed inset-x-0 top-full z-50 mx-auto mt-2 w-[min(92vw,22rem)] px-4 sm:px-0"
+             role="dialog" aria-label="Daftar notifikasi">
+            <div class="plate-up">
 
             <div class="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
                 <p class="part-no">
@@ -56,6 +67,18 @@
                         <x-ikon name="refresh" :size="15" />
                         <span class="visually-hidden">Segarkan</span>
                     </button>
+
+                    {{-- Pengaturan notifikasi. Dulu butir menu sidebar tersendiri;
+                         halaman itu mengelola perangkat push, yang bukan pekerjaan
+                         harian. Sekarang hanya terjangkau dari sini — tempat
+                         orang berpikir tentang notifikasi ketika ingin mengubah
+                         perilakunya. Rutenya tetap ada dan tetap di luar
+                         "Situs": yang hilang dari sidebar hanya tautannya. --}}
+                    <a href="{{ route('admin.notifications.index') }}" wire:navigate
+                       class="btn-icon !h-8 !w-8" title="Pengaturan notifikasi">
+                        <x-ikon name="sliders" :size="15" />
+                        <span class="visually-hidden">Pengaturan notifikasi</span>
+                    </a>
                 </span>
             </div>
 
@@ -123,6 +146,7 @@
                     @endforeach
                 </ul>
             @endif
+            </div>
         </div>
     @endif
 </div>

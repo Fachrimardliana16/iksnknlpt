@@ -61,14 +61,19 @@
         @endif
 
         {{-- Lencana di atas gambar: informasi sekunder yang tidak memakan
-             tinggi kartu. --}}
-        <div class="pointer-events-none absolute inset-x-2.5 top-2.5 z-10 flex items-start justify-between gap-2">
+             tinggi kartu.
+
+             Tata letak dipisah dua sudut supaya tidak bertumpuk:
+             kiri atas  = status stok / jumlah varian (tidak dapat diklik)
+             kanan atas = tombol suka (dapat diklik, z-20)
+
+             Dulu keduanya berbagai satu baris flex kanan, sehingga pada kartu
+             sempit lencana "X VARIAN" menimpa ikon hati. --}}
+        <div class="pointer-events-none absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
             @unless ($adaStok)
                 <span class="badge badge-danger bg-surface">
                     {{ __('site.product.out_of_stock') }}
                 </span>
-            @else
-                <span></span>
             @endunless
 
             @if ($jumlahVarian > 1)
@@ -76,6 +81,17 @@
                     {{ $jumlahVarian }} {{ __('site.product.variant') }}
                 </span>
             @endif
+        </div>
+
+        <div class="absolute right-2 top-2 z-20">
+            {{-- Jumlah dan status "sudah disukai" datang dari halaman pemanggil,
+                 bukan dihitung komponen ini. Satu kueri untuk seluruh halaman,
+                 bukan dua per kartu — lihat ProductLike::propsUntuk(). --}}
+            <livewire:front.suka-produk
+                :produk-id="$produk->id"
+                :disukai="isset($suka['disukai'][$produk->id])"
+                :jumlah="(int) ($suka['hitungan'][$produk->id] ?? 0)"
+                :key="'suka-'.$produk->id" />
         </div>
     </div>
 

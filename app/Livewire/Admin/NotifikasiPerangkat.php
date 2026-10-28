@@ -5,7 +5,6 @@ namespace App\Livewire\Admin;
 use App\Models\PushSubscription;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 
 /**
  * Pendaftaran notifikasi perangkat (web push) untuk admin.
@@ -19,7 +18,7 @@ use Livewire\Component;
  * mematikannya dari sumbernya, dan itu berarti tidak bisa dihubungi lagi.
  */
 #[Layout('layouts.admin')]
-class NotifikasiPerangkat extends Component
+class NotifikasiPerangkat extends KomponenAdmin
 {
     public bool $aktif = false;
 
@@ -27,6 +26,7 @@ class NotifikasiPerangkat extends Component
 
     public function mount(): void
     {
+
         $this->muatUlang();
     }
 

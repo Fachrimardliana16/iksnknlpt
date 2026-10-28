@@ -19,13 +19,19 @@
             aria-label="{{ __('site.product.add_to_cart') }}"
             title="{{ __('site.product.add_to_cart') }}"
             class="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[var(--r-btn)]
-                   border border-transparent bg-accent px-2.5 text-accent-fg
+                   border border-transparent bg-accent px-3 text-accent-fg
                    transition duration-200 hover:bg-accent-hover hover:shadow-[0_6px_16px_color-mix(in_srgb,var(--c-accent)_32%,transparent)]
                    active:scale-[0.98] disabled:opacity-60">
 
-        <span wire:loading.remove wire:target="tambah" class="flex items-center gap-1.5">
-            <x-ikon name="plus" :size="16" />
-            <span class="truncate text-[0.8125rem] font-medium">{{ __('site.product.add_to_cart') }}</span>
+        <span wire:loading.remove wire:target="tambah" class="flex min-w-0 items-center justify-center gap-1.5">
+            <x-ikon name="plus" :size="16" class="flex-none" />
+            {{-- Tidak memakai truncate: pada kartu dua kolom di ponsel sempit,
+                 "Tambah ke Keranjang" terpotong menjadi "Tambah ke Ker…".
+                 leading-tight + text-center membuatnya turun ke dua baris
+                 dengan rapi alih-alih dipotong. --}}
+            <span class="text-center text-xs font-medium leading-tight sm:text-[0.8125rem]">
+                {{ __('site.product.add_to_cart') }}
+            </span>
         </span>
         <span wire:loading wire:target="tambah" class="tech text-xs">…</span>
     </button>

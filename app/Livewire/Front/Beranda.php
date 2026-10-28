@@ -65,6 +65,13 @@ class Beranda extends Component
             'kategori' => $isi['kategori'],
             'faq' => $isi['faq'],
             'angka' => $this->angkaNyata(),
+            // Data suka untuk seluruh kartu unggulan, satu kueri — bukan satu
+            // kueri per kartu. Lihat ProductLike::propsUntuk().
+            'suka' => \App\Models\ProductLike::propsUntuk(
+                $isi['unggulan'],
+                auth()->user(),
+                session()->getId(),
+            ),
         ])
             // Slide hero pertama di-preload di <head>: gambar terbesar di
             // beranda tidak perlu menunggu CSS dan skrip selesai diurai.

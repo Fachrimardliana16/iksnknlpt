@@ -51,21 +51,6 @@
                 <h2 class="mt-3 text-3xl font-semibold sm:text-4xl">{{ __('site.home.faq_title') }}</h2>
                 <p class="mt-2 max-w-2xl text-muted">{{ __('site.home.faq_subtitle') }}</p>
             </div>
-
-            {{-- Tautan "semua FAQ" hanya muncul bila halaman itu benar-benar
-                 terdaftar. Route::has() diuji DUA KALI — sekali untuk memutuskan,
-                 sekali untuk membuat alamat — karena rute dapat berubah antara
-                 keduanya pada aplikasi lain, dan kesalahan di sini berarti
-                 seluruh beranda gagal dirender, bukan hanya tombolnya. --}}
-            @php
-                $adaHalamanFaq = \Illuminate\Support\Facades\Route::has('front.faq');
-            @endphp
-            @if ($adaHalamanFaq)
-                <a href="{{ url('/faq') }}" class="btn btn-outline">
-                    {{ __('site.home.faq_all') }}
-                    <x-ikon name="arrow-right" :size="16" />
-                </a>
-            @endif
         </div>
 
         <div class="mt-6 space-y-8 lg:mt-10">

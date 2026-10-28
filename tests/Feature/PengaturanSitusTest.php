@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\GrupPengaturan;
 use App\Livewire\Admin\HeroBuilder;
+use App\Livewire\Admin\HeroSunting;
 use App\Livewire\Admin\PengaturanSitus;
 use App\Models\ActivityLog;
 use App\Models\HeroSlide;
@@ -452,8 +453,7 @@ class PengaturanSitusTest extends TestCase
             'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->set('form.title_id', 'Knalpot Full System NMAX')
             ->set('form.title_en', 'NMAX Full System Exhaust')
             ->set('form.subtitle_id', 'Titanium, suara bass')
@@ -481,8 +481,7 @@ class PengaturanSitusTest extends TestCase
             'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->set('form.title_id', 'Jadwal')
             ->set('form.title_en', 'Schedule')
             ->set('form.starts_at', '2026-12-31T10:00')
@@ -500,8 +499,7 @@ class PengaturanSitusTest extends TestCase
             'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->set('form.title_id', '')
             ->call('simpan')
             ->assertHasErrors('form.title_id');
@@ -516,8 +514,7 @@ class PengaturanSitusTest extends TestCase
             'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->set('form.title_id', 'Tautan')
             ->set('form.title_en', 'Link')
             ->set('form.primary_button_url', 'javascript:alert(1)')
@@ -535,8 +532,7 @@ class PengaturanSitusTest extends TestCase
             'media_path' => '', 'media_type' => 'video', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->set('form.media_type', 'video')
             ->set('berkasVideo', \Illuminate\Http\UploadedFile::fake()->create('promo.mp4', 9000, 'video/mp4'))
             ->call('simpan')
@@ -552,9 +548,15 @@ class PengaturanSitusTest extends TestCase
             'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
         ]);
 
-        Livewire::test(HeroBuilder::class)
-            ->call('sunting', $slide->id)
-            ->call('ubahFokus', 0.25, 0.75);
+        // Titik fokus sekarang disimpan bersama isian lain, bukan lewat
+        // method terpisah: halaman sunting punya satu tombol Simpan, dan
+        // menulis ke basis data di tengah penggeseran membuat nilai yang
+        // belum disimpan sudah berlaku di sisi depan.
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
+            ->set('form.focal_point_x', 0.25)
+            ->set('form.focal_point_y', 0.75)
+            ->call('simpan')
+            ->assertHasNoErrors();
 
         $this->assertEqualsWithDelta(0.25, $slide->fresh()->focal_point_x, 0.001);
         $this->assertEqualsWithDelta(0.75, $slide->fresh()->focal_point_y, 0.001);
@@ -565,12 +567,19 @@ class PengaturanSitusTest extends TestCase
     {
         $this->actingAs($this->admin());
 
-        Livewire::test(HeroBuilder::class)
-            ->assertSet('pratinjau', 'ponsel')
-            ->call('ubahPratinjau', 'desktop')
+        $slide = HeroSlide::create([
+            'title_id' => 'Pratinjau', 'title_en' => 'Preview',
+            'media_path' => 'hero/a.webp', 'display_order' => 0, 'is_active' => false,
+        ]);
+
+        // Pratinjau pindah bersama form ke halaman sunting, dan bawaannya
+        // desktop: itulah yang pertama dilihat pengunjung di layar lebar.
+        Livewire::test(HeroSunting::class, ['ulid' => $slide->ulid])
             ->assertSet('pratinjau', 'desktop')
             ->call('ubahPratinjau', 'ponsel')
-            ->assertSet('pratinjau', 'ponsel');
+            ->assertSet('pratinjau', 'ponsel')
+            ->call('ubahPratinjau', 'desktop')
+            ->assertSet('pratinjau', 'desktop');
     }
 
     public function test_hero_tab_tidak_sah_diabaikan(): void

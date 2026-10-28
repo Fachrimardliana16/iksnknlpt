@@ -1,12 +1,29 @@
+{{-- Keranjang Ditinggalkan.
+
+     Halaman ini menjawab satu pertanyaan: barang apa yang masuk keranjang
+     lalu ditinggalkan, dan oleh siapa. Karena itu isinya DAFTAR, bukan
+     papan angka — empat kartu statistik versi lama (keranjang aktif, nilai
+     tertahan, baru, mengendap) menjawab pertanyaan yang tidak punya tindakan
+     lanjut di halaman ini. Angka yang masih berguna kini satu baris di kepala,
+     dan daftar produk yang paling sering tertinggal pindah ke atas supaya
+     terbaca tanpa menggulir.
+
+     Nama halaman diganti dari "Keranjang Terbuka": istilah itu dipakai juga
+     untuk keranjang tamu yang bisa dilihat siapa saja, sementara halaman ini
+     khusus barang yang BELUM dibayar. "Ditinggalkan" mengatakan apa adanya. --}}
+
 <div class="space-y-5">
 
     {{-- ── Kepala ──────────────────────────────────────────────────── --}}
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
             <p class="part-no">Penjualan · keranjang</p>
-            <h1 class="mt-1 font-display text-2xl font-semibold">Keranjang Terbuka</h1>
+            <h1 class="mt-1 font-display text-2xl font-semibold">Keranjang Ditinggalkan</h1>
             <p class="mt-1 text-sm text-muted">
                 Barang yang sudah dimasukkan pembeli tetapi belum dibayar.
+                {{ number_format($ringkas['total'], 0, ',', '.') }} keranjang ·
+                nilai {{ rupiah($ringkas['nilai']) }} ·
+                {{ number_format($ringkas['harian'], 0, ',', '.') }} bergerak dalam 24 jam
             </p>
         </div>
 
@@ -32,23 +49,51 @@
         <div class="plate border-l-2 border-ok p-3 text-sm" role="status">{{ session('pesan-admin') }}</div>
     @endif
 
-    {{-- ── Angka ringkas ───────────────────────────────────────────── --}}
-    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        @foreach ([
-            ['label' => 'Keranjang aktif', 'nilai' => number_format($ringkas['total'], 0, ',', '.'), 'ikon' => 'cart'],
-            ['label' => 'Nilai tertahan', 'nilai' => rupiah($ringkas['nilai']), 'ikon' => 'chart'],
-            ['label' => 'Baru (24 jam)', 'nilai' => number_format($ringkas['harian'], 0, ',', '.'), 'ikon' => 'activity'],
-            ['label' => 'Mengendap', 'nilai' => number_format($ringkas['mengendap'], 0, ',', '.'), 'ikon' => 'clock'],
-        ] as $k)
-            <div class="plate p-4">
-                <div class="flex items-center justify-between">
-                    <p class="part-no">{{ $k['label'] }}</p>
-                    <x-ikon :name="$k['ikon']" :size="17" class="text-dim" />
+    {{-- ── Produk yang paling sering ditinggalkan ────────────────────── --}}
+    @if ($ringkas['terpopuler']->isNotEmpty() || $ringkas['disukai']->isNotEmpty())
+        <div class="grid gap-3 lg:grid-cols-2">
+            @if ($ringkas['terpopuler']->isNotEmpty())
+                <div class="plate p-4">
+                    <p class="part-no">Paling sering tertinggal di keranjang</p>
+                    <p class="mt-1 text-xs text-dim">
+                        Pembeli sempat serius, lalu berhenti. Tinjau harga, gambar, atau keterangan stoknya.
+                    </p>
+
+                    <div class="mt-3 space-y-2">
+                        @foreach ($ringkas['terpopuler'] as $p)
+                            <div class="flex items-center justify-between gap-3 text-sm">
+                                <span class="truncate">{{ $p->nama }}</span>
+                                <span class="tech flex-none text-muted">
+                                    {{ $p->jumlah }} pcs · {{ $p->keranjang }} keranjang
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <p class="tech mt-3 text-xl font-medium lg:text-2xl">{{ $k['nilai'] }}</p>
-            </div>
-        @endforeach
-    </div>
+            @endif
+
+            {{-- Disukai: sinyal minat termurah, satu ketukan tanpa stok ditahan.
+                 Dipakai sebagai parameter iklan — produk yang dibutuhkan pembeli,
+                 bukan produk yang menurut toko bagus. --}}
+            @if ($ringkas['disukai']->isNotEmpty())
+                <div class="plate p-4">
+                    <p class="part-no">Paling banyak disukai</p>
+                    <p class="mt-1 text-xs text-dim">
+                        Minat yang dinyatakan pembeli tanpa menahan stok. Bagus dipakai sebagai parameter iklan.
+                    </p>
+
+                    <div class="mt-3 space-y-2">
+                        @foreach ($ringkas['disukai'] as $p)
+                            <div class="flex items-center justify-between gap-3 text-sm">
+                                <span class="truncate">{{ $p->nama }}</span>
+                                <span class="tech flex-none text-muted">{{ $p->jumlah }} suka</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
 
     {{-- ── Saringan ────────────────────────────────────────────────── --}}
     <div class="plate flex flex-wrap items-center gap-2 p-3">
@@ -112,7 +157,7 @@
                     </div>
                 </div>
 
-                {{-- Isi keranjang --}}
+                {{-- Isi keranjang: produk dan jumlahnya. --}}
                 <ul class="mt-3 divide-y divide-line-soft border-t border-line-soft">
                     @foreach ($k->items as $item)
                         @php
@@ -153,7 +198,7 @@
         @empty
             <div class="plate p-10 text-center">
                 <x-ikon name="cart" :size="30" class="mx-auto text-dim" />
-                <p class="mt-3 font-semibold">Tidak ada keranjang terbuka.</p>
+                <p class="mt-3 font-semibold">Tidak ada keranjang ditinggalkan.</p>
                 <p class="mt-1 text-sm text-muted">
                     @if (filled($cari) || $umur !== 'semua')
                         Tidak ada yang cocok dengan saringan ini. Coba lebarkan saringan.
@@ -167,23 +212,5 @@
 
     @if ($keranjang->hasPages())
         <div>{{ $keranjang->links() }}</div>
-    @endif
-
-    {{-- ── Produk yang paling sering tertinggal ────────────────────── --}}
-    @if ($ringkas['terpopuler']->isNotEmpty())
-        <div class="plate p-4">
-            <p class="part-no">Paling sering tertinggal di keranjang</p>
-
-            <div class="mt-3 space-y-2">
-                @foreach ($ringkas['terpopuler'] as $p)
-                    <div class="flex items-center justify-between gap-3 text-sm">
-                        <span class="truncate">{{ $p->nama }}</span>
-                        <span class="tech flex-none text-muted">
-                            {{ $p->jumlah }} pcs · {{ $p->keranjang }} keranjang
-                        </span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
     @endif
 </div>

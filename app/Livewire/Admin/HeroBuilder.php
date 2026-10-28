@@ -4,15 +4,11 @@ namespace App\Livewire\Admin;
 
 use App\Models\HeroSlide;
 use App\Services\Hero\PenyimpanHero;
+use App\Support\CacheKatalog;
 use App\Support\CatatanAktivitas;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use Throwable;
 
 /**
  * Hero builder (checklist F4-09, F4-10, F4-11).
@@ -29,48 +25,13 @@ use Throwable;
  *    antara keduanya.
  */
 #[Layout('layouts.admin')]
-class HeroBuilder extends Component
+class HeroBuilder extends KomponenAdmin
 {
-    use WithFileUploads;
-
-    /** Slide yang sedang dibuka di panel penyuntingan.
-
-     *  Nama ini TIDAK BOLEH menjadi "sunting" — dan itu bukan selera penulisan.
-     *  Livewire menerjemahkan `wire:click="sunting(1)"` menjadi ekspresi Alpine
-     *  `$wire.sunting(1)`, sementara `$wire` adalah proxy yang urut
-     *  pemeriksaannya begini: alias, lalu method terdaftar, lalu PROPERTI data,
-     *  dan hanya sebagai jalan terakhir method apa pun melalui fallback.
-     *  Ketika properti data bernama "sunting" ada, setiap `$wire.sunting`
-     *  langsung kembali berupa angka id itu — bukan fungsinya. Klik pun
-     *  menghasilkan "1 is not a function", walau method sunting() di kelas
-     *  benar-benar ada dan sehat saat diuji dari server.
-     *
-     *  Karena itu properti memakai akhiran "Id", sementara method tetap
-     *  "sunting" agar nama di blade tetap pendek. */
-    public ?int $suntingId = null;
-
-    /** @var array<string, mixed> */
-    public array $form = [];
-
-    /** Berkas gambar desktop yang menunggu disimpan. */
-    public mixed $berkasGambar = null;
-
-    /** Berkas gambar khusus ponsel. */
-    public mixed $berkasPonsel = null;
-
-    /** Berkas video. */
-    public mixed $berkasVideo = null;
-
-    public string $pratinjau = 'ponsel';
-
+    // WithFileUploads TIDAK dipakai di sini lagi: halaman ini hanya mengelola
+    // daftar, urutan, dan status aktif. Semua unggahan pindah ke HeroSunting.
     public ?string $pesanSukses = null;
 
     public ?string $galat = null;
-
-    public function mount(): void
-    {
-        $this->kosongkanForm();
-    }
 
     // ── Daftar & urutan ──────────────────────────────────────────────
 
@@ -102,8 +63,12 @@ class HeroBuilder extends Component
 
         CatatanAktivitas::catat('hero.ditambah', ['ulid' => $slide->ulid], auth()->id(), $slide);
 
-        $this->pesanSukses = 'Slide kosong ditambahkan. Unggah gambar, lalu aktifkan.';
-        $this->sunting($slide->id);
+        CacheKatalog::tandaiBerubah('hero ditambah');
+
+        // Diarahkan ke halaman sunting slide baru. Sebelumnya panel dibuka di
+        // tempat; sekarang slide kosong tanpa gambar memang harus diisi di
+        // halaman itu, jadi langsung membukanya memangkas satu langkah.
+        $this->redirectRoute('admin.hero.edit', ['ulid' => $slide->ulid], navigate: true);
     }
 
     /** Geser satu langkah ke atas: tukar dengan tetangga terdekat. */
@@ -146,6 +111,11 @@ class HeroBuilder extends Component
         });
 
         CatatanAktivitas::catat('hero.urutan.diubah', ['urutan' => $akhir], auth()->id());
+
+        // Urutan di beranda mengikuti display_order, jadi penukaran harus
+        // membatalkan cache 'home:isi' — kalau tidak, admin menggeser slide
+        // dan melihat urutan lama selama sepuluh menit.
+        CacheKatalog::tandaiBerubah('urutan hero diubah');
 
         $this->pesanSukses = 'Urutan slide disimpan.';
     }
@@ -203,6 +173,9 @@ class HeroBuilder extends Component
 
             $slide->is_active = false;
             $slide->save();
+
+            CacheKatalog::tandaiBerubah('hero dinonaktifkan');
+
             $this->pesanSukses = 'Slide dinonaktifkan.';
 
             return;
@@ -218,6 +191,8 @@ class HeroBuilder extends Component
         $slide->save();
 
         CatatanAktivitas::catat('hero.diaktifkan', ['ulid' => $slide->ulid], auth()->id(), $slide);
+
+        CacheKatalog::tandaiBerubah('hero diaktifkan');
 
         $this->pesanSukses = 'Slide diaktifkan.';
     }
@@ -251,180 +226,19 @@ class HeroBuilder extends Component
 
         $slide->delete();
 
-        $this->rapikanUrutan();
+        CacheKatalog::tandaiBerubah('hero dihapus');
 
-        if ($this->suntingId === $id) {
-            $this->suntingId = null;
-            $this->kosongkanForm();
-        }
+        $this->rapikanUrutan();
 
         $this->pesanSukses = 'Slide dihapus.';
     }
 
     // ── Penyuntingan ─────────────────────────────────────────────────
 
-    public function sunting(int $id): void
-    {
-        $this->bersihkanPesan();
 
-        $slide = HeroSlide::query()->find($id);
 
-        if ($slide === null) {
-            return;
-        }
 
-        $this->suntingId = $slide->id;
-        $this->berkasGambar = null;
-        $this->berkasPonsel = null;
-        $this->berkasVideo = null;
 
-        $this->form = [
-            'title_id' => $slide->title_id ?? '',
-            'title_en' => $slide->title_en ?? '',
-            'subtitle_id' => $slide->subtitle_id ?? '',
-            'subtitle_en' => $slide->subtitle_en ?? '',
-            'media_type' => $slide->media_type,
-            'primary_button_label_id' => $slide->primary_button_label_id ?? '',
-            'primary_button_label_en' => $slide->primary_button_label_en ?? '',
-            'primary_button_url' => $slide->primary_button_url ?? '',
-            'secondary_button_label_id' => $slide->secondary_button_label_id ?? '',
-            'secondary_button_label_en' => $slide->secondary_button_label_en ?? '',
-            'secondary_button_url' => $slide->secondary_button_url ?? '',
-            'focal_point_x' => (float) $slide->focal_point_x,
-            'focal_point_y' => (float) $slide->focal_point_y,
-            'starts_at' => $slide->starts_at?->format('Y-m-d\TH:i') ?? '',
-            'ends_at' => $slide->ends_at?->format('Y-m-d\TH:i') ?? '',
-        ];
-    }
-
-    public function batalSunting(): void
-    {
-        $this->suntingId = null;
-        $this->berkasGambar = null;
-        $this->berkasPonsel = null;
-        $this->berkasVideo = null;
-        $this->kosongkanForm();
-        $this->bersihkanPesan();
-    }
-
-    public function simpan(PenyimpanHero $penyimpan): void
-    {
-        $this->bersihkanPesan();
-
-        $slide = $this->suntingId === null ? null : HeroSlide::query()->find($this->suntingId);
-
-        if ($slide === null) {
-            $this->galat = 'Slide tidak ditemukan. Muat ulang halaman.';
-
-            return;
-        }
-
-        try {
-            $this->validate([
-                'form.title_id' => ['required', 'string', 'max:120'],
-                'form.title_en' => ['required', 'string', 'max:120'],
-                'form.subtitle_id' => ['nullable', 'string', 'max:300'],
-                'form.subtitle_en' => ['nullable', 'string', 'max:300'],
-                'form.media_type' => ['required', 'in:image,video'],
-                'form.primary_button_label_id' => ['nullable', 'string', 'max:40'],
-                'form.primary_button_label_en' => ['nullable', 'string', 'max:40'],
-                'form.primary_button_url' => ['nullable', 'url', 'max:255'],
-                'form.secondary_button_label_id' => ['nullable', 'string', 'max:40'],
-                'form.secondary_button_label_en' => ['nullable', 'string', 'max:40'],
-                'form.secondary_button_url' => ['nullable', 'url', 'max:255'],
-                'form.focal_point_x' => ['required', 'numeric', 'between:0,1'],
-                'form.focal_point_y' => ['required', 'numeric', 'between:0,1'],
-                'form.starts_at' => ['nullable', 'date'],
-                'form.ends_at' => ['nullable', 'date', 'after_or_equal:form.starts_at'],
-                'berkasGambar' => ['nullable', 'image', 'mimes:jpeg,png,webp,avif', 'max:5120'],
-                'berkasPonsel' => ['nullable', 'image', 'mimes:jpeg,png,webp,avif', 'max:5120'],
-                'berkasVideo' => ['nullable', 'file', 'max:'.(int) config('iksan.hero.video_max_kb')],
-            ], [
-                'form.title_id.required' => 'Judul bahasa Indonesia wajib diisi.',
-                'form.title_en.required' => 'Judul bahasa Inggris wajib diisi.',
-                'form.ends_at.after_or_equal' => 'Tanggal berakhir tidak boleh mendahului tanggal mulai.',
-                'berkasVideo.max' => 'Ukuran video melebihi batas :max KB.',
-            ]);
-
-            if ($this->form['media_type'] === 'video') {
-                if ($this->berkasVideo !== null) {
-                    $slide->media_path = $penyimpan->simpanVideo($slide, $this->berkasVideo);
-                }
-
-                if (blank($slide->media_path)) {
-                    throw ValidationException::withMessages([
-                        'berkasVideo' => 'Slide bertipe video harus punya berkas video.',
-                    ]);
-                }
-            } elseif ($this->berkasGambar !== null) {
-                $hasil = $penyimpan->simpanGambar($slide, $this->berkasGambar, $this->berkasPonsel);
-
-                $slide->media_path = $hasil['path'];
-                $slide->media_path_mobile = $hasil['mobile'];
-                $slide->poster_path = $hasil['poster'];
-            }
-
-            $slide->fill([
-                'title_id' => $this->form['title_id'],
-                'title_en' => $this->form['title_en'],
-                'subtitle_id' => $this->form['subtitle_id'] ?: null,
-                'subtitle_en' => $this->form['subtitle_en'] ?: null,
-                'media_type' => $this->form['media_type'],
-                'primary_button_label_id' => $this->form['primary_button_label_id'] ?: null,
-                'primary_button_label_en' => $this->form['primary_button_label_en'] ?: null,
-                'primary_button_url' => $this->form['primary_button_url'] ?: null,
-                'secondary_button_label_id' => $this->form['secondary_button_label_id'] ?: null,
-                'secondary_button_label_en' => $this->form['secondary_button_label_en'] ?: null,
-                'secondary_button_url' => $this->form['secondary_button_url'] ?: null,
-                'focal_point_x' => (float) $this->form['focal_point_x'],
-                'focal_point_y' => (float) $this->form['focal_point_y'],
-                'starts_at' => $this->form['starts_at'] ?: null,
-                'ends_at' => $this->form['ends_at'] ?: null,
-            ]);
-
-            $slide->save();
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Slide hero gagal disimpan', ['sebab' => $e->getMessage()]);
-
-            $this->galat = 'Slide gagal disimpan. Periksa kembali isian dan berkas gambarnya.';
-
-            return;
-        }
-
-        CatatanAktivitas::catat('hero.disimpan', ['ulid' => $slide->ulid], auth()->id(), $slide);
-
-        $this->berkasGambar = null;
-        $this->berkasPonsel = null;
-        $this->berkasVideo = null;
-
-        $this->pesanSukses = 'Slide "'.$slide->title_id.'" tersimpan.';
-        $this->sunting($slide->id);
-    }
-
-    /** Pindahkan titik fokus tanpa memuat ulang halaman. */
-    public function ubahFokus(float $x, float $y): void
-    {
-        if ($this->suntingId === null) {
-            return;
-        }
-
-        $this->form['focal_point_x'] = max(0.0, min(1.0, $x));
-        $this->form['focal_point_y'] = max(0.0, min(1.0, $y));
-
-        HeroSlide::query()->whereKey($this->suntingId)->update([
-            'focal_point_x' => $this->form['focal_point_x'],
-            'focal_point_y' => $this->form['focal_point_y'],
-        ]);
-    }
-
-    public function ubahPratinjau(string $mode): void
-    {
-        if (in_array($mode, ['ponsel', 'desktop'], true)) {
-            $this->pratinjau = $mode;
-        }
-    }
 
     // ── Pembantu ─────────────────────────────────────────────────────
 
@@ -443,26 +257,6 @@ class HeroBuilder extends Component
         });
     }
 
-    private function kosongkanForm(): void
-    {
-        $this->form = [
-            'title_id' => '',
-            'title_en' => '',
-            'subtitle_id' => '',
-            'subtitle_en' => '',
-            'media_type' => 'image',
-            'primary_button_label_id' => '',
-            'primary_button_label_en' => '',
-            'primary_button_url' => '',
-            'secondary_button_label_id' => '',
-            'secondary_button_label_en' => '',
-            'secondary_button_url' => '',
-            'focal_point_x' => 0.5,
-            'focal_point_y' => 0.5,
-            'starts_at' => '',
-            'ends_at' => '',
-        ];
-    }
 
     private function bersihkanPesan(): void
     {
@@ -474,15 +268,10 @@ class HeroBuilder extends Component
     {
         $slides = HeroSlide::query()->orderBy('display_order')->orderBy('id')->get();
 
-        $sedang = $this->suntingId === null ? null : $slides->firstWhere('id', $this->suntingId);
-
         return view('livewire.admin.hero', [
             'judul' => 'Hero Beranda',
             'slides' => $slides,
-            'sedang' => $sedang,
             'maksSlide' => (int) config('iksan.hero.max_slides'),
-            'videoMaksKb' => (int) config('iksan.hero.video_max_kb'),
-            'videoMaksDetik' => (int) config('iksan.hero.video_max_detik'),
         ])->layout('layouts.admin', ['judul' => 'Hero Beranda', 'bagian' => 'Situs']);
     }
 

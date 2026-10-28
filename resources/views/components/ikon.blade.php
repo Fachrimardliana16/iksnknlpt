@@ -47,6 +47,12 @@
         'dots' => '<path d="M12 6h.01M12 12h.01M12 18h.01"/>',
         'copy' => '<path d="M9 9h11v11H9z"/><path d="M5 15V4h11"/>',
         'eye' => '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+        // eye-off: celah mata ditutup garis miring.
+        //
+        // Ditambahkan karena tombol aktif/nonaktif dulu memakai ikon yang SAMA
+        // untuk kedua keadaan, jadi tidak ada cara membaca status hanya dari
+        // ikonnya — harus membaca title, yang di ponsel tidak pernah muncul.
+        'eye-off' => '<path d="M2 12s3.6-6.5 10-6.5a10 10 0 0 1 5 1.4M22 12s-3.6 6.5-10 6.5a10 10 0 0 1-5-1.4"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
         'filter' => '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
         'refresh' => '<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/>',
         'lock' => '<path d="M5 11h14v10H5z"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',

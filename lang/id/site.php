@@ -65,6 +65,8 @@ return [
         'description' => 'Deskripsi',
         'related' => 'Produk lain',
         'sku' => 'SKU',
+        'product_info' => 'Info Produk',
+        'weight' => 'Berat',
         'added_to_cart' => 'Ditambahkan',
         'in_cart' => 'di keranjang',
         'empty' => 'Tidak ada produk yang cocok dengan filter ini.',

@@ -36,65 +36,124 @@
     // berbeda. Yang punya halaman baru (Produk, Kategori, Pesanan, Keranjang)
     // baru muncul setelah rutenya terdaftar, jadi menu tidak pernah menautkan
     // halaman yang belum ada.
+    $penggunaPanel = auth()->user();
+    $superAdmin = $penggunaPanel !== null && $penggunaPanel->role->bisaUbahKredensial();
+
+    // Menu dibatasi per peran di sini, tapi itu TIDAK pengaman.
+    //
+    // Yang mengunci tetap pemeriksaan di server: route admin memakai middleware
+    // PastikanAdmin (ditambah can() pada rute yang terbatas), dan setiap
+    // tindakan sensitif memanggil authorize() di dalam komponennya.
+    // Menyembunyikan tautan hanya membuat menu tidak ramai — permintaan yang
+    // dikirim langsung tetap ditolak.
+    //
+    // Pengelompokan mengikuti PERTANYAAN yang dijawab tiap halaman, bukan
+    // nama fiturnya: "apa yang perlu dikerjakan" (Penjualan, Katalog, Situs)
+    // dipisah dari "siapa boleh masuk dan mesinnya bagaimana" (Sistem). Semua
+    // butir Sistem khusus Super Admin, jadi kelompok itu lenyap seluruhnya
+    // bagi Admin biasa — bukan setengah tampil.
+    //
+    // Hanya butir yang rutenya BENAR-BENAR terdaftar yang didaftar di sini;
+    // tidak ada tautan cadangan "untuk nanti". Yang belum punya halaman tidak
+    // muncul sama sekali.
     $menu = [
         [
             'kelompok' => null,
             'butir' => [
-                ['rute' => 'admin.dashboard', 'pola' => 'admin.dashboard', 'ikon' => 'activity', 'label' => 'Dashboard', 'bawah' => true],
+                ['rute' => 'admin.dashboard', 'pola' => 'admin.dashboard', 'ikon' => 'activity', 'label' => 'Dashboard', 'bawah' => true, 'super' => false],
             ],
         ],
         [
             'kelompok' => 'Penjualan',
             'butir' => [
-                ['rute' => 'admin.orders.index', 'pola' => 'admin.orders.*', 'ikon' => 'receipt', 'label' => 'Pesanan', 'bawah' => true],
-                ['rute' => 'admin.carts.index', 'pola' => 'admin.carts.*', 'ikon' => 'cart', 'label' => 'Keranjang Terbuka', 'bawah' => false],
-                ['rute' => 'admin.customers.index', 'pola' => 'admin.customers.*', 'ikon' => 'users', 'label' => 'Pelanggan', 'bawah' => false],
-                ['rute' => 'admin.users.index', 'pola' => 'admin.users.*', 'ikon' => 'shield', 'label' => 'Pengguna & Peran', 'bawah' => true],
-                ['rute' => 'admin.messages.index', 'pola' => 'admin.messages.*', 'ikon' => 'mail', 'label' => 'Pesan', 'bawah' => false],
-                ['rute' => 'admin.coupons.index', 'pola' => 'admin.coupons.*', 'ikon' => 'tag', 'label' => 'Kupon', 'bawah' => false],
-                ['rute' => 'admin.kol.index', 'pola' => 'admin.kol.*', 'ikon' => 'share', 'label' => 'Performa KOL', 'bawah' => false],
+                ['rute' => 'admin.orders.index', 'pola' => 'admin.orders.*', 'ikon' => 'receipt', 'label' => 'Pesanan', 'bawah' => true, 'super' => false],
+                ['rute' => 'admin.carts.index', 'pola' => 'admin.carts.*', 'ikon' => 'cart', 'label' => 'Keranjang Ditinggalkan', 'bawah' => false, 'super' => false],
+                ['rute' => 'admin.customers.index', 'pola' => 'admin.customers.*', 'ikon' => 'users', 'label' => 'Pelanggan', 'bawah' => false, 'super' => false],
+                ['rute' => 'admin.coupons.index', 'pola' => 'admin.coupons.*', 'ikon' => 'tag', 'label' => 'Kupon', 'bawah' => true, 'super' => false],
+                ['rute' => 'admin.kol.index', 'pola' => 'admin.kol.*', 'ikon' => 'share', 'label' => 'Performa KOL', 'bawah' => true, 'super' => false],
             ],
         ],
         [
             'kelompok' => 'Katalog',
             'butir' => [
-                ['rute' => 'admin.products.index', 'pola' => 'admin.products.*', 'ikon' => 'box', 'label' => 'Produk', 'bawah' => true],
-                ['rute' => 'admin.categories.index', 'pola' => 'admin.categories.*', 'ikon' => 'tag', 'label' => 'Kategori', 'bawah' => false],
+                ['rute' => 'admin.products.index', 'pola' => 'admin.products.*', 'ikon' => 'box', 'label' => 'Produk', 'bawah' => true, 'super' => false],
+                ['rute' => 'admin.categories.index', 'pola' => 'admin.categories.*', 'ikon' => 'tag', 'label' => 'Kategori', 'bawah' => false, 'super' => false],
             ],
         ],
         [
             'kelompok' => 'Situs',
             'butir' => [
-                ['rute' => 'admin.hero.index', 'pola' => 'admin.hero.*', 'ikon' => 'image', 'label' => 'Hero', 'bawah' => false],
-                ['rute' => 'admin.faq.index', 'pola' => 'admin.faq.*', 'ikon' => 'info', 'label' => 'FAQ', 'bawah' => false],
-                ['rute' => 'admin.notifications.index', 'pola' => 'admin.notifications.*', 'ikon' => 'bell', 'label' => 'Notifikasi', 'bawah' => false],
-                ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => true],
-                ['rute' => 'admin.reports.index', 'pola' => 'admin.reports.*', 'ikon' => 'chart', 'label' => 'Laporan', 'bawah' => false],
-                ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false],
-                ['rute' => 'admin.backup.index', 'pola' => 'admin.backup.*', 'ikon' => 'download', 'label' => 'Cadangan', 'bawah' => false],
+                ['rute' => 'admin.hero.index', 'pola' => 'admin.hero.*', 'ikon' => 'image', 'label' => 'Hero', 'bawah' => false, 'super' => false],
+                ['rute' => 'admin.faq.index', 'pola' => 'admin.faq.*', 'ikon' => 'info', 'label' => 'FAQ', 'bawah' => false, 'super' => false],
+            ],
+        ],
+        [
+            // Seluruh kelompok ini khusus Super Admin. Diletakkan terakhir dan
+            // dipisahkan dari pekerjaan harian karena pertanyaannya berbeda:
+            // bukan "apa yang perlu dikerjakan" tapi "siapa boleh masuk, dan
+            // mesinnya bagaimana".
+            'kelompok' => 'Sistem',
+            'butir' => [
+                // Pengguna & Peran mengelola siapa yang boleh masuk panel.
+                // Admin biasa boleh mengerjakan pesanan dan produk, bukan
+                // menaikkan peran orang lain.
+                ['rute' => 'admin.users.index', 'pola' => 'admin.users.*', 'ikon' => 'shield', 'label' => 'Pengguna & Peran', 'bawah' => false, 'super' => true],
+                ['rute' => 'admin.settings.index', 'pola' => 'admin.settings.*', 'ikon' => 'sliders', 'label' => 'Pengaturan', 'bawah' => false, 'super' => true],
+                ['rute' => 'admin.security.index', 'pola' => 'admin.security.*', 'ikon' => 'shield', 'label' => 'Keamanan', 'bawah' => false, 'super' => true],
+                ['rute' => 'admin.backup.index', 'pola' => 'admin.backup.*', 'ikon' => 'download', 'label' => 'Cadangan', 'bawah' => false, 'super' => true],
             ],
         ],
     ];
 
     // Butir yang rutenya belum terdaftar tidak dirender sama sekali.
-    $menu = collect($menu)->map(function (array $g): array {
+    $menu = collect($menu)->map(function (array $g) use ($superAdmin): array {
         $g['butir'] = array_values(array_filter(
             $g['butir'],
-            fn (array $m): bool => \Illuminate\Support\Facades\Route::has($m['rute']),
+            fn (array $m): bool => \Illuminate\Support\Facades\Route::has($m['rute'])
+                // Butir 'super' hanya untuk Super Admin. Untuk Admin biasa
+                // hilang dari sidebar, tapi rutenya sendiri masih ada —
+                // yang menolak tetap pemeriksaan di server.
+                && (! ($m['super'] ?? false) || $superAdmin),
         ));
 
         return $g;
     })->filter(fn (array $g): bool => $g['butir'] !== [])->all();
 
-    // Bar bawah hanya memuat empat yang paling sering dipakai.
+    // Bar bawah hanya memuat lima yang paling sering dipakai.
     $bawah = array_values(array_filter(
         array_merge(...array_map(fn (array $g): array => $g['butir'], $menu)),
         fn (array $m): bool => $m['bawah'],
     ));
 
-    $bawah = array_slice($bawah, 0, 4);
+    $bawah = array_slice($bawah, 0, 5);
 
     $aktif = fn (string $pola) => request()->routeIs($pola);
+
+    /*
+     * Kelompok yang tidak boleh tertutup.
+     *
+     * Hanya yang memuat halaman yang SEDANG dibuka. Kelompok lain bebas
+     * dilipat, dan pilihan admin disimpan di peramban (lihat di bawah).
+     *
+     * Dihitung di PHP, bukan di Alpine: keadaan awal yang salah akan
+     * menyembunyikan tautan menuju halaman tempat admin sedang berdiri sampai
+     * skrip sisi klien berjalan dan memperbaikinya — dan kalau skrip gagal
+     * dimuat, tautannya tidak kembali sama sekali.
+     */
+    $grupTerbuka = collect($menu)
+        ->filter(fn (array $g): bool => $g['kelompok'] !== null
+            && collect($g['butir'])->contains(fn (array $m): bool => $aktif($m['pola'])))
+        ->pluck('kelompok')
+        ->all();
+
+    // Semua nama kelompok yang punya kepala kelompok — dipakai sisi klien
+    // untuk membaca pilihan lipat tersimpan. Kelompok tanpa nama (Dashboard)
+    // tidak dilipat, jadi tak perlu tercatat.
+    $semuaKelompok = collect($menu)
+        ->map(fn (array $g): ?string => $g['kelompok'])
+        ->filter()
+        ->values()
+        ->all();
 
     // Dua butir yang paling sering dibuka admin, dipasang sebagai tindakan
     // cepat di kepala panel supaya tidak perlu mencari di sidebar.
@@ -120,25 +179,113 @@
             </a>
         </div>
 
-        <nav class="flex-1 overflow-y-auto p-2" aria-label="Navigasi panel">
+        <nav class="flex-1 overflow-y-auto p-2" aria-label="Navigasi panel" x-data="{
+                // Keadaan lipat per kelompok. Nilai awal dari PHP: kelompok yang
+                // memuat halaman yang sedang dibuka SELALU terbuka, yang lain
+                // terbuka secara bawaan. Pilihan admin kemudiannya disimpan di
+                // localStorage per kelompok sehingga bertahan antar halaman.
+                //
+                // Sengaja satu peta di sini, bukan x-data terpisah per kelompok:
+                // versi per-kelompok memakai x-init untuk membaca localStorage,
+                // dan x-init berjalan SETELAH keadaan awal dipasang sehingga
+                // selalu menimpanya. localStorage kosong (kunjungan pertama)
+                // menghasilkan `null !== '0'` = true, jadi semua kelompok kembali
+                // terbuka walau sudah dilipat — lipatnya tampak mati.
+                //
+                // Kelompok yang sedang aktif tidak dapat ditutup: menutupnya
+                // menyembunyikan jalan kembali ke tempat admin sedang berdiri.
+                grup: {{ json_encode($grupTerbuka, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+                kunciPrefix: 'iksan.admin.grup.',
+
+                terbuka(nama) {
+                    return this.grup.includes(nama);
+                },
+
+                alihkan(nama) {
+                    if (this.kunciAktif.includes(nama)) return;
+
+                    const i = this.grup.indexOf(nama);
+                    if (i === -1) {
+                        this.grup.push(nama);
+                    } else {
+                        this.grup.splice(i, 1);
+                    }
+
+                    try {
+                        localStorage.setItem(this.kunciPrefix + nama, this.terbuka(nama) ? '1' : '0');
+                    } catch (e) {}
+                },
+
+                // Dipakai untuk menolak penutupan kelompok yang sedang aktif.
+                kunciAktif: {{ json_encode($grupTerbuka, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+
+                // Daftar SEMUA nama kelompok, dipakai init() untuk membaca
+                // localStorage. Kelompok tanpa nama (Dashboard, tanpa kepala
+                // kelompok) tidak dilipat sehingga tidak perlu tercatat.
+                semuaKelompok: {{ json_encode($semuaKelompok, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+
+                init() {
+                    // Baca pilihan admin SEKALI, sebelum ada yang diklik. Nilai
+                    // bawaan dari PHP tetap dipakai untuk kelompok yang belum
+                    // pernah disentuh.
+                    try {
+                        for (const nama of Object.keys(this.semuaKelompok)) {
+                            const tersimpan = localStorage.getItem(this.kunciPrefix + nama);
+                            if (tersimpan === null) continue;
+                            if (tersimpan === '0') {
+                                const i = this.grup.indexOf(nama);
+                                if (i !== -1) this.grup.splice(i, 1);
+                            } else if (!this.grup.includes(nama)) {
+                                this.grup.push(nama);
+                            }
+                        }
+                    } catch (e) {}
+                }
+             }"
+             x-init="init()">
+
             @foreach ($menu as $grup)
                 @if ($grup['kelompok'] !== null)
-                    {{-- Judul kelompok hanya tampil saat sidebar tidak diringkas;
-                         saat ringkas, garis pemisah menggantikannya supaya
-                         pengelompokannya masih terbaca. --}}
-                    <p x-show="!ringkas" class="part-no px-3 pb-1 pt-4">{{ $grup['kelompok'] }}</p>
-                    <div x-show="ringkas" class="mx-3 my-3 border-t border-line-soft" aria-hidden="true"></div>
-                @endif
+                    {{-- Judul kelompok sekaligus tombol lipat. Seluruh kelompoknya
+                         dapat ditutup supaya yang jarang dipakai tidak mendorong
+                         yang harian keluar layar.
 
-                @foreach ($grup['butir'] as $item)
-                    <a href="{{ route($item['rute']) }}" wire:navigate
-                       class="flex min-h-[44px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-sm
-                              {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
-                       :title="ringkas ? '{{ $item['label'] }}' : null">
-                        <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
-                        <span x-show="!ringkas" class="truncate">{{ $item['label'] }}</span>
-                    </a>
-                @endforeach
+                         Saat sidebar ringkas tombolnya hilang dan seluruh butir
+                         ikut tampil: hanya ikon yang terlihat, jadi yang
+                         disembunyikan malah membuat ikon tidak berarti. --}}
+                    <button type="button" x-show="!ringkas" @click="alihkan('{{ $grup['kelompok'] }}')"
+                            :aria-expanded="terbuka('{{ $grup['kelompok'] }}')"
+                            class="flex w-full min-h-[44px] items-center gap-1 rounded-[var(--r-kecil)] px-3 pb-1 pt-4 text-left hover:bg-sunken">
+                        <span class="part-no flex-1">{{ $grup['kelompok'] }}</span>
+                        <x-ikon name="chevron-down" :size="14" class="flex-none text-dim transition-transform"
+                                ::class="terbuka('{{ $grup['kelompok'] }}') ? '' : '-rotate-90'" />
+                        <span class="visually-hidden">Lipat kelompok {{ $grup['kelompok'] }}</span>
+                    </button>
+
+                    <div x-show="ringkas" class="mx-3 my-3 border-t border-line-soft" aria-hidden="true"></div>
+
+                    <div x-show="terbuka('{{ $grup['kelompok'] }}') || ringkas">
+                        @foreach ($grup['butir'] as $item)
+                            <a href="{{ route($item['rute']) }}" wire:navigate
+                               class="flex min-h-[44px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-sm
+                                      {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
+                               :title="ringkas ? '{{ $item['label'] }}' : null">
+                                <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                                <span x-show="!ringkas" class="truncate">{{ $item['label'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                @else
+                    @foreach ($grup['butir'] as $item)
+                        <a href="{{ route($item['rute']) }}" wire:navigate
+                           class="flex min-h-[44px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-sm
+                                  {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted hover:bg-sunken hover:text-ink' }}"
+                           :title="ringkas ? '{{ $item['label'] }}' : null">
+                            <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                            <span x-show="!ringkas" class="truncate">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                @endif
             @endforeach
         </nav>
 
@@ -175,20 +322,98 @@
                 </button>
             </div>
 
-            <nav class="flex-1 overflow-y-auto p-2">
+            {{-- Navigasi drawer.
+
+                 State lipat dipisah dari sidebar desktop: keduanya tak pernah
+                 tampil bersamaan (drawer hanya untuk layar kecil), dan satu
+                 state membuat memilih lipat di satu tempat langsung mengubah
+                 yang lain tanpa ada yang menyadarinya.
+
+                 State yang SAMA tetap: `grupAktif` adalah kelompok yang memuat
+                 halaman yang sedang dibuka, dan itu tidak boleh tertutup —
+                 menutupnya menyembunyikan jalan kembali ke tempat admin sedang
+                 berdiri.
+
+                 localStorage dipakai supaya pilihan lipat bertahan antar
+                 halaman, sama seperti sidebar desktop. --}}
+            <nav class="flex-1 overflow-y-auto p-2" x-data="{
+                    grup: {{ json_encode($grupTerbuka, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+                    grupAktif: {{ json_encode($grupTerbuka, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+                    semuaKelompok: {{ json_encode($semuaKelompok, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+                    kunciPrefix: 'iksan.admin.grup.',
+
+                    terbuka(nama) {
+                        return this.grup.includes(nama);
+                    },
+
+                    alihkan(nama) {
+                        if (this.grupAktif.includes(nama)) return;
+
+                        const i = this.grup.indexOf(nama);
+                        if (i === -1) {
+                            this.grup.push(nama);
+                        } else {
+                            this.grup.splice(i, 1);
+                        }
+
+                        try {
+                            localStorage.setItem(this.kunciPrefix + nama, this.terbuka(nama) ? '1' : '0');
+                        } catch (e) {}
+                    },
+
+                    init() {
+                        // Pilihan tersimpan dibaca SEKALI di sini, bukan lewat
+                        // x-init terpisah: x-init berjalan setelah keadaan awal
+                        // dipasang, sehingga menimpanya — dan localStorage kosong
+                        // menghasilkan true, membuat semua kelompok kembali
+                        // terbuka walau sudah dilipat.
+                        try {
+                            for (const nama of this.semuaKelompok) {
+                                const tersimpan = localStorage.getItem(this.kunciPrefix + nama);
+                                if (tersimpan === null) continue;
+                                if (tersimpan === '0') {
+                                    const i = this.grup.indexOf(nama);
+                                    if (i !== -1) this.grup.splice(i, 1);
+                                } else if (!this.grup.includes(nama)) {
+                                    this.grup.push(nama);
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                 }"
+                 x-init="init()">
+
                 @foreach ($menu as $grup)
                     @if ($grup['kelompok'] !== null)
-                        <p class="part-no px-3 pb-1 pt-4">{{ $grup['kelompok'] }}</p>
-                    @endif
+                        <button type="button" @click="alihkan('{{ $grup['kelompok'] }}')"
+                                :aria-expanded="terbuka('{{ $grup['kelompok'] }}')"
+                                class="flex w-full min-h-[48px] items-center gap-1 rounded-[var(--r-kecil)] px-3 pb-1 pt-4 text-left hover:bg-sunken">
+                            <span class="part-no flex-1">{{ $grup['kelompok'] }}</span>
+                            <x-ikon name="chevron-down" :size="14" class="flex-none text-dim transition-transform"
+                                    ::class="terbuka('{{ $grup['kelompok'] }}') ? '' : '-rotate-90'" />
+                            <span class="visually-hidden">Lipat kelompok {{ $grup['kelompok'] }}</span>
+                        </button>
 
-                    @foreach ($grup['butir'] as $item)
-                        <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
-                           class="flex min-h-[48px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-base
-                                  {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted' }}">
-                            <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
-                            {{ $item['label'] }}
-                        </a>
-                    @endforeach
+                        <div x-show="terbuka('{{ $grup['kelompok'] }}')">
+                            @foreach ($grup['butir'] as $item)
+                                <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
+                                   class="flex min-h-[48px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-base
+                                          {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted' }}">
+                                    <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                                    {{ $item['label'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        @foreach ($grup['butir'] as $item)
+                            <a href="{{ route($item['rute']) }}" wire:navigate @click="drawer = false"
+                               class="flex min-h-[48px] items-center gap-3 rounded-[var(--r-kecil)] px-3 text-base
+                                      {{ $aktif($item['pola']) ? 'bg-sunken font-medium text-accent' : 'text-muted' }}">
+                                <x-ikon :name="$item['ikon']" :size="20" class="flex-none" />
+                                {{ $item['label'] }}
+                            </a>
+                        @endforeach
+                    @endif
                 @endforeach
             </nav>
 
@@ -230,6 +455,11 @@
             {{-- Notifikasi: stok menipis, stok habis, pesanan dibeli,
                  keranjang terisi, dan pesanan yang hampir batal. --}}
             <livewire:admin.lonceng-notifikasi />
+
+            {{-- Pesan dari halaman kontak. Lonceng tersendiri, bukan satu
+                 bagian dari lonceng notifikasi: keduanya menjawab pertanyaan
+                 berbeda, dan pesan dari pembeli biasanya perlu dibalas cepat. --}}
+            <livewire:admin.lonceng-pesan />
 
             <a href="{{ route('front.home') }}" target="_blank" rel="noopener" class="btn-icon hidden lg:inline-flex"
                title="Lihat situs">
@@ -284,7 +514,7 @@
     <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-surface lg:hidden"
          style="padding-bottom: env(safe-area-inset-bottom, 0px)"
          aria-label="Navigasi panel">
-        <div class="grid grid-cols-4">
+        <div class="grid grid-cols-5">
             @foreach ($bawah as $item)
                 @continue(! \Illuminate\Support\Facades\Route::has($item['rute']))
                 <a href="{{ route($item['rute']) }}" wire:navigate

@@ -12,10 +12,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 
 #[Layout('layouts.admin')]
-class Dashboard extends Component
+class Dashboard extends KomponenAdmin
 {
     public function render(): View
     {

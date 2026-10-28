@@ -92,6 +92,13 @@ class Kategori extends Component
             'produk' => $produk,
             'jumlah' => $jumlah,
             'deskripsi' => $deskripsi,
+            // Data suka untuk seluruh kartu, satu kueri — bukan satu kueri per
+            // kartu. Lihat ProductLike::propsUntuk().
+            'suka' => \App\Models\ProductLike::propsUntuk(
+                $produk->getCollection(),
+                auth()->user(),
+                session()->getId(),
+            ),
         ])
             ->title($namaKategori.' · '.$toko->teks('site_name'))
             ->layoutData([

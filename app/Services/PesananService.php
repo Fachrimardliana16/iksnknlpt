@@ -166,7 +166,20 @@ class PesananService
             ]);
 
             if ($kupon !== null) {
-                $kupon->increment('used_count');
+                // Kuota kupon diambil di basis data, bukan dari model. Dua
+                // checkout bersamaan bisa sama-sama lolos pemeriksaan kuota
+                // di atas; UPDATE bersyarat di bawah membuat hanya satu yang
+                // berhasil menambah, dan pesanan satunya dibatalkan.
+                $kena = DB::table('coupons')
+                    ->where('id', $kupon->getKey())
+                    ->where(function ($q): void {
+                        $q->whereNull('quota')->orWhereColumn('used_count', '<', 'quota');
+                    })
+                    ->update(['used_count' => DB::raw('used_count + 1')]);
+
+                if ($kena === 0) {
+                    throw new RuntimeException('Kuota kupon sudah habis.');
+                }
             }
 
             $keranjang->kosongkan();

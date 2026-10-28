@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Throwable;
 
@@ -35,7 +34,7 @@ use Throwable;
  * semuanya.
  */
 #[Layout('layouts.admin')]
-class ProdukForm extends Component
+class ProdukForm extends KomponenAdmin
 {
     use WithFileUploads;
 
@@ -121,6 +120,7 @@ class ProdukForm extends Component
 
     public function mount(?string $ulid = null): void
     {
+
         if ($ulid === null) {
             $this->siapkanProdukBaru();
 

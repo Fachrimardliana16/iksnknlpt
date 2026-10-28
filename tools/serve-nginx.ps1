@@ -26,13 +26,17 @@ $nginxDir = Join-Path $env:LOCALAPPDATA 'nginx\nginx-1.28.0'
 # PHP 8.5.12 dipasang di folder terpisah (bukan folder WinGet 8.4), supaya
 # rollback cukup dengan mengubah satu baris ini kembali ke path WinGet 8.4.
 $php = Join-Path $env:LOCALAPPDATA 'php85\php-cgi.exe'
-$portPhp = 9200..9207
+$portPhp = 9200..9203
 
 function Hentikan {
-    Get-CimInstance Win32_Process -Filter "Name='nginx.exe'" -ErrorAction SilentlyContinue |
+    # Hanya proses milik salinan ini (port 920x + iksan.conf). Membunuh SEMUA
+    # nginx/php-cgi akan ikut mematikan bitesexhaust yang melayani port 940x.
+    Get-CimInstance Win32_Process -Filter "Name='php-cgi.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -match ':920[0-9]' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 
-    Get-CimInstance Win32_Process -Filter "Name='php-cgi.exe'" -ErrorAction SilentlyContinue |
+    Get-CimInstance Win32_Process -Filter "Name='nginx.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -match 'iksan\.conf' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
 

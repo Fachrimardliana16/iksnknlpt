@@ -33,19 +33,37 @@
         @forelse ($slides as $idx => $slide)
             @php
                 $urlSlide = \App\Models\ProductMedia::urlMedia($slide->media_path);
+
+                // Gambar ponsel hanya dipakai bila ADA. Kalau kosong, slide
+                // memakai gambar desktop apa adanya — tidak ada unggahan kedua
+                // yang diwajibkan. <picture> memilih sumbernya di peramban,
+                // jadi hanya satu berkas yang benar-benar diunduh.
+                $urlPonsel = filled($slide->media_path_mobile)
+                    ? \App\Models\ProductMedia::urlMedia($slide->media_path_mobile)
+                    : null;
             @endphp
             <div class="absolute inset-0 -z-10 transition-opacity duration-700"
                  x-show="i === {{ $idx }}"
                  :style="'opacity: i === {{ $idx }} ? 1 : 0'"
                  @if ($idx === 0)
-                     style="background-image: url('{{ $urlSlide }}');
-                            background-size: cover;
-                            background-position: {{ $slide->posisiFokus() }};"
-                 @else
-                     {{-- Dipasang saat slide ditampilkan (Alpine menyalin latar). --}}
-                     x-bind:style="i === {{ $idx }} ? \"background-image: url('{{ $urlSlide }}'); background-size: cover; background-position: {{ $slide->posisiFokus() }};\" : 'background-image: none;'"
+                     style="opacity: 1"
                  @endif
                  >
+                {{-- Latar slide. Versi lama memakai background-image di style,
+                     dan karena itu satu-satunya jalan memuat gambar: gambar
+                     ponsel yang tersimpan tidak pernah terpakai di beranda.
+                     <picture> membuat pilihan sumbernya milik peramban. --}}
+                <picture>
+                    @if ($urlPonsel)
+                        <source media="(max-width: 639px)" srcset="{{ $urlPonsel }}" />
+                    @endif
+                    <img src="{{ $urlSlide }}" alt=""
+                         class="h-full w-full object-cover"
+                         style="object-position: {{ $slide->posisiFokus() }}"
+                         @if ($idx === 0) fetchpriority="high" @else loading="lazy" @endif
+                         decoding="async" />
+                </picture>
+
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/45"></div>
             </div>
         @empty
@@ -91,14 +109,27 @@
                         @endif
 
                         <div class="mt-8 flex flex-wrap gap-3">
-                            @if (filled($slide->primary_button_url) && filled($slide->labelTombolUtama()))
-                                <a href="{{ $slide->primary_button_url }}" class="btn btn-primary">
+                            {{-- href memakai hrefTombolUtama(), BUKAN kolom mentah.
+
+                                 Nilai mentah dapat berisi `javascript:` atau
+                                 `file://` bila admin salah ketik atau akunnya
+                                 dibajak; Laravel meng-escape atribut sehingga
+                                 tidak menjadi XSS, tetapi tautannya tetap
+                                 menjalankan skrip saat diklik. Penyaringan ada
+                                 di model supaya berlaku untuk semua tempat
+                                 yang merender tombol ini. --}}
+                            @php $hrefUtama = $slide->hrefTombolUtama(); @endphp
+
+                            @if ($hrefUtama !== null && filled($slide->labelTombolUtama()))
+                                <a href="{{ $hrefUtama }}" class="btn btn-primary">
                                     {{ $slide->labelTombolUtama() }}
                                 </a>
                             @endif
 
-                            @if (filled($slide->secondary_button_url) && filled($slide->labelTombolKedua()))
-                                <a href="{{ $slide->secondary_button_url }}"
+                            @php $hrefKedua = $slide->hrefTombolKedua(); @endphp
+
+                            @if ($hrefKedua !== null && filled($slide->labelTombolKedua()))
+                                <a href="{{ $hrefKedua }}"
                                    class="btn btn-outline !border-white/40 !text-white">
                                     {{ $slide->labelTombolKedua() }}
                                 </a>
@@ -177,26 +208,42 @@
             </div>
 
             {{-- Angka dari basis data. Bila nol, barisnya tidak dirender. --}}
+            {{-- Tiga kolom tetap. `grid-cols-3` saja tidak cukup: tanpa
+                 min-w-0 dan text-center, label panjang ("PRODUK AKTIF") meluber
+                 ke kolom sebelah dan angkanya tidak sejajar. Setiap sel kini
+                 flex-col items-center justify-center dengan padding sendiri. --}}
             @if (array_filter($angka))
-                <dl class="plate dl-grid grid grid-cols-3 content-center gap-3 self-start p-5 lg:gap-6 lg:p-8">
+                <dl class="plate grid grid-cols-3 gap-2 self-start p-4 text-center lg:gap-4 lg:p-6">
                     @if (($angka['produk'] ?? 0) > 0)
-                        <div>
-                            <dt class="part-no">{{ __('site.home.stats_products') }}</dt>
-                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['produk'], 0, ',', '.') }}</dd>
+                        <div class="flex min-w-0 flex-col items-center justify-center px-1 py-2">
+                            <dt class="text-[0.625rem] uppercase leading-tight tracking-wide text-dim lg:text-xs">
+                                {{ __('site.home.stats_products') }}
+                            </dt>
+                            <dd class="tech mt-1.5 text-xl font-bold tabular-nums leading-none lg:text-3xl">
+                                {{ number_format($angka['produk'], 0, ',', '.') }}
+                            </dd>
                         </div>
                     @endif
 
                     @if (($angka['pesanan'] ?? 0) > 0)
-                        <div>
-                            <dt class="part-no">{{ __('site.home.stats_customers') }}</dt>
-                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['pesanan'], 0, ',', '.') }}</dd>
+                        <div class="flex min-w-0 flex-col items-center justify-center px-1 py-2">
+                            <dt class="text-[0.625rem] uppercase leading-tight tracking-wide text-dim lg:text-xs">
+                                {{ __('site.home.stats_customers') }}
+                            </dt>
+                            <dd class="tech mt-1.5 text-xl font-bold tabular-nums leading-none lg:text-3xl">
+                                {{ number_format($angka['pesanan'], 0, ',', '.') }}
+                            </dd>
                         </div>
                     @endif
 
                     @if (($angka['kategori'] ?? 0) > 0)
-                        <div>
-                            <dt class="part-no">{{ __('site.footer.categories') }}</dt>
-                            <dd class="tech mt-1.5 text-2xl lg:text-4xl">{{ number_format($angka['kategori'], 0, ',', '.') }}</dd>
+                        <div class="flex min-w-0 flex-col items-center justify-center px-1 py-2">
+                            <dt class="text-[0.625rem] uppercase leading-tight tracking-wide text-dim lg:text-xs">
+                                {{ __('site.footer.categories') }}
+                            </dt>
+                            <dd class="tech mt-1.5 text-xl font-bold tabular-nums leading-none lg:text-3xl">
+                                {{ number_format($angka['kategori'], 0, ',', '.') }}
+                            </dd>
                         </div>
                     @endif
                 </dl>
@@ -258,11 +305,6 @@
                         {{ __('site.home.categories_subtitle') }}
                     </p>
                 </div>
-
-                <a href="{{ route('front.products.index') }}" wire:navigate class="btn btn-outline">
-                    {{ __('site.home.view_all_products') }}
-                    <x-ikon name="arrow-right" :size="16" />
-                </a>
             </div>
 
             {{-- Kategori SEBARIS: enam kartu dalam satu baris di desktop, dua

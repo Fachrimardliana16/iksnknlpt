@@ -47,12 +47,12 @@ Route::middleware([SetLocale::class, BlokirIp::class])->group(function (): void 
     | menjaga aksesnya adalah ULID pesanan: 26 karakter acak yang tidak dapat
     | ditebak, dan hanya diketahui pembeli dari halaman sukses pesanannya.
     */
-    Route::get('/pesanan/{ulid}/bayar', UnggahBukti::class)->name('front.payment.upload');
+    Route::get('/pesanan/{ulid}/bayar', UnggahBukti::class)
+        ->middleware('laju:payment_proof')
+        ->name('front.payment.upload');
 
     Route::get('/tentang', About::class)->name('front.about');
 
-    // Halaman FAQ tersendiri: beranda hanya memuat sebagian butir.
-    Route::get('/faq', \App\Livewire\Front\FaqHalaman::class)->name('front.faq');
     Route::get('/kontak', Kontak::class)->name('front.contact');
 
     Route::get('/keranjang', KeranjangHalaman::class)->name('front.cart');

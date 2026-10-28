@@ -26,21 +26,48 @@
             @endif
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        {{-- Tindakan kepala.
+
+             Tiga tombol dipangkas jadi satu-satu yang benar-benar tindakan:
+
+               "Kembali"     -> ikon panah, judul "Kembali ke daftar produk".
+                                Ia navigasi, bukan tindakan atas produk, jadi
+                                tidak layak memakan lebar seukuran tombol
+                                bertuliskan di antara dua tombol tindakan.
+               "Lihat"       -> ikon mata, hanya muncul bila produk terbit.
+                                Sudah membuka tab baru; labelnya ada di title.
+               "Tarik/Terbit" -> tetap tombol bertuliskan, karena inilah satu-
+                                satunya tindakan yang mengubah keadaan produk
+                                dan paling sering dicari.
+
+             Di ponsel ketiganya jadi ikon 44px berjejer sebaris, tidak lagi
+             tiga baris bertumpuk. --}}
+        <div class="flex flex-none items-center gap-1">
+            <a href="{{ route('admin.products.index') }}" class="btn-icon" title="Kembali ke daftar produk"
+               aria-label="Kembali ke daftar produk">
+                <x-ikon name="chevron-left" :size="18" />
+            </a>
+
             @if ($produk)
                 @if ($produk->is_published)
                     <a href="{{ route('front.products.show', $produk->slug) }}" target="_blank" rel="noopener"
-                       class="btn btn-outline">
-                        <x-ikon name="eye" :size="16" />
-                        Lihat
+                       class="btn-icon" title="Lihat halaman produk" aria-label="Lihat halaman produk">
+                        <x-ikon name="eye" :size="18" />
                     </a>
                 @endif
-                <button type="button" wire:click="ubahTerbit" class="btn {{ $produk->is_published ? 'btn-outline' : 'btn-primary' }}">
-                    <x-ikon name="{{ $produk->is_published ? 'close' : 'check' }}" :size="16" />
-                    {{ $produk->is_published ? 'Tarik dari katalog' : 'Terbitkan' }}
+
+                <button type="button" wire:click="ubahTerbit"
+                        class="btn {{ $produk->is_published ? 'btn-outline' : 'btn-primary' }} btn-sm"
+                        title="{{ $produk->is_published ? 'Tarik dari katalog' : 'Terbitkan' }}">
+                    <x-ikon name="{{ $produk->is_published ? 'close' : 'check' }}" :size="15" />
+                    <span class="hidden sm:inline">
+                        {{ $produk->is_published ? 'Tarik dari katalog' : 'Terbitkan' }}
+                    </span>
+                    <span class="sr-only sm:hidden">
+                        {{ $produk->is_published ? 'Tarik dari katalog' : 'Terbitkan' }}
+                    </span>
                 </button>
             @endif
-            <a href="{{ route('admin.products.index') }}" class="btn btn-ghost">Kembali</a>
         </div>
     </div>
 
@@ -221,7 +248,22 @@
                         @else
                             <div class="space-y-3">
                                 @foreach ($spesifikasi as $i => $baris)
-                                    <div class="rounded-[var(--r-btn)] border border-line-soft p-3" wire:key="spesifikasi-{{ $i }}">
+                                    {{-- Kotak sudut tipis, bukan pil.
+
+                                         Versi sebelumnya memakai
+                                         rounded-[var(--r-btn)] — radius penuh
+                                         (999px) — pada wadah yang setinggi
+                                         beberapa baris. Radius sebesar itu
+                                         hanya masuk akal pada tombol 44px dan
+                                         lencana; pada kotak form ia membuat
+                                         ujungnya melengkung seperti pastil dan
+                                         tepi dalamnya tidak lagi sejajar tepi
+                                         luar panel.
+
+                                         Sudut sekarang r-kecil (8px), sama
+                                         dengan .field dan .btn-icon — satu
+                                         skala untuk seluruh komponen kecil. --}}
+                                    <div class="rounded-[var(--r-kecil)] border border-line-soft p-3" wire:key="spesifikasi-{{ $i }}">
                                         <div class="flex flex-wrap items-end gap-2">
                                             <div class="min-w-0 flex-1">
                                                 <label class="part-no" for="spec-label-{{ $i }}">{{ __('site.product.spec_label') }}</label>

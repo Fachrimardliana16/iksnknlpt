@@ -11,7 +11,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
 
@@ -24,7 +23,7 @@ use Throwable;
  * membatalkan perubahan produk lain, dan alasannya dilaporkan per produk.
  */
 #[Layout('layouts.admin')]
-class ProdukDaftar extends Component
+class ProdukDaftar extends KomponenAdmin
 {
     use WithPagination;
 
@@ -42,6 +41,21 @@ class ProdukDaftar extends Component
 
     #[Url(as: 'stok', history: true)]
     public string $stok = 'semua';
+
+    /**
+     * Kondisi: satu pilihan untuk publikasi DAN stok.
+     *
+     * Halaman ini dulu punya empat tombol (Terbit, Draf, Stok habis, Menipis)
+     * ditambah dua select terpisah. Sembilan kontrol untuk empat kemungkinan
+     * yang saling tumpang tindih — "Terbit" sama saja dengan publikasi=terbit.
+     *
+     * Nilainya TIDAK disimpan ke basis data dan tidak dipakai kueri; ia hanya
+     * cermin yang dipetakan ke $terbit dan $stok oleh aturKondisi(). Kedua
+     * properti itu tetap ada karena tautan ?stok=habis dari lonceng notifikasi
+     * dan ?terbit=draf dari halaman Kategori harus tetap bekerja.
+     */
+    #[Url(as: 'kondisi', history: true)]
+    public string $kondisi = 'semua';
 
     public string $perHalaman = '20';
 
@@ -61,6 +75,30 @@ class ProdukDaftar extends Component
         $this->terpilih = [];
     }
 
+    /**
+     * Saringan yang datang dari URL dirapikan saat masuk.
+     *
+     * Atribut #[Url] mengisi properti langsung dari query string TANPA lewat
+     * updatedX(), sehingga tautan ?stok=habis tidak pernah memicu
+     * sinkronKondisi(). Akibatnya select Kondisi tampil "Semua kondisi"
+     * padahal daftar sudah tersaring — persis kesalahpahaman yang ingin
+     * dihindari: admin membaca daftar pendek sebagai stok yang memang kosong,
+     * bukan sebagai saringan yang sedang menyala.
+     */
+    public function mount(): void
+    {
+
+        if (! in_array($this->terbit, ['semua', 'terbit', 'draf'], true)) {
+            $this->terbit = 'semua';
+        }
+
+        if (! in_array($this->stok, ['semua', 'ada', 'habis', 'menipis'], true)) {
+            $this->stok = 'semua';
+        }
+
+        $this->sinkronKondisi();
+    }
+
     public function updatedKategori(): void
     {
         $this->resetPage();
@@ -68,17 +106,59 @@ class ProdukDaftar extends Component
 
     public function updatedTerbit(): void
     {
+        $this->sinkronKondisi();
         $this->resetPage();
     }
 
     public function updatedStok(): void
     {
+        $this->sinkronKondisi();
         $this->resetPage();
     }
 
     public function updatedUrut(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * Select Kondisi ditulis ke dua properti yang benar-benar dipakai kueri.
+     *
+     * Dipisah dari updatedX() karena arahnya berlawanan: updatedTerbit dan
+     * updatedStok dipanggil ketika NILAI DASAR berubah dari tautan
+     * (?stok=habis), sedangkan method ini dipanggil ketika orang memilih di
+     * select. Memisahkannya mencegah dua method saling memicu tanpa henti.
+     *
+     * "semua" mengosongkan keduanya sekaligus — itu yang membuat satu pilihan
+     * bisa mewakili dua dimensi tanpa menyisakan saringan lama yang tertinggal.
+     */
+    public function updatedKondisi(string $nilai): void
+    {
+        $sah = ['semua', 'terbit', 'draf', 'habis', 'menipis', 'ada'];
+
+        $nilai = in_array($nilai, $sah, true) ? $nilai : 'semua';
+
+        $this->terbit = in_array($nilai, ['terbit', 'draf'], true) ? $nilai : 'semua';
+        $this->stok = in_array($nilai, ['habis', 'menipis', 'ada'], true) ? $nilai : 'semua';
+
+        $this->resetPage();
+    }
+
+    /**
+     * Cermin balik: tautan ?stok=habis harus membuat select Kondisi menunjuk
+     * "habis", bukan tetap "Semua kondisi" sambil daftar sudah tersaring.
+     *
+     * Tanpa ini, admin yang datang dari lonceng notifikasi melihat daftar
+     * kosong tanpa satu pun kontrol yang tampak menyala — dan menyimpulkan
+     * stoknya memang kosong, bukan bahwa ia sedang menyaring.
+     */
+    private function sinkronKondisi(): void
+    {
+        $this->kondisi = match (true) {
+            in_array($this->terbit, ['terbit', 'draf'], true) => $this->terbit,
+            in_array($this->stok, ['habis', 'menipis', 'ada'], true) => $this->stok,
+            default => 'semua',
+        };
     }
 
     public function aturKategori(string $nilai): void
@@ -409,7 +489,14 @@ class ProdukDaftar extends Component
 
     public function render(): View
     {
-        $daftar = $this->kueri()->paginate(25);
+        // Sepuluh produk per halaman, bukan dua puluh lima.
+        //
+        // Gridnya lima kolom di layar lebar dan dua kolom di ponsel, jadi
+        // sepuluh berarti DUA baris rapi di desktop dan LIMA baris di ponsel —
+        // halaman penuh tanpa menggulir, dan sisa ruang layar dipakai gambar
+        // produk yang lebih besar. Dua puluh lima menghasilkan lima baris di
+        // desktop yang memaksa admin menggulir untuk menemukan satu produk.
+        $daftar = $this->kueri()->paginate(10);
 
         return view('livewire.admin.produk-daftar', [
             'daftar' => $daftar,

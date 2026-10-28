@@ -7,7 +7,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -24,7 +23,7 @@ use Livewire\WithPagination;
  * berapa penjualan yang dihasilkan.
  */
 #[Layout('layouts.admin')]
-class KolPerforma extends Component
+class KolPerforma extends KomponenAdmin
 {
     use WithPagination;
 

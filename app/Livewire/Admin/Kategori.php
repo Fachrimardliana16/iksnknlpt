@@ -12,7 +12,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
@@ -28,7 +27,7 @@ use Livewire\WithPagination;
  * meninggalkan celah atau nomor kembar.
  */
 #[Layout('layouts.admin')]
-class Kategori extends Component
+class Kategori extends KomponenAdmin
 {
     use WithPagination;
 
@@ -56,6 +55,7 @@ class Kategori extends Component
 
     public function mount(): void
     {
+
         $this->slugDisentuh = false;
     }
 
@@ -223,6 +223,11 @@ class Kategori extends Component
             'slug' => $kategori->slug,
             'is_active' => $kategori->is_active,
         ], auth()->id(), $kategori);
+
+        // Sama seperti simpan(): status aktif mengubah daftar kategori beranda,
+        // jadi cache katalog harus dibatalkan supaya perubahan benar-benar
+        // terlihat di front page.
+        CacheKatalog::tandaiBerubah('kategori status');
 
         $this->pesan = $kategori->is_active
             ? 'Kategori "'.$kategori->name_id.'" diaktifkan.'

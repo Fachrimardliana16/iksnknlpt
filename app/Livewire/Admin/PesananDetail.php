@@ -9,7 +9,6 @@ use App\Services\StatusPesananService;
 use App\Support\Galat;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
 use RuntimeException;
 
 /**
@@ -21,7 +20,7 @@ use RuntimeException;
  * mengubah kolom status langsung dari sini akan merusak keduanya.
  */
 #[Layout('layouts.admin')]
-class PesananDetail extends Component
+class PesananDetail extends KomponenAdmin
 {
     /** Alasan penolakan bukti transfer, diisi admin sebelum menolak. */
     public string $alasanTolak = '';
@@ -47,6 +46,7 @@ class PesananDetail extends Component
 
     public function mount(string $ulid): void
     {
+
         $order = $this->cari($ulid);
 
         $this->ulid = $order->ulid;

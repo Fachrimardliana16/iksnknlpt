@@ -13,7 +13,6 @@ use Illuminate\Support\Collection;
 use App\Models\Setting;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Throwable;
 
@@ -26,7 +25,7 @@ use Throwable;
  * kredensial PayPal.
  */
 #[Layout('layouts.admin')]
-class PengaturanSitus extends Component
+class PengaturanSitus extends KomponenAdmin
 {
     use WithFileUploads;
 
@@ -60,6 +59,7 @@ class PengaturanSitus extends Component
 
     public function mount(?string $tab = null): void
     {
+
         if ($tab !== null && $this->tabSah($tab)) {
             $this->tab = $tab;
         }

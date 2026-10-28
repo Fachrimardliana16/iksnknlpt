@@ -88,4 +88,56 @@ class HeroSlide extends Model
     {
         return round($this->focal_point_x * 100, 2).'% '.round($this->focal_point_y * 100, 2).'%';
     }
+
+    /**
+     * URL tombol yang AMAN dipasang pada atribut href.
+     *
+     * Kolom ini diisi admin, dan admin bisa salah ketik atau sebuah akun panel
+     * bisa dibajak. Tanpa penyaringan, nilai seperti `javascript:alert(1)`
+     * atau `file:///etc/passwd` akan masuk apa adanya ke atribut href di
+     * beranda — Laravel meng-escape atributnya sehingga tidak menjadi XSS,
+     * tetapi tautannya tetap menjalankan skrip atau membuka berkas lokal saat
+     * pengunjung mengkliknya.
+     *
+     * Yang diizinkan hanya dua bentuk yang memang dipakai beranda: jalur di
+     * dalam situs (diawali "/") dan URL http/https. Selain itu dikembalikan
+     * null, sehingga tombolnya tidak dirender sama sekali — lebih baik tombol
+     * hilang daripada mengarah ke tempat yang tidak diketahui.
+     */
+    public static function urlTombolAman(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        // Jalur di dalam situs sendiri.
+        if (str_starts_with($url, '/')) {
+            // "//evil.test" adalah URL protokol-relatif: peramban membacanya
+            // sebagai host lain, bukan jalur. Harus ditolak.
+            return str_starts_with($url, '//') ? null : $url;
+        }
+
+        $skema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        if (! in_array($skema, ['http', 'https'], true)) {
+            return null;
+        }
+
+        // Tanpa host, "http://" saja bukan tujuan yang sah.
+        return filter_var($url, FILTER_VALIDATE_URL) === false ? null : $url;
+    }
+
+    /** href tombol utama, sudah disaring. Null berarti tombol tidak dirender. */
+    public function hrefTombolUtama(): ?string
+    {
+        return self::urlTombolAman($this->primary_button_url);
+    }
+
+    /** href tombol kedua, sudah disaring. */
+    public function hrefTombolKedua(): ?string
+    {
+        return self::urlTombolAman($this->secondary_button_url);
+    }
 }

@@ -12,35 +12,87 @@
         <div class="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
 
             {{-- Galeri --}}
-            <div x-data="{ aktif: 0 }">
-                @php $mediaUtama = $product->gambarUtama(); @endphp
+            {{-- Carousel geser: gambar utama tersusun berjajar di dalam wadah
+                 scroll-snap horizontal, sehingga bisa digeser (swipe) dengan
+                 jari maupun trackpad. Sebelumnya hanya ada SATU elemen <img>
+                 yang src-nya ditukar saat thumbnail diklik — tidak ada yang
+                 bisa digeser sama sekali.
 
-                <div class="plate aspect-[4/3] overflow-hidden">
-                    @if ($mediaUtama)
-                        <img x-ref="utama"
-                             src="{{ $mediaUtama->url('full') }}"
-                             width="{{ $mediaUtama->width ?: 1600 }}" height="{{ $mediaUtama->height ?: 1200 }}"
-                             alt="{{ $mediaUtama->alt() }}"
-                             fetchpriority="high" decoding="async"
-                             class="h-full w-full object-cover">
-                    @else
-                        <div class="flex h-full items-center justify-center text-dim">
-                            <x-ikon name="image" :size="40" />
+                 Thumbnail dan gambar utama memakai satu indeks `aktif`:
+                 menggeser gambar memperbarui thumbnail, dan menekan thumbnail
+                 menggulir ke gambar yang sama. --}}
+            <div x-data="{
+                    aktif: 0,
+                    geserKe(i) {
+                        this.aktif = i;
+                        const trek = this.$refs.trek;
+                        if (!trek) return;
+                        trek.scrollTo({ left: trek.clientWidth * i, behavior: 'smooth' });
+                    },
+                    sinkron() {
+                        const trek = this.$refs.trek;
+                        if (!trek || trek.clientWidth === 0) return;
+                        this.aktif = Math.round(trek.scrollLeft / trek.clientWidth);
+                    }
+                 }">
+                @php $daftarMedia = $product->media; @endphp
+
+                @if ($daftarMedia->isEmpty())
+                    <div class="plate flex aspect-[4/3] items-center justify-center text-dim">
+                        <x-ikon name="image" :size="40" />
+                    </div>
+                @else
+                    <div class="relative">
+                        <div x-ref="trek"
+                             @scroll.debounce.80ms="sinkron()"
+                             class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth
+                                    [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                             style="touch-action: pan-x pan-y; overscroll-behavior-x: contain;">
+
+                            @foreach ($daftarMedia as $i => $m)
+                                <div class="w-full flex-none snap-center"
+                                     wire:key="media-{{ $m->id ?? $i }}">
+                                    <div class="plate aspect-[4/3] overflow-hidden">
+                                        <img src="{{ $m->url('full') }}"
+                                             width="{{ $m->width ?: 1600 }}" height="{{ $m->height ?: 1200 }}"
+                                             alt="{{ $m->alt() }}"
+                                             @if ($i === 0) fetchpriority="high" @else loading="lazy" @endif
+                                             decoding="async"
+                                             draggable="false"
+                                             class="pointer-events-none h-full w-full select-none object-cover">
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if ($daftarMedia->count() > 1)
+                            {{-- Penunjuk posisi: tampil di ponsel karena thumbnail
+                                 saja tidak cukup jelas menunjukkan ada gambar lain. --}}
+                            <div class="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
+                                @foreach ($daftarMedia as $i => $m)
+                                    <span class="h-1.5 rounded-full transition-all duration-300"
+                                          :class="aktif === {{ $i }} ? 'w-5 bg-accent' : 'w-1.5 bg-white/70'"></span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($daftarMedia->count() > 1)
+                        <div class="mt-3 grid grid-cols-5 gap-2">
+                            @foreach ($daftarMedia as $i => $m)
+                                <button type="button"
+                                        @click="geserKe({{ $i }})"
+                                        :aria-current="aktif === {{ $i }} ? 'true' : 'false'"
+                                        aria-label="Gambar {{ $i + 1 }} dari {{ $daftarMedia->count() }}"
+                                        class="aspect-[4/3] overflow-hidden border transition-colors"
+                                        :class="aktif === {{ $i }} ? 'border-accent' : 'border-line-soft'">
+                                    <img src="{{ $m->url('thumb') }}" width="320" height="240"
+                                         alt="{{ $m->alt() }}" loading="lazy" decoding="async"
+                                         class="h-full w-full object-cover">
+                                </button>
+                            @endforeach
                         </div>
                     @endif
-                </div>
-
-                @if ($product->media->count() > 1)
-                    <div class="mt-3 grid grid-cols-5 gap-2">
-                        @foreach ($product->media as $i => $m)
-                            <button type="button" @click="aktif = {{ $i }}; $refs.utama.src = '{{ $m->url('full') }}'"
-                                    class="aspect-[4/3] overflow-hidden border {{ $i === 0 ? 'border-accent' : 'border-line-soft' }}">
-                                <img src="{{ $m->url('thumb') }}" width="320" height="240"
-                                     alt="{{ $m->alt() }}" loading="lazy" decoding="async"
-                                     class="h-full w-full object-cover">
-                            </button>
-                        @endforeach
-                    </div>
                 @endif
             </div>
 
@@ -138,59 +190,133 @@
                     </a>
                 @endif
 
+                {{-- Suka produk.
+
+                     Berdampingan dengan tautan Bagikan, bukan menggantikannya:
+                     membagikan menjawab "siapa lagi yang perlu lihat ini", suka
+                     menjawab "produk mana yang dibutuhkan pembeli" — dan yang
+                     kedua tidak punya tautan keluar, cuma satu ketukan.
+
+                     Jumlah suka ikut tampil supaya pembeli melihat barang yang
+                     memang diperhatikan orang lain. --}}
+                <div class="mt-3 flex items-center gap-3">
+                    {{-- Halaman detail memuat satu produk, jadi kuerinya memang
+                         satu — tapi propertinya tetap diteruskan supaya kartu
+                         katalog dan halaman detail memakai kontrak yang sama. --}}
+                    <livewire:front.suka-produk
+                        :produk-id="$product->id"
+                        :disukai="isset($suka['disukai'][$product->id])"
+                        :jumlah="(int) ($suka['hitungan'][$product->id] ?? 0)"
+                        :key="'suka-detail-'.$product->id" />
+                    <span class="text-xs text-dim">Sukai produk ini untuk menandai minat Anda</span>
+                </div>
+
                 <div class="measure-line my-6"></div>
 
-                <div>
-                    <p class="label">{{ __('site.product.description') }}</p>
-                    <div class="mt-2 space-y-3 text-sm leading-relaxed text-muted">
+                {{-- Deskripsi sebagai accordion. Default TERTUTUP: pengunjung
+                     ponsel membuka halaman untuk melihat harga dan tombol beli,
+                     bukan membaca paragraf. Isinya tetap ada di DOM (hanya
+                     dilipat) sehingga Ctrl+F tetap menemukannya. --}}
+                <div x-data="{ buka: false }">
+                    <button type="button"
+                            @click="buka = !buka"
+                            :aria-expanded="buka ? 'true' : 'false'"
+                            aria-controls="deskripsi-produk"
+                            class="flex w-full items-center justify-between gap-3 py-1 text-left">
+                        <span class="label !mb-0">{{ __('site.product.description') }}</span>
+                        <x-ikon name="chevron-down" :size="18"
+                                class="flex-none text-muted transition-transform duration-300"
+                                x-bind:class="buka ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div id="deskripsi-produk" x-show="buka" x-cloak
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-1"
+                         class="mt-2 space-y-3 text-sm leading-relaxed text-muted">
                         @foreach (preg_split('/\n\s*\n/', trim($product->deskripsi())) as $paragraf)
                             <p>{{ trim($paragraf) }}</p>
                         @endforeach
                     </div>
                 </div>
 
-                {{-- Spesifikasi teknis terurut (checklist F6-04). Hanya baris yang
-                     punya label dan isi yang ditampilkan; baris setengah terisi
-                     yang lolos dari panel admin tidak menghasilkan garis kosong
-                     di halaman pembeli. --}}
+                {{-- Pratinjau 3D dan contoh suara. Tidak ikut dilipat: keduanya
+                     pemutar, bukan teks bacaan — melipatnya hanya menambah satu
+                     ketukan sebelum pembeli bisa memutarnya. --}}
                 <x-media-produk :media3d="$media3d" :audio="$audio" :judul="$product->judul()" />
 
-@if ($spesifikasi !== [])
-                    <div class="measure-line my-6"></div>
+                @if ($spesifikasi !== [])
+                    <div x-data="{ buka: window.innerWidth >= 1024 }">
+                        <button type="button"
+                                @click="buka = !buka"
+                                :aria-expanded="buka ? 'true' : 'false'"
+                                aria-controls="spesifikasi-produk"
+                                class="flex w-full items-center justify-between gap-3 py-1 text-left">
+                            <span class="label !mb-0">{{ __('site.product.specification') }}</span>
+                            <x-ikon name="chevron-down" :size="18"
+                                    class="flex-none text-muted transition-transform duration-300"
+                                    x-bind:class="buka ? 'rotate-180' : ''" />
+                        </button>
 
-                    <div>
-                        <p class="label">{{ __('site.product.specification') }}</p>
-                        <dl class="mt-3 divide-y divide-[var(--c-line-soft)] border-y border-line-soft">
+                        <div id="spesifikasi-produk" x-show="buka" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 -translate-y-1"
+                             class="mt-3 divide-y divide-[var(--c-line-soft)] border-y border-line-soft">
                             @foreach ($spesifikasi as $baris)
                                 <div class="grid grid-cols-[minmax(0,9rem)_1fr] gap-3 py-2.5">
                                     <dt class="text-sm text-muted">{{ $baris['label'] }}</dt>
                                     <dd class="tech text-sm">{{ $baris['nilai'] }}</dd>
                                 </div>
                             @endforeach
-                        </dl>
+                        </div>
                     </div>
                 @endif
+                {{-- Info produk (SKU, berat, varian, kategori) sebagai accordion. --}}
+                <div x-data="{ buka: window.innerWidth >= 1024 }">
+                    <button type="button"
+                            @click="buka = !buka"
+                            :aria-expanded="buka ? 'true' : 'false'"
+                            aria-controls="info-produk"
+                            class="flex w-full items-center justify-between gap-3 py-1 text-left">
+                        <span class="label !mb-0">{{ __('site.product.product_info') }}</span>
+                        <x-ikon name="chevron-down" :size="18"
+                                class="flex-none text-muted transition-transform duration-300"
+                                x-bind:class="buka ? 'rotate-180' : ''" />
+                    </button>
 
-                <div class="measure-line my-6"></div>
-
-                <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <dt class="part-no">{{ __('site.product.sku') }}</dt>
-                        <dd class="tech mt-1">{{ $product->sku }}</dd>
+                    <div id="info-produk" x-show="buka" x-cloak
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-1"
+                         class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <dt class="part-no">{{ __('site.product.sku') }}</dt>
+                            <dd class="tech mt-1">{{ $product->sku }}</dd>
+                        </div>
+                        <div>
+                            <dt class="part-no">{{ __('site.product.weight') }}</dt>
+                            <dd class="tech mt-1">{{ number_format(($variant?->berat() ?? $product->weight_gram) / 1000, 2, ',', '.') }} kg</dd>
+                        </div>
+                        <div>
+                            <dt class="part-no">{{ __('site.product.variant_col') }}</dt>
+                            <dd class="tech mt-1">{{ $variant?->nama() ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="part-no">{{ __('site.footer.categories') }}</dt>
+                            <dd class="tech mt-1">{{ $product->category?->nama() }}</dd>
+                        </div>
                     </div>
-                    <div>
-                        <dt class="part-no">{{ __('site.product.weight') }}</dt>
-                        <dd class="tech mt-1">{{ number_format(($variant?->berat() ?? $product->weight_gram) / 1000, 2, ',', '.') }} kg</dd>
-                    </div>
-                    <div>
-                        <dt class="part-no">{{ __('site.product.variant_col') }}</dt>
-                        <dd class="tech mt-1">{{ $variant?->nama() ?? '-' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="part-no">{{ __('site.footer.categories') }}</dt>
-                        <dd class="tech mt-1">{{ $product->category?->nama() }}</dd>
-                    </div>
-                </dl>
+                </div>
             </div>
         </div>
 
@@ -201,7 +327,7 @@
              yang akan ditambahkan. Label statis "Tambah ke Keranjang" menyembunyikan
              dua hal yang mahal: jumlah yang sudah diubah, dan varian yang
              sedang dipilih. --}}
-        <div class="fixed inset-x-0 z-30 border-t border-line-soft bg-surface p-3 lg:hidden"
+        <div class="bottom-bar-cart fixed inset-x-0 z-30 border-t border-line-soft bg-surface p-3 lg:hidden"
              style="bottom: calc(60px + env(safe-area-inset-bottom, 0px))">
             <div class="flex items-center gap-2">
                 <div class="min-w-0 flex-1">

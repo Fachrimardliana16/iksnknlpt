@@ -65,6 +65,8 @@ return [
         'description' => 'Description',
         'related' => 'More products',
         'sku' => 'SKU',
+        'product_info' => 'Product Info',
+        'weight' => 'Weight',
         'added_to_cart' => 'Added',
         'in_cart' => 'in cart',
         'empty' => 'No product matches this filter.',

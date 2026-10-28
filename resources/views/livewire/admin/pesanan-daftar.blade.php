@@ -10,10 +10,45 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.exports.orders') }}" class="btn btn-outline">
-            <x-ikon name="download" :size="16" />
-            Report Penjualan
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            {{-- Report penjualan: rentang + dua format.
+
+                 Rentang dibawa sebagai query string pada tautan, bukan state
+                 Livewire. Laporan akhir bulan harus bisa disalin dan dibuka
+                 ulang — tautan yang sama, bulan depan, tanpa memilih ulang
+                 tanggal. Dua tautan (CSV, PDF) juga berarti tak ada permintaan
+                 Livewire hanya untuk mengunduh berkas.
+
+                 Nilai awal diisi dari bulan berjalan; tanggal yang tertulis
+                 bebas diubah. --}}
+            <div class="plate flex flex-wrap items-center gap-2 p-2" x-data="{
+                    dari: '{{ now()->startOfMonth()->format('Y-m-d') }}',
+                    ke: '{{ now()->format('Y-m-d') }}',
+                    get dasar() { return '{{ url('/admin/laporan/penjualan') }}'; },
+                    get query() {
+                        return '?mulai=' + this.dari + '&sampai=' + this.ke
+                            + '&status={{ $status }}&bayar={{ $bayar }}';
+                    }
+                 }">
+                <label class="flex items-center gap-1.5 text-xs text-muted">
+                    <span>Dari</span>
+                    <input type="date" x-model="dari" class="field !min-h-[36px] !w-auto py-1 text-xs">
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-muted">
+                    <span>s/d</span>
+                    <input type="date" x-model="ke" class="field !min-h-[36px] !w-auto py-1 text-xs">
+                </label>
+
+                <a :href="dasar + '/csv' + query" class="btn btn-outline btn-sm">
+                    <x-ikon name="download" :size="15" />
+                    CSV
+                </a>
+                <a :href="dasar + '/pdf' + query" class="btn btn-outline btn-sm">
+                    <x-ikon name="download" :size="15" />
+                    PDF
+                </a>
+            </div>
+        </div>
     </div>
 
     @if (session('pesan-admin'))
@@ -222,7 +257,19 @@
                     @endif
                 </ul>
 
-                {{-- Tindakan cepat, di atas lapisan tautan --}}
+                {{-- Tindakan cepat, di atas lapisan tautan.
+
+                     Di ponsel tombolnya tersusun sebagai ikon yang ditekan ke
+                     kanan, bukan bilah yang berpindah baris: "Tandai lunas"
+                     yang panjang memakan lebar penuh dan mendorong Detail
+                     serta Cetak resi ke baris berikutnya, sehingga tiga
+                     tombol terlihat seperti tiga baris — padahal cuma satu
+                     baris tindakan.
+
+                     Sekarang di ponsel ketiganya jadi kotak ikon 44px (target
+                     sentuh tetap utuh), berjejer sebaris, dan label hanya
+                     tampil di layar lebar. Judul lengkapnya tetap di title
+                     supaya hover masih menjelaskan. --}}
                 <div class="relative z-10 mt-3 flex flex-wrap items-center gap-2 border-t border-line-soft pt-3">
 
                     {{-- Kotak centang untuk cetak resi banyak.
@@ -234,26 +281,31 @@
                            title="Pilih untuk dicetak bersama yang lain">
                         <input type="checkbox" class="h-4 w-4 accent-[var(--c-accent)]"
                                data-cetak-resi value="{{ $o->ulid }}">
-                        <span>Pilih cetak</span>
+                        <span class="hidden sm:inline">Pilih cetak</span>
                     </label>
                     @if ($o->status === \App\Enums\StatusPesanan::Pending)
-                        <button type="button" class="btn btn-primary"
+                        <button type="button" class="btn btn-primary sm:!px-4"
                                 wire:click="tandaiDibayar({{ $o->id }})"
-                                wire:loading.attr="disabled" wire:target="tandaiDibayar({{ $o->id }})">
+                                wire:loading.attr="disabled" wire:target="tandaiDibayar({{ $o->id }})"
+                                title="Tandai lunas">
                             <x-ikon name="check" :size="16" />
-                            Tandai lunas
+                            <span class="hidden sm:inline">Tandai lunas</span>
+                            <span class="sr-only sm:hidden">Tandai lunas</span>
                         </button>
                     @endif
 
-                    <a href="{{ route('admin.orders.show', $o->ulid) }}" wire:navigate class="btn btn-outline">
+                    <a href="{{ route('admin.orders.show', $o->ulid) }}" wire:navigate class="btn btn-outline sm:!px-4"
+                       title="Detail">
                         <x-ikon name="eye" :size="16" />
-                        Detail
+                        <span class="hidden sm:inline">Detail</span>
+                        <span class="sr-only sm:hidden">Detail</span>
                     </a>
 
                     <a href="{{ route('admin.orders.receipt', $o->ulid) }}" target="_blank" rel="noopener"
-                       class="btn btn-outline">
+                       class="btn btn-outline sm:!px-4" title="Cetak resi">
                         <x-ikon name="printer" :size="16" />
-                        Cetak resi
+                        <span class="hidden sm:inline">Cetak resi</span>
+                        <span class="sr-only sm:hidden">Cetak resi</span>
                     </a>
                 </div>
             </article>
