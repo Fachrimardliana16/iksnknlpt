@@ -169,6 +169,7 @@
 
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row">
                     <button type="button" class="btn btn-primary flex-1" wire:click="tambah"
+                            data-aksi-utama
                             @disabled($tersedia < 1)>
                         <x-ikon name="cart" :size="18" />
                         {{ __('site.product.add_to_cart') }}
@@ -326,8 +327,21 @@
              Isinya harga, pengatur jumlah, dan label tombol yang menyebut apa
              yang akan ditambahkan. Label statis "Tambah ke Keranjang" menyembunyikan
              dua hal yang mahal: jumlah yang sudah diubah, dan varian yang
-             sedang dipilih. --}}
+             sedang dipilih.
+
+             KAPAN MUNCUL. Sejak 2026-10 bar ini TERSEMBUNYI pada gulir
+             pertama. Sebelumnya ia selalu tampil, sehingga di ponsel pengguna
+             melihat dua tombol "Tambah ke Keranjang" yang sama di satu layar
+             (panel dan bar) dan bar-nya menutupi isi. Sekarang ia baru muncul
+             ketika tombol utama di panel sudah tidak terlihat —
+             lihat resources/js/bar-aksi.js.
+
+             `data-tersembunyi` dipakai, bukan kelas `hidden`: statusnya harus
+             terbaca dari DOM, dan utilitas `hidden` Tailwind tidak bisa
+             dibedakan dari `hidden` layar lebar. `inert` menahan fokus
+             keyboard selama bar belum tampil. --}}
         <div class="bottom-bar-cart fixed inset-x-0 z-30 border-t border-line-soft bg-surface p-3 lg:hidden"
+             data-tersembunyi inert
              style="bottom: calc(60px + env(safe-area-inset-bottom, 0px))">
             <div class="flex items-center gap-2">
                 <div class="min-w-0 flex-1">

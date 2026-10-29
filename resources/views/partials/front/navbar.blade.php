@@ -3,15 +3,57 @@
     $kategoriNav = \App\Models\Category::query()->aktif()->terurut()->take(8)->get();
     $logo = $toko->teks('site_logo_light');
     $logoTerang = $toko->teks('site_logo_dark');
+
+    // Beranda memakai dua wujud navbar:
+    //   di atas hero  -> sidebar kiri (lihat .navbar-hero di tokens/navbar css)
+    //   setelah gulir -> bilah mendatar dengan menu di tengah
+    $diBeranda = request()->routeIs('front.home');
+
+    // Menu utama ditulis sekali, dipakai di kedua wujud. `pola` menentukan
+    // penanda aktif; dua label terakhir sengaja memakai route yang sama
+    // dengan katalog karena memang menuju ke sana.
+    $menuUtama = [
+        ['pola' => 'front.home', 'label' => __('site.nav.home'), 'rute' => route('front.home')],
+        ['pola' => 'front.products.index', 'label' => __('site.nav.products'), 'rute' => route('front.products.index')],
+        ['pola' => 'front.about', 'label' => __('site.nav.about'), 'rute' => route('front.about')],
+        ['pola' => 'front.contact', 'label' => __('site.nav.contact'), 'rute' => route('front.contact')],
+        ['pola' => 'front.order.track', 'label' => __('site.order.track'), 'rute' => route('front.order.track')],
+    ];
+
+    $aktif = fn (string $pola) => request()->routeIs($pola);
+
+    // Sosial di sidebar: satu ikon per platform.
+    //
+    // Dulu daftar dari pengaturan dipakai apa adanya. Bila panel menyimpan
+    // dua baris untuk platform yang sama (mudah terjadi saat admin mengisi
+    // ulang formulir), sidebar menampilkan dua ikon Instagram yang identik.
+    // Di sini yang pertama dipertahankan, sisanya dibuang — dan hanya yang
+    // `tampil` true yang dipakai, karena panel memang punya sakelar itu.
+    $sosialNav = $toko->mediaSosial()
+        ->filter(fn (array $s) => ($s['tampil'] ?? true) && filled($s['url'] ?? null))
+        ->unique(fn (array $s) => strtolower((string) ($s['platform'] ?? '')))
+        ->values();
 @endphp
 
-{{-- Bar atas. Desktop: satu baris penuh. Tablet dan mobile: bar ringkas,
-     menu lengkap pindah ke drawer dan bar navigasi bawah. --}}
+{{-- Bar atas. Dua wujud, satu markup:
+
+     1. SIDEBAR (hanya beranda, di atas hero, ≥1280px)
+        logo di atas, menu vertikal berjarak, sosial di kaki. Kolom ini yang
+        membuat hero terasa seperti halaman spesifikasi, bukan banner toko.
+
+     2. BILAH (semua halaman, dan beranda setelah digulir)
+        logo kiri, menu di TENGAH, utilitas kanan.
+
+     Perpindahannya ditulis app.js ke `data-nav-ramping` pada <html>; CSS di
+     bawah membaca atribut itu. Tanpa JS, beranda tetap memakai wujud bilah —
+     navigasi tidak pernah hilang, hanya tidak berganti wujud. --}}
 <div x-data="{ menu: false, cari: false, kategori: false }">
 
-<header class="sticky top-0 z-40 border-b border-line-soft bg-surface/95 backdrop-blur">
+<header class="race-navbar sticky top-0 z-40 border-b border-line-soft bg-surface/95 backdrop-blur
+               {{ $diBeranda ? 'navbar-hero' : '' }}">
+    <div class="race-navbar__signal" aria-hidden="true"><span></span><span></span><span></span></div>
 
-    <div class="container-page flex h-14 items-center gap-2 lg:h-[72px] lg:gap-6">
+    <div class="container-page navbar-bilah flex h-14 items-center gap-2 lg:h-[72px] lg:gap-6">
 
         {{-- Mobile dan tablet: tombol menu --}}
         <button type="button" class="btn-icon lg:hidden" @click="menu = true"
@@ -20,8 +62,18 @@
             <span class="visually-hidden">{{ __('site.nav.open_menu') }}</span>
         </button>
 
-        {{-- Logo --}}
-        <a href="{{ route('front.home') }}" class="flex min-w-0 items-center gap-2">
+        {{-- Brand. Dirender SEKALI di sini, di kedua wujud navbar.
+
+             Sebelumnya nama toko juga muncul di tengah hero (`.hero-race__merek`)
+             dan sebagai huruf raksasa di latar (`.hero-race__outline`), jadi
+             satu layar memuat tiga kali nama yang sama. Keduanya sudah
+             dihapus; brand resmi hanya di navbar, dan hero memakai judul
+             slide sebagai teks utamanya.
+
+             Bila logo gambar diisi di panel, logo itu yang dipakai; bila
+             kosong, nama toko sebagai teks. Dua-duanya tidak pernah tampil
+             bersamaan. --}}
+        <a href="{{ route('front.home') }}" class="navbar-logo flex min-w-0 items-center gap-2">
             @if ($logo || $logoTerang)
                 <img src="{{ \App\Models\ProductMedia::urlMedia($logo ?: $logoTerang) }}"
                      alt="{{ $toko->teks('site_name') }}"
@@ -33,25 +85,32 @@
             @endif
         </a>
 
-        {{-- Desktop: menu utama --}}
-        <nav class="hidden flex-1 items-center gap-1 lg:flex" aria-label="{{ __('site.nav.menu') }}">
-            <a href="{{ route('front.home') }}"
-               class="btn btn-ghost {{ request()->routeIs('front.home') ? '!text-ink' : '' }}">
-                {{ __('site.nav.home') }}
-            </a>
-            <a href="{{ route('front.products.index') }}"
-               class="btn btn-ghost {{ request()->routeIs('front.products.*') ? '!text-ink' : '' }}">
-                {{ __('site.nav.products') }}
-            </a>
+        {{-- Menu utama.
 
-            <div class="relative" @click.outside="kategori = false">
-                <button type="button" class="btn btn-ghost" @click="kategori = !kategori"
+             Di bilah: di TENGAH (baris ini memakai `flex-1` dan
+             `justify-center`, jadi menu duduk di tengah sisa ruang antara
+             logo dan utilitas — bukan menempel ke kiri).
+
+             Di sidebar: kolom vertikal, jadi markupnya dipakai ulang dengan
+             kelas yang sama dan hanya arah flex yang ditukar CSS. --}}
+        <nav class="navbar-menu hidden flex-1 items-center justify-center gap-1 lg:flex"
+             aria-label="{{ __('site.nav.menu') }}">
+            @foreach ($menuUtama as $menu)
+                <a href="{{ $menu['rute'] }}" wire:navigate
+                   class="navbar-tautan btn btn-ghost {{ $aktif($menu['pola']) ? 'is-aktif' : '' }}">
+                    {{ $menu['label'] }}
+                </a>
+            @endforeach
+
+            <div class="navbar-kategori relative" @click.outside="kategori = false">
+                <button type="button" class="btn btn-ghost navbar-tautan" @click="kategori = !kategori"
                         :aria-expanded="kategori">
                     {{ __('site.nav.categories') }}
                     <x-ikon name="chevron-down" :size="16" />
                 </button>
+
                 <div x-show="kategori" x-cloak x-transition.opacity
-                     class="plate-up absolute left-0 top-full mt-1 w-56 py-1">
+                     class="plate-up absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 py-1">
                     @foreach ($kategoriNav as $kat)
                         <a href="{{ route('front.products.index', ['kategori' => $kat->slug]) }}"
                            class="block px-3 py-2 text-sm hover:bg-sunken">
@@ -61,11 +120,36 @@
                 </div>
             </div>
 
-            <a href="{{ route('front.about') }}" class="btn btn-ghost">{{ __('site.nav.about') }}</a>
-            <a href="{{ route('front.contact') }}" class="btn btn-ghost">{{ __('site.nav.contact') }}</a>
+            {{-- Sosial: HANYA di wujud sidebar. Di bilah, ruangnya dipakai
+                 menu dan utilitas; di hero beranda sudah ada baris sosial
+                 sendiri di kaki hero, jadi tidak diulang di sini. --}}
+            @if ($sosialNav->isNotEmpty())
+                <div class="navbar-sosial">
+                    @foreach ($sosialNav as $sosial)
+                        <a href="{{ $sosial['url'] }}" target="_blank" rel="noopener noreferrer"
+                           title="{{ ucfirst($sosial['platform']) }}">
+                            <x-ikon :name="$sosial['platform']" :size="16" />
+                            <span class="visually-hidden">{{ ucfirst($sosial['platform']) }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         </nav>
 
-        <div class="ml-auto flex items-center gap-0.5">
+        {{-- Utilitas.
+
+             ISI MENYESUAIKAN WUJUD. Di bilah (halaman lain, dan beranda
+             setelah digulir) isinya bahasa, tema, cari, keranjang — semuanya
+             jalan pintas yang dibutuhkan pembeli. Di wujud sidebar kolom ini
+             DIGANTI ikon media sosial, karena di sebelah kiri hero keempat
+             tombol itu sudah ada di baris atas hero (bahasa, suka, cari,
+             keranjang) plus tema, jadi menaruhnya lagi di sidebar membuat
+             satu layar memuat dua salinan tombol yang sama.
+
+             Penukarannya lewat CSS (.navbar-utilitas di navbar.css), bukan
+             Blade: markupnya satu, dan aturan `:not(.navbar-melayang)` sudah
+             menandai wujud sidebar. --}}
+        <div class="navbar-utilitas ml-auto flex items-center gap-0.5">
 
             {{-- Bahasa --}}
             @php $localeLain = \App\Http\Middleware\SetLocale::lain(app()->getLocale()); @endphp
@@ -76,12 +160,8 @@
                 <span class="visually-hidden">{{ __('site.nav.language') }}</span>
             </a>
 
-            {{-- Tombol tema.
-                 Dulu memakai onclick="..." di dalam HTML. CSP proyek ini tidak memuat
-                 'unsafe-inline', jadi atribut itu diblokir peramban dan tombolnya mati
-                 tanpa pesan apa pun. Sekarang memakai penanda data-aksi yang ditangani
-                 satu pendengar klik di app.js, sehingga tidak bergantung pada Alpine
-                 maupun pada skrip inline. --}}
+            {{-- Tombol tema. Memakai penanda data-aksi yang ditangani app.js,
+                 bukan onclick: CSP proyek ini tidak memuat 'unsafe-inline'. --}}
             <button type="button" class="btn-icon" data-aksi="ganti-tema"
                     title="{{ __('site.nav.theme') }}" aria-label="{{ __('site.nav.theme') }}">
                 <span data-tema-ikon="gelap" class="hidden"><x-ikon name="sun" /></span>
@@ -106,6 +186,7 @@
     </div>
 
 </header>
+
     {{-- Drawer menu: tablet dan mobile --}}
     <div x-show="menu" x-cloak class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/50" @click="menu = false" x-transition.opacity></div>

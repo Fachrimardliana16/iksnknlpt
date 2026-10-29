@@ -122,7 +122,7 @@
     <link rel="preload" href="{{ asset('fonts/barlow-400-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset('fonts/barlow-600-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/bar-aksi.js'])
 
     {{-- Livewire WAJIB dimuat eksplisit di sini.
          ...
@@ -144,7 +144,23 @@
 
     @include('partials.front.navbar')
 
-    <main id="konten-utama" class="pb-20 lg:pb-0">
+    {{-- Isi halaman ikut BERGESER saat sidebar tampil.
+
+         Sebelumnya sidebar hanya menumpuk di atas konten: isi halaman tetap
+         selebar layar dan beberapa bagian masuk ke bawah kolom sidebar. Di
+         sini lebarnya yang disesuaikan, bukan sekadar ditumpuk — saat sidebar
+         tampil (data-sidebar-tampil ada), isi digeser `md:pl-64`; saat
+         sidebar keluar (digulir), kembali `md:pl-0`.
+
+         Transisinya `transition-all duration-300` sesuai permintaan, tetapi
+         hanya properti yang benar-benar berubah yang dianimasikan (padding).
+         `transition-all` dipakai apa adanya supaya aturan ini mudah dibaca
+         dan disetel tanpa menghitung daftar properti.
+
+         Kelas `konten-utama` dipakai app.js untuk menandai keadaan, jadi
+         aturannya hanya perlu ditulis sekali di sini. --}}
+    <main id="konten-utama"
+          class="konten-utama pb-20 transition-all duration-300 ease-out lg:pb-0">
         {{ $slot }}
     </main>
 

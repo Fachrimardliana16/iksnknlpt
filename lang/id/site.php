@@ -48,9 +48,20 @@ return [
         'stats_years' => 'Tahun melayani',
         'stats_products' => 'Produk aktif',
         'stats_customers' => 'Pesanan selesai',
+
+        // Hero bergaya lembar spesifikasi. Label sengaja pendek dan
+        // uppercase: di layar kecil ia wajib muat dalam satu baris.
+        'hero_top_speed' => 'Kecepatan puncak',
+        'hero_power' => 'Tenaga mesin',
+        'hero_race_label' => 'Siap lintasan',
+        'hero_shop_label' => 'Etalase',
+        'hero_scroll' => 'Gulir',
+        'hero_all_products' => 'Semua produk',
+        'hero_consult' => 'Konsultasi',
     ],
 
     'product' => [
+        'liked' => 'Produk disukai',
         'add_to_cart' => 'Tambah ke Keranjang',
         'buy_now' => 'Beli Sekarang',
         'share_whatsapp' => 'Tanya via WhatsApp',

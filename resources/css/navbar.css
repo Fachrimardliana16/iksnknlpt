@@ -1,0 +1,252 @@
+/* ═══ NAVIGASI — SIDEBAR + TOP NAVBAR ═══════════════════════════════════
+
+   Dua wujud, dua keadaan gulir, tanpa tumpang tindih:
+
+     Scroll Y = 0      SIDEBAR kiri tampil (≥1280px), top navbar tersembunyi.
+                       Isi halaman digeser `md:pl-64` supaya tidak tertimpa.
+     Scroll Y > 50px   sidebar keluar ke kiri (-translate-x-full), top navbar
+                       muncul sebagai bilah melayang `fixed top-0 w-full z-50`
+                       dengan backdrop-blur. Isi halaman kembali `md:pl-0`.
+
+   Di dalam keadaan sudah digulir, bilahnya juga menyembunyikan diri saat
+   gulir ke bawah (-translate-y-full) dan turun lagi saat gulir ke atas.
+
+   SEMUA keadaan ditulis app.js ke <html> sebagai atribut:
+
+     data-sidebar-tampil   sidebar sedang terlihat (gulir di puncak)
+     data-bilah-tampil     top navbar sedang terlihat
+     data-gulir-arah="naik"|"turun"
+
+   CSS di bawah hanya MEMBACA atribut itu. Tidak ada perhitungan gulir di
+   CSS, karena CSS tidak bisa membacanya.
+
+   Tanpa JS: tidak ada satu pun atribut itu, sehingga aturan sidebar tidak
+   menyala dan top navbar tetap tampil seperti biasa (posisi bawaan header:
+   `sticky`). Navigasi tidak pernah hilang — hanya tidak berganti wujud. */
+
+/* ── Top navbar: dasar ───────────────────────────────────────────────────
+   Di halaman selain beranda, header tetap `sticky` seperti sebelumnya.
+   Di beranda, wujud bilahnya dipindah ke `fixed` oleh app.js (kelas
+   `.navbar-melayang`) supaya bisa disembunyikan ke atas. */
+.race-navbar {
+    transition: transform 300ms cubic-bezier(.4, 0, .2, 1),
+                opacity 200ms ease,
+                background-color 200ms ease,
+                box-shadow 200ms ease;
+}
+
+/* Menu utama di TENGAH. `flex-1` + `justify-center` menaruh menu di tengah
+   ruang antara brand dan utilitas; `mx-auto` pada menu saja tidak cukup
+   karena lebar brand dan utilitas tidak sama. */
+.navbar-bilah {
+    position: relative;
+}
+
+.navbar-menu {
+    justify-content: center;
+}
+
+/* Penanda aktif di bilah: garis aksen di bawah label. */
+.navbar-tautan.is-aktif {
+    color: var(--c-text);
+    box-shadow: inset 0 -2px 0 var(--c-accent);
+}
+
+/* Sosial hanya milik wujud sidebar. */
+.navbar-sosial {
+    display: none;
+}
+
+/* ── Top navbar melayang (beranda, sudah digulir) ────────────────────────
+   `fixed top-0 w-full z-50`, latar tembus pandang + blur. Menyembunyikan
+   diri ke atas saat gulir ke bawah, turun lagi saat gulir ke atas. */
+header.navbar-melayang {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--c-surface) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--c-line-soft);
+    box-shadow: 0 10px 30px rgb(0 0 0 / .12);
+}
+
+/* Saat bilah sedang aktif DAN pengunjung menggulir ke bawah, ia keluar
+   layar. Saat gulir ke atas, ia turun lagi. */
+html[data-bilah-tampil='1'][data-gulir-arah='turun'] header.navbar-melayang {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+html[data-gulir-arah='naik'] header.navbar-melayang,
+html[data-gulir-arah='netral'] header.navbar-melayang {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* ── Sidebar kiri (beranda, di puncak, ≥1280px) ──────────────────────────
+   `position: fixed` selebar 16rem (setara `md:pl-64` di main content) dan
+   setinggi layar. Saat atribut `data-sidebar-tampil` hilang, kelas
+   `.navbar-keluar` dipasang app.js sehingga kolomnya bergeser keluar. */
+@media (min-width: 1280px) {
+    /* GARIS PEMISAH SIDEBAR — satu, tipis, transparan.
+
+       Sebelumnya di sini ada `border-right` selebar 1px, sementara header
+       juga membawa `border-b` dari kelas Tailwind-nya. Di wujud sidebar,
+       garis bawah itu ikut tampil sebagai potongan mendatar pendek di atas
+       kolom — bertumpuk dengan garis tepi hero yang tepat di sebelahnya.
+       Karena itu garis bawahnya DINOLKAN di wujud sidebar dan hanya tepi
+       kanan yang dipakai sebagai pemisah. */
+    header.navbar-hero:not(.navbar-melayang) {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 16rem;
+        height: 100svh;
+        border-top: 0;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        box-shadow: inset -1px 0 0 rgb(255 255 255 / .07);
+        background: transparent;
+        backdrop-filter: none;
+        color: #f2f2ef;
+    }
+
+    /* Kolom: brand, menu vertikal, sosial + utilitas didorong ke kaki. */
+    header.navbar-hero:not(.navbar-melayang) .navbar-bilah {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 2rem;
+        height: 100%;
+        padding: 1.75rem 1.5rem;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-logo {
+        width: 100%;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-menu {
+        flex-direction: column;
+        align-items: stretch;
+        flex: 1 1 auto;
+        gap: .1rem;
+    }
+
+    /* Tautan sidebar: mono kecil berjarak, rata kiri — bukan tombol. */
+    header.navbar-hero:not(.navbar-melayang) .navbar-menu .navbar-tautan {
+        justify-content: flex-start;
+        padding: .55rem 0;
+        min-height: 2.25rem;
+        font: 500 .6875rem/1 var(--font-mono);
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: rgb(255 255 255 / .45);
+        box-shadow: none;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-menu .navbar-tautan:hover,
+    header.navbar-hero:not(.navbar-melayang) .navbar-menu .navbar-tautan.is-aktif {
+        color: #fff;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-menu .navbar-tautan.is-aktif::before {
+        content: '';
+        width: 1rem;
+        height: 1px;
+        margin-right: .35rem;
+        background: var(--c-accent);
+    }
+
+    /* Dropdown kategori membuka ke kanan sidebar, bukan ke tengah layar. */
+    header.navbar-hero:not(.navbar-melayang) .navbar-kategori .plate-up {
+        left: 0;
+        translate: 0;
+        margin-top: .25rem;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-sosial {
+        display: flex;
+        gap: .3rem;
+        width: 100%;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-sosial a {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        color: rgb(255 255 255 / .5);
+        border: 1px solid rgb(255 255 255 / .12);
+        transition: color 160ms ease, border-color 160ms ease;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-sosial a:hover {
+        color: #fff;
+        border-color: #fff;
+    }
+
+    /* Utilitas DI SIDEBAR DIGANTI SOSIAL.
+
+       Empat tombolnya (bahasa, tema, cari, keranjang) sudah ada di baris atas
+       hero, jadi di sidebar tempat itu dipakai ikon media sosial. Ikon
+       sosialnya tinggal dipindah dari dalam menu ke kaki kolom, dan barisan
+       utilitas disembunyikan.
+
+       Memakai `:not(.navbar-melayang)` — penanda wujud sidebar yang sama
+       dengan blok ini — supaya bilah (beranda setelah digulir, dan semua
+       halaman lain) tetap memakai bahasa/tema/cari/keranjang seperti biasa. */
+    header.navbar-hero:not(.navbar-melayang) .navbar-utilitas {
+        display: none;
+    }
+
+    header.navbar-hero:not(.navbar-melayang) .navbar-sosial {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgb(255 255 255 / .1);
+    }
+
+    /* Tombol menu mobile tidak pernah tampil di wujud sidebar. */
+    header.navbar-hero:not(.navbar-melayang) .navbar-bilah > .lg\:hidden {
+        display: none;
+    }
+}
+
+/* Sidebar keluar ke kiri. `.navbar-keluar` dipasang app.js bersamaan dengan
+   `navbar-melayang`; keduanya terjadi di satu frame, jadi tidak ada keadaan
+   antara "sidebar masih di tengah layar" yang sempat terlihat. */
+@media (min-width: 1280px) {
+    header.navbar-hero.navbar-keluar {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* ── Isi halaman ikut bergeser ───────────────────────────────────────────
+   Sidebar selebar 16rem. Saat tampil, isi digeser selebar itu; saat keluar,
+   kembali penuh. `transition-all duration-300` sudah dipasang di <main>
+   lewat layout, jadi di sini cukup nilai paddingnya. */
+@media (min-width: 1280px) {
+    html[data-sidebar-tampil='1'] .konten-utama {
+        padding-left: 16rem;
+    }
+
+    /* Garis pemisah sidebar adalah SATU garis: tepi kanan kolom (inset
+       shadow di atas). Hero tidak boleh punya garis sendiri di tepi
+       kirinya saat sidebar tampil — dua garis 1px yang berdempetan
+       terbaca sebagai satu garis tebal dan bergerigi saat digulir. */
+    html[data-sidebar-tampil='1'] .hero-race {
+        border-left: 0;
+    }
+
+    html[data-sidebar-tampil='1'] .beranda-hero-geser {
+        /* Ruang yang ditempati sidebar di kiri hero. Dipakai hero untuk
+           memusatkan judulnya di sisa lebar, bukan di lebar layar penuh —
+           tanpa ini judul tampak bergeser ke kanan selama sidebar muncul. */
+        padding-left: 16rem;
+    }
+}

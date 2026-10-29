@@ -48,9 +48,20 @@ return [
         'stats_years' => 'Years in service',
         'stats_products' => 'Active products',
         'stats_customers' => 'Completed orders',
+
+        // Hero bergaya lembar spesifikasi. Label sengaja pendek dan
+        // uppercase: di layar kecil ia wajib muat dalam satu baris.
+        'hero_top_speed' => 'Top speed',
+        'hero_power' => 'Power',
+        'hero_race_label' => 'Track ready',
+        'hero_shop_label' => 'Shop',
+        'hero_scroll' => 'Scroll',
+        'hero_all_products' => 'All products',
+        'hero_consult' => 'Consult',
     ],
 
     'product' => [
+        'liked' => 'Liked products',
         'add_to_cart' => 'Add to Cart',
         'buy_now' => 'Buy Now',
         'share_whatsapp' => 'Ask on WhatsApp',

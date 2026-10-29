@@ -92,6 +92,26 @@ document.addEventListener('click', (event) => {
         window.iksanTheme.toggle();
     }
 
+    // Tombol cari di mana pun: navbar, hero beranda, drawer.
+    //
+    // Panel pencarian ada di navbar, dan navbar memakai Alpine (x-data di
+    // pembungkusnya). Yang dicari adalah pembungkus ITU — bukan x-data
+    // terdekat — karena tombol di hero berada di luar navbar. Bila Alpine
+    // belum siap, tombol jatuh ke halaman katalog supaya tidak mati.
+    if (aksi === 'buka-cari') {
+        // Header dirender dari partial navbar: penanda `.race-navbar__signal`
+        // ada di dalamnya, dan pembungkus x-data adalah induk dua tingkat.
+        const header = document.querySelector('header.race-navbar');
+        const pembungkus = header?.parentElement;
+        const data = pembungkus?._x_dataStack?.[0];
+
+        if (data && 'cari' in data) {
+            data.cari = true;
+        } else {
+            window.location.href = '/produk';
+        }
+    }
+
     // Halaman cetak: resi, invoice, surat jalan. Tombolnya memanggil
     // window.print() dari berkas ini, bukan dari atribut onclick, karena CSP
     // proyek ini tidak memuat 'unsafe-inline'.
@@ -553,3 +573,164 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
+
+/**
+ * Navigasi dua wujud: sidebar kiri di puncak, top navbar melayang saat digulir.
+ *
+ * Keadaan yang ditulis ke <html> (dibaca CSS di resources/css/navbar.css):
+ *
+ *   data-sidebar-tampil="1"   sidebar kiri terlihat  (beranda, ≥1280px, Y=0)
+ *   data-bilah-tampil="1"     top navbar terlihat    (Y > 50px)
+ *   data-gulir-arah           "naik" | "turun" | "netral"
+ *
+ * Aturan gulir:
+ *
+ *   Y = 0        sidebar tampil, isi halaman digeser `md:pl-64`
+ *   Y > 50px     sidebar keluar (-translate-x-full), top navbar melayang
+ *                masuk (`fixed top-0 w-full z-50`, backdrop-blur)
+ *   gulir turun  top navbar naik keluar (-translate-y-full)
+ *   gulir naik   top navbar turun lagi di tempatnya
+ *
+ * Selisih arah dihitung dari Y sebelumnya, bukan dari event kapan pun:
+ * gulir 1–2 px karena trackpad atau jari yang berhenti tidak boleh
+ * membalik arah dan membuat bilah berkedip.
+ *
+ * Semua atribut SELALU ditulis saat halaman dimuat — termasuk saat nilainya
+ * "tidak tampil". Tanpa itu, sidebar bisa tertinggal menutupi isi halaman
+ * setelah berpindah dari beranda ke halaman lain.
+ */
+function pasangNavigasi() {
+    const header = document.querySelector('header.race-navbar');
+    const akar = document.documentElement;
+
+    const AMBANG_BILAH = 50;   // px, sesuai permintaan
+    const AMBANG_ARAH = 6;     // px, selisih minimum agar arah dianggap berubah
+
+    if (!header) {
+        akar.removeAttribute('data-sidebar-tampil');
+        akar.removeAttribute('data-bilah-tampil');
+
+        return;
+    }
+
+    // Wujud sidebar hanya dipakai di beranda (kelas navbar-hero dipasang
+    // Blade khusus route beranda) dan hanya di layar ≥1280px.
+    const punyaSidebar = header.classList.contains('navbar-hero');
+    const lebarCukup = () => window.matchMedia('(min-width: 1280px)').matches;
+
+    let yTerakhir = window.scrollY;
+    let arah = 'netral';
+    let sedang = null;
+
+    const tulis = () => {
+        const y = window.scrollY;
+
+        // Arah gulir: hanya berubah bila selisihnya melewati ambang.
+        const selisih = y - yTerakhir;
+        if (Math.abs(selisih) > AMBANG_ARAH) {
+            arah = selisih > 0 ? 'turun' : 'naik';
+            yTerakhir = y;
+        }
+
+        const sidebarTampil = punyaSidebar && lebarCukup() && y <= AMBANG_BILAH;
+        const bilahTampil = y > AMBANG_BILAH;
+
+        // Tiga keadaan disimpan sebagai satu string supaya penulisan ke DOM
+        // hanya terjadi saat ada perubahan (setiap penulisan memicu gaya
+        // ulang, dan ini berjalan di event scroll).
+        const keadaan = sidebarTampil + '|' + bilahTampil + '|' + arah;
+
+        if (keadaan === sedang) return;
+        sedang = keadaan;
+
+        akar.toggleAttribute('data-sidebar-tampil', sidebarTampil);
+        akar.toggleAttribute('data-bilah-tampil', bilahTampil);
+        akar.setAttribute('data-gulir-arah', arah);
+
+        header.classList.toggle('navbar-melayang', bilahTampil);
+        header.classList.toggle('navbar-keluar', !sidebarTampil);
+    };
+
+    window.addEventListener('scroll', tulis, { passive: true });
+    window.addEventListener('resize', tulis, { passive: true });
+    tulis();
+}
+
+document.addEventListener('DOMContentLoaded', pasangNavigasi);
+document.addEventListener('livewire:navigated', () => {
+    // Navigasi Livewire mengganti isi halaman tetapi tidak memuat ulang
+    // dokumen; tinggi hero dan keadaan gulir bisa berbeda, jadi dihitung ulang.
+    document.documentElement.removeAttribute('data-sidebar-tampil');
+    document.documentElement.removeAttribute('data-bilah-tampil');
+    pasangNavigasi();
+});
+
+/**
+ * Angka pada tombol hero (suka & keranjang).
+ *
+ * Kedua tombol ada di baris atas hero, sementara hitungannya sudah dikerjakan
+ * komponen Livewire yang ada:
+ *
+ *   keranjang  livewire:front.jumlah-keranjang  (ikut `keranjang-berubah`)
+ *   suka       livewire:front.suka-produk       (ikut `suka-berubah`)
+ *
+ * Menyalin angkanya lebih murah daripada membuat komponen baru: satu kueri
+ * untuk seluruh halaman, dan perubahan langsung terlihat karena komponen asli
+ * sudah menulis ulang angkanya sendiri lalu memicu event.
+ *
+ * Bila penanda tidak ada (halaman tanpa hero), fungsi ini tidak melakukan
+ * apa pun.
+ */
+function pasangAngkaHero() {
+    const angkaKeranjang = document.querySelector('[data-hero-keranjang]');
+    const angkaSuka = document.querySelector('[data-hero-suka]');
+    const sumberKeranjang = document.querySelector('[data-jumlah-keranjang]');
+
+    const salinKeranjang = () => {
+        if (!angkaKeranjang) return;
+
+        const teks = (sumberKeranjang?.textContent || '').replace(/\D/g, '');
+        const jumlah = Number(teks || 0);
+
+        angkaKeranjang.textContent = jumlah > 99 ? '99+' : String(jumlah);
+        angkaKeranjang.hidden = jumlah === 0;
+    };
+
+    // Suka: tombol di hero menampilkan berapa produk yang disukai pengunjung
+    // ini. Angkanya TIDAK dihitung ulang dari DOM setiap saat (sebelumnya
+    // salah: menghitung `[data-suka-aktif]` mengukur produk yang disukai di
+    // halaman ini, bukan seluruh toko). Nilai awalnya dibaca dari penanda
+    // `data-jumlah-suka` yang disiapkan Blade, lalu diperbarui lewat event
+    // `suka-berubah` yang membawa `detail.disukai`.
+    let jumlahSuka = Number(document.querySelector('[data-jumlah-suka]')?.dataset.jumlahSuka || 0);
+
+    const tulisSuka = (jumlah) => {
+        if (!angkaSuka) return;
+        angkaSuka.textContent = jumlah > 99 ? '99+' : String(jumlah);
+        angkaSuka.hidden = jumlah === 0;
+    };
+
+    tulisSuka(jumlahSuka);
+    salinKeranjang();
+
+    // Komponen Livewire menulis ulang angkanya lewat DOM; mengamati teksnya
+    // adalah cara paling sederhana untuk ikut tanpa mengubah komponennya.
+    if (sumberKeranjang && 'MutationObserver' in window) {
+        new MutationObserver(salinKeranjang).observe(sumberKeranjang, {
+            subtree: true,
+            childList: true,
+            characterData: true,
+        });
+    }
+
+    window.addEventListener('keranjang-berubah', salinKeranjang);
+    window.addEventListener('suka-berubah', (e) => {
+        if (typeof e.detail?.disukai !== 'boolean') return;
+
+        jumlahSuka = Math.max(0, jumlahSuka + (e.detail.disukai ? 1 : -1));
+        tulisSuka(jumlahSuka);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', pasangAngkaHero);
+document.addEventListener('livewire:navigated', pasangAngkaHero);

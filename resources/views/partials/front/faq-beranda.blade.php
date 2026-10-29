@@ -44,8 +44,8 @@
         $adaSisa = $faq->count() > $tampil;
     @endphp
 
-    <section class="container-page py-10 lg:py-24" data-reveal x-data="{ terbuka: false }">
-        <div class="flex flex-wrap items-end justify-between gap-4">
+    <section class="container-page race-faq py-10 lg:py-24" data-reveal x-data="{ terbuka: false }">
+        <div class="race-faq__heading flex flex-wrap items-end justify-between gap-4">
             <div>
                 <span class="part-no">06 / {{ __('site.home.faq_title') }}</span>
                 <h2 class="mt-3 text-3xl font-semibold sm:text-4xl">{{ __('site.home.faq_title') }}</h2>
